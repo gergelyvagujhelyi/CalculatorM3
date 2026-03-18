@@ -3,7 +3,14 @@ package com.m3calculator
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+
+data class HistoryEntry(
+    val expression: String,
+    val result: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 class CalculatorViewModel : ViewModel() {
     var expression by mutableStateOf("")
@@ -12,6 +19,19 @@ class CalculatorViewModel : ViewModel() {
         private set
     var history by mutableStateOf("")
         private set
+
+    private val _historyList = mutableStateListOf<HistoryEntry>()
+    val historyList: List<HistoryEntry> get() = _historyList
+
+    fun loadHistoryEntry(entry: HistoryEntry) {
+        expression = entry.result
+        result = ""
+        history = "${entry.expression} ="
+    }
+
+    fun clearHistory() {
+        _historyList.clear()
+    }
 
     fun onButtonPress(label: String) {
         when (label) {
@@ -30,6 +50,9 @@ class CalculatorViewModel : ViewModel() {
                 if (expression.isNotEmpty()) {
                     val res = evaluate(expression)
                     history = "$expression ="
+                    if (res != "Error") {
+                        _historyList.add(0, HistoryEntry(expression, res))
+                    }
                     result = res
                     expression = if (res == "Error") "" else res
                 }
