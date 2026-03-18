@@ -4,56 +4,56 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Calculator body -->
+    <!-- Calculator body (narrow) -->
     <path
-        android:pathData="M30,28h48c3.3,0 6,2.7 6,6v40c0,3.3 -2.7,6 -6,6h-48c-3.3,0 -6,-2.7 -6,-6v-40c0,-3.3 2.7,-6 6,-6z"
-        android:fillColor="#FFFFFF"/>
+        android:pathData="M40,24h28c4,0 6,3 6,7v46c0,4 -2,7 -6,7h-28c-4,0 -6,-3 -6,-7v-46c0,-4 2,-7 6,-7z"
+        android:fillColor="#1A2332"/>
 
     <!-- Display screen -->
     <path
-        android:pathData="M30,33h48c1.1,0 2,0.9 2,2v10c0,1.1 -0.9,2 -2,2h-48c-1.1,0 -2,-0.9 -2,-2v-10c0,-1.1 0.9,-2 2,-2z"
-        android:fillColor="#EADDFF"/>
+        android:pathData="M39,29h30c1.5,0 2.5,1 2.5,3v10c0,2 -1,3 -2.5,3h-30c-1.5,0 -2.5,-1 -2.5,-3v-10c0,-2 1,-3 2.5,-3z"
+        android:fillColor="#0F1620"/>
 
-    <!-- Row 1 buttons -->
+    <!-- Row 1: 3 grey + 1 blue -->
     <path
-        android:pathData="M30,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M42,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M46,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M50,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M62,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M58,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M78,52m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#6750A4"/>
+        android:pathData="M66,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#2196F3"/>
 
-    <!-- Row 2 buttons -->
+    <!-- Row 2: 3 grey + 1 blue -->
     <path
-        android:pathData="M30,64m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M42,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M46,64m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M50,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M62,64m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M58,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M78,64m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#6750A4"/>
+        android:pathData="M66,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#2196F3"/>
 
-    <!-- Row 3 buttons -->
+    <!-- Row 3: 3 grey + 1 blue -->
     <path
-        android:pathData="M30,76m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M42,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M46,76m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M50,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M62,76m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#E8DEF8"/>
+        android:pathData="M58,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#B0BEC5"/>
     <path
-        android:pathData="M78,76m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0"
-        android:fillColor="#6750A4"/>
+        android:pathData="M66,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
+        android:fillColor="#2196F3"/>
 
 </vector>

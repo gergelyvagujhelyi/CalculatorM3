@@ -78,6 +78,27 @@ class CalculatorViewModel : ViewModel() {
                     updatePreview()
                 }
             }
+            "√" -> {
+                if (expression.isNotEmpty()) {
+                    expression = "√($expression)"
+                    updatePreview()
+                }
+            }
+            "π" -> {
+                expression += "π"
+                updatePreview()
+            }
+            "^" -> {
+                if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == ')' || it == 'π' }) {
+                    expression += "^"
+                }
+            }
+            "!" -> {
+                if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == ')' }) {
+                    expression += "!"
+                    updatePreview()
+                }
+            }
             "+", "−", "×", "÷" -> {
                 if (expression.isNotEmpty() && expression.last() !in listOf('+', '−', '×', '÷')) {
                     expression += label
@@ -98,7 +119,7 @@ class CalculatorViewModel : ViewModel() {
     }
 
     private fun updatePreview() {
-        if (expression.isNotEmpty() && expression.last().isDigit()) {
+        if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
             if (preview != "Error") {
                 result = preview
@@ -113,6 +134,9 @@ class CalculatorViewModel : ViewModel() {
                 .replace("÷", "/")
                 .replace("−", "-")
                 .replace("%", "/100.0")
+                .replace(Regex("(\\d)π"), "$1*${Math.PI}")
+                .replace(Regex("π(\\d)"), "${Math.PI}*$1")
+                .replace("π", Math.PI.toString())
 
             val result = evaluateExpression(sanitized)
             if (!result.isFinite()) return "Error"
@@ -137,6 +161,7 @@ class CalculatorViewModel : ViewModel() {
     private sealed class Token {
         data class Num(val value: Double) : Token()
         data class Op(val op: Char, val precedence: Int, val leftAssoc: Boolean = true) : Token()
+        data class UnaryOp(val op: Char) : Token()
         data object LParen : Token()
         data object RParen : Token()
     }
@@ -171,6 +196,11 @@ class CalculatorViewModel : ViewModel() {
                 }
                 c == '*' -> tokens.add(Token.Op('*', 2))
                 c == '/' -> tokens.add(Token.Op('/', 2))
+                c == '^' -> tokens.add(Token.Op('^', 3, leftAssoc = false))
+                c == '√' -> tokens.add(Token.UnaryOp('√'))
+                c == '!' -> {
+                    tokens.add(Token.UnaryOp('!'))
+                }
             }
             i++
         }
@@ -196,12 +226,22 @@ class CalculatorViewModel : ViewModel() {
                     }
                     stack.addLast(token)
                 }
+                is Token.UnaryOp -> {
+                    if (token.op == '!') {
+                        output.add(token)
+                    } else {
+                        stack.addLast(token)
+                    }
+                }
                 is Token.LParen -> stack.addLast(token)
                 is Token.RParen -> {
                     while (stack.isNotEmpty() && stack.last() !is Token.LParen) {
                         output.add(stack.removeLast())
                     }
                     if (stack.isNotEmpty()) stack.removeLast()
+                    if (stack.isNotEmpty() && stack.last() is Token.UnaryOp) {
+                        output.add(stack.removeLast())
+                    }
                 }
             }
         }
@@ -223,6 +263,17 @@ class CalculatorViewModel : ViewModel() {
                         '-' -> a - b
                         '*' -> a * b
                         '/' -> if (b == 0.0) Double.NaN else a / b
+                        '^' -> Math.pow(a, b)
+                        else -> Double.NaN
+                    }
+                    stack.addLast(result)
+                }
+                is Token.UnaryOp -> {
+                    if (stack.isEmpty()) return Double.NaN
+                    val a = stack.removeLast()
+                    val result = when (token.op) {
+                        '√' -> if (a < 0) Double.NaN else Math.sqrt(a)
+                        '!' -> if (a < 0 || a != Math.floor(a) || a > 20) Double.NaN else factorial(a.toLong()).toDouble()
                         else -> Double.NaN
                     }
                     stack.addLast(result)
@@ -231,5 +282,11 @@ class CalculatorViewModel : ViewModel() {
             }
         }
         return stack.lastOrNull() ?: Double.NaN
+    }
+
+    private fun factorial(n: Long): Long {
+        var result = 1L
+        for (i in 2..n) result *= i
+        return result
     }
 }
