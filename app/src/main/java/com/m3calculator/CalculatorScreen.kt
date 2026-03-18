@@ -45,8 +45,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
     val buttons = listOf(
         listOf(
+            CalcButton("⌫", ButtonType.BACKSPACE),
             CalcButton("AC", ButtonType.FUNCTION),
-            CalcButton("()", ButtonType.FUNCTION),
             CalcButton("%", ButtonType.FUNCTION),
             CalcButton("÷", ButtonType.OPERATOR),
         ),
@@ -69,7 +69,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             CalcButton("+", ButtonType.OPERATOR),
         ),
         listOf(
-            CalcButton("+/−", ButtonType.FUNCTION),
+            CalcButton("+/−", ButtonType.NUMBER),
             CalcButton("0", ButtonType.NUMBER),
             CalcButton(".", ButtonType.NUMBER),
             CalcButton("=", ButtonType.EQUALS),
@@ -135,32 +135,42 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 color = colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
 
-            // Backspace row
+            // Scientific row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                CalcButtonView(
-                    button = CalcButton("⌫", ButtonType.BACKSPACE),
-                    onClick = { viewModel.onButtonPress("⌫") },
-                    modifier = Modifier.size(width = 72.dp, height = 40.dp)
-                )
+                listOf("√", "π", "^", "!").forEach { label ->
+                    TextButton(
+                        onClick = { viewModel.onButtonPress(label) },
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Normal,
+                            color = colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
 
             // Button grid
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp)
-                    .padding(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .padding(horizontal = 8.dp)
+                    .padding(bottom = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 buttons.forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         row.forEach { button ->
                             CalcButtonView(
@@ -168,7 +178,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                                 onClick = { viewModel.onButtonPress(button.label) },
                                 modifier = Modifier
                                     .weight(1f)
-                                    .aspectRatio(1.15f)
+                                    .aspectRatio(1f)
                             )
                         }
                     }
@@ -274,6 +284,12 @@ fun CalcButtonView(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
+    LaunchedEffect(isPressed) {
+        if (isPressed) {
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        }
+    }
+
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.92f else 1f,
         animationSpec = spring(
@@ -283,33 +299,30 @@ fun CalcButtonView(
         label = "buttonScale"
     )
 
-    val shape = when (button.type) {
-        ButtonType.EQUALS -> RoundedCornerShape(28.dp)
-        else -> RoundedCornerShape(24.dp)
-    }
+    val shape = CircleShape
 
     val containerColor = when (button.type) {
         ButtonType.NUMBER -> colorScheme.surfaceContainerHigh
         ButtonType.OPERATOR -> colorScheme.secondaryContainer
-        ButtonType.FUNCTION -> colorScheme.surfaceContainer
+        ButtonType.FUNCTION -> colorScheme.tertiaryContainer
         ButtonType.EQUALS -> colorScheme.primary
-        ButtonType.BACKSPACE -> Color.Transparent
+        ButtonType.BACKSPACE -> colorScheme.tertiaryContainer
     }
 
     val contentColor = when (button.type) {
         ButtonType.NUMBER -> colorScheme.onSurface
         ButtonType.OPERATOR -> colorScheme.onSecondaryContainer
-        ButtonType.FUNCTION -> colorScheme.primary
+        ButtonType.FUNCTION -> colorScheme.onTertiaryContainer
         ButtonType.EQUALS -> colorScheme.onPrimary
-        ButtonType.BACKSPACE -> colorScheme.onSurfaceVariant
+        ButtonType.BACKSPACE -> colorScheme.onTertiaryContainer
     }
 
     val fontSize = when (button.type) {
-        ButtonType.EQUALS -> 28.sp
-        ButtonType.OPERATOR -> 24.sp
-        ButtonType.NUMBER -> 22.sp
-        ButtonType.BACKSPACE -> 20.sp
-        else -> 18.sp
+        ButtonType.EQUALS -> 36.sp
+        ButtonType.OPERATOR -> 36.sp
+        ButtonType.NUMBER -> 32.sp
+        ButtonType.BACKSPACE -> 28.sp
+        else -> 28.sp
     }
 
     Surface(
