@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.DeleteOutline
@@ -21,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -120,6 +124,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             // Display area
             DisplaySection(
                 expression = viewModel.expression,
+                cursorPosition = viewModel.cursorPosition,
+                onCursorChange = { viewModel.moveCursorTo(it) },
                 result = viewModel.result,
                 history = viewModel.history,
                 modifier = Modifier
@@ -191,11 +197,16 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 @Composable
 fun DisplaySection(
     expression: String,
+    cursorPosition: Int,
+    onCursorChange: (Int) -> Unit,
     result: String,
     history: String,
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
+
+    val formatted = formatExpression(expression)
+    val cursorInFormatted = mapCursorToFormatted(expression, cursorPosition)
 
     Column(
         modifier = modifier,
@@ -236,18 +247,72 @@ fun DisplaySection(
             label = "fontSize"
         )
 
-        Text(
-            text = formatExpression(expression).ifEmpty { "0" },
-            fontSize = animatedFontSize.sp,
-            fontWeight = FontWeight.Light,
-            color = if (expression.isEmpty()) colorScheme.outlineVariant else colorScheme.onSurface,
-            textAlign = TextAlign.End,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = (animatedFontSize * 1.15).sp,
-            modifier = Modifier.fillMaxWidth(),
-            letterSpacing = (-0.5).sp
-        )
+        val displayText = formatted.ifEmpty { "0" }
+        val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
+
+        val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
+        val blinkVisible = if (cursorVisible) {
+            val infiniteTransition = rememberInfiniteTransition(label = "cursorBlink")
+            val alpha by infiniteTransition.animateFloat(
+                initialValue = 1f,
+                targetValue = 0f,
+                animationSpec = infiniteRepeatable(
+                    animation = keyframes {
+                        durationMillis = 1000
+                        1f at 0
+                        1f at 500
+                        0f at 501
+                        0f at 1000
+                    },
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "cursorAlpha"
+            )
+            alpha > 0.5f
+        } else false
+
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = displayText,
+                fontSize = animatedFontSize.sp,
+                fontWeight = FontWeight.Light,
+                color = if (expression.isEmpty()) colorScheme.outlineVariant else colorScheme.onSurface,
+                textAlign = TextAlign.End,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                lineHeight = (animatedFontSize * 1.15).sp,
+                letterSpacing = (-0.5).sp,
+                onTextLayout = { textLayoutResult.value = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(displayText) {
+                        detectTapGestures { offset ->
+                            textLayoutResult.value?.let { layout ->
+                                val tappedOffset = layout.getOffsetForPosition(offset)
+                                val rawCursor = mapCursorFromFormatted(expression, tappedOffset)
+                                onCursorChange(rawCursor)
+                            }
+                        }
+                    }
+            )
+
+            if (cursorVisible && blinkVisible) {
+                textLayoutResult.value?.let { layout ->
+                    val cursorOffset = cursorInFormatted.coerceAtMost(displayText.length)
+                    val cursorRect = layout.getCursorRect(cursorOffset)
+                    Box(
+                        modifier = Modifier
+                            .offset(
+                                x = with(LocalDensity.current) { cursorRect.left.toDp() },
+                                y = with(LocalDensity.current) { cursorRect.top.toDp() }
+                            )
+                            .width(2.dp)
+                            .height(with(LocalDensity.current) { (cursorRect.bottom - cursorRect.top).toDp() })
+                            .background(colorScheme.primary)
+                    )
+                }
+            }
+        }
 
         // Live preview
         val showPreview = result.isNotEmpty() && expression != result && expression.isNotEmpty()
@@ -479,4 +544,30 @@ fun HistorySheet(
 
 private fun formatExpression(expr: String): String {
     return expr.replace(Regex("([+\\-×÷])")) { " ${it.value} " }
+}
+
+private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
+    var formattedPos = 0
+    for (i in 0 until rawCursor.coerceAtMost(raw.length)) {
+        if (raw[i] in listOf('+', '−', '×', '÷')) {
+            formattedPos += 3 // " X "
+        } else {
+            formattedPos += 1
+        }
+    }
+    return formattedPos
+}
+
+private fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
+    var fPos = 0
+    var rPos = 0
+    while (rPos < raw.length && fPos < formattedCursor) {
+        if (raw[rPos] in listOf('+', '−', '×', '÷')) {
+            fPos += 3
+        } else {
+            fPos += 1
+        }
+        rPos++
+    }
+    return rPos
 }
