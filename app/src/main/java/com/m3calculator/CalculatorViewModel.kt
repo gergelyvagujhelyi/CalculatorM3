@@ -1,6 +1,7 @@
 package com.m3calculator
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateListOf
@@ -15,6 +16,8 @@ data class HistoryEntry(
 class CalculatorViewModel : ViewModel() {
     var expression by mutableStateOf("")
         private set
+    var cursorPosition by mutableIntStateOf(0)
+        private set
     var result by mutableStateOf("")
         private set
     var history by mutableStateOf("")
@@ -23,8 +26,25 @@ class CalculatorViewModel : ViewModel() {
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
+    fun moveCursorTo(position: Int) {
+        cursorPosition = position.coerceIn(0, expression.length)
+    }
+
+    private fun insertAtCursor(text: String) {
+        expression = expression.substring(0, cursorPosition) + text + expression.substring(cursorPosition)
+        cursorPosition += text.length
+    }
+
+    private fun deleteAtCursor() {
+        if (cursorPosition > 0) {
+            expression = expression.substring(0, cursorPosition - 1) + expression.substring(cursorPosition)
+            cursorPosition--
+        }
+    }
+
     fun loadHistoryEntry(entry: HistoryEntry) {
         expression = entry.result
+        cursorPosition = entry.result.length
         result = ""
         history = "${entry.expression} ="
     }
@@ -37,12 +57,36 @@ class CalculatorViewModel : ViewModel() {
         when (label) {
             "AC" -> {
                 expression = ""
+                cursorPosition = 0
                 result = ""
                 history = ""
             }
             "⌫" -> {
-                if (expression.isNotEmpty()) {
-                    expression = expression.dropLast(1)
+                if (expression.isNotEmpty() && cursorPosition > 0) {
+                    val charBefore = expression[cursorPosition - 1]
+                    if (charBefore == '(' && cursorPosition >= 2 && expression[cursorPosition - 2] == '√') {
+                        // Delete √( together, and matching )
+                        val closingIndex = findMatchingClose(expression, cursorPosition - 1)
+                        expression = if (closingIndex != null) {
+                            expression.removeRange(closingIndex, closingIndex + 1)
+                                .removeRange(cursorPosition - 2, cursorPosition)
+                        } else {
+                            expression.removeRange(cursorPosition - 2, cursorPosition)
+                        }
+                        cursorPosition -= 2
+                    } else if (charBefore == ')') {
+                        val openIndex = findMatchingOpen(expression, cursorPosition - 1)
+                        if (openIndex != null && openIndex > 0 && expression[openIndex - 1] == '√') {
+                            // Delete √( and ), keep cursor at end of inner content
+                            expression = expression.removeRange(cursorPosition - 1, cursorPosition)
+                                .removeRange(openIndex - 1, openIndex + 1)
+                            cursorPosition = cursorPosition - 3
+                        } else {
+                            deleteAtCursor()
+                        }
+                    } else {
+                        deleteAtCursor()
+                    }
                     updatePreview()
                 }
             }
@@ -55,67 +99,89 @@ class CalculatorViewModel : ViewModel() {
                     }
                     result = res
                     expression = if (res == "Error") "" else res
+                    cursorPosition = expression.length
                 }
             }
             "+/−" -> {
-                expression = if (expression.startsWith("-")) {
-                    expression.drop(1)
+                if (expression.startsWith("-")) {
+                    expression = expression.drop(1)
+                    cursorPosition = (cursorPosition - 1).coerceAtLeast(0)
                 } else if (expression.isNotEmpty()) {
-                    "-$expression"
-                } else expression
-            }
-            "()" -> {
-                val openCount = expression.count { it == '(' }
-                val closeCount = expression.count { it == ')' }
-                expression += if (openCount == closeCount ||
-                    expression.isEmpty() ||
-                    expression.last() in listOf('+', '−', '×', '÷', '(')
-                ) "(" else ")"
+                    expression = "-$expression"
+                    cursorPosition++
+                }
             }
             "%" -> {
-                if (expression.isNotEmpty() && expression.last().isDigit()) {
-                    expression += "%"
+                val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
+                if (charBefore != null && charBefore.isDigit()) {
+                    insertAtCursor("%")
                     updatePreview()
                 }
             }
             "√" -> {
                 if (expression.isNotEmpty()) {
                     expression = "√($expression)"
+                    cursorPosition = expression.length
                     updatePreview()
                 }
             }
             "π" -> {
-                expression += "π"
+                insertAtCursor("π")
                 updatePreview()
             }
             "^" -> {
-                if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == ')' || it == 'π' }) {
-                    expression += "^"
+                val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π')) {
+                    insertAtCursor("^")
                 }
             }
             "!" -> {
-                if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == ')' }) {
-                    expression += "!"
+                val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')')) {
+                    insertAtCursor("!")
                     updatePreview()
                 }
             }
             "+", "−", "×", "÷" -> {
-                if (expression.isNotEmpty() && expression.last() !in listOf('+', '−', '×', '÷')) {
-                    expression += label
+                val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
+                if (charBefore != null && charBefore !in listOf('+', '−', '×', '÷')) {
+                    insertAtCursor(label)
                 }
             }
             "." -> {
-                val parts = expression.split(Regex("[+\\-×÷]"))
-                val lastPart = parts.lastOrNull() ?: ""
+                val before = expression.substring(0, cursorPosition)
+                val lastPart = before.split(Regex("[+\\-×÷]")).lastOrNull() ?: ""
                 if (!lastPart.contains(".")) {
-                    expression += label
+                    insertAtCursor(label)
                 }
             }
             else -> {
-                expression += label
+                insertAtCursor(label)
                 updatePreview()
             }
         }
+    }
+
+    private fun findMatchingClose(expr: String, openIndex: Int): Int? {
+        var depth = 1
+        for (i in (openIndex + 1) until expr.length) {
+            when (expr[i]) {
+                '(' -> depth++
+                ')' -> { depth--; if (depth == 0) return i }
+            }
+        }
+        return null
+    }
+
+    private fun findMatchingOpen(expr: String, closeIndex: Int): Int? {
+        var depth = 1
+        for (i in (closeIndex - 1) downTo 0) {
+            when (expr[i]) {
+                ')' -> depth++
+                '(' -> { depth--; if (depth == 0) return i }
+            }
+        }
+        return null
     }
 
     private fun updatePreview() {
