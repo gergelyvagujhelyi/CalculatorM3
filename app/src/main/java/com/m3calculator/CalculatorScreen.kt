@@ -3,11 +3,17 @@ package com.m3calculator
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -70,6 +76,22 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
         ),
     )
 
+    var showHistory by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    if (showHistory) {
+        HistorySheet(
+            sheetState = sheetState,
+            historyList = viewModel.historyList,
+            onDismiss = { showHistory = false },
+            onEntryClick = { entry ->
+                viewModel.loadHistoryEntry(entry)
+                showHistory = false
+            },
+            onClearHistory = { viewModel.clearHistory() }
+        )
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = colorScheme.surface
@@ -79,6 +101,22 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 .fillMaxSize()
                 .systemBarsPadding()
         ) {
+            // Top bar with history button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(onClick = { showHistory = true }) {
+                    Icon(
+                        imageVector = Icons.Default.AccessTime,
+                        contentDescription = "History",
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
             // Display area
             DisplaySection(
                 expression = viewModel.expression,
@@ -316,6 +354,111 @@ fun CalcButtonView(
                     color = contentColor,
                     letterSpacing = if (button.label == "+/−") (-0.5).sp else 0.2.sp
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HistorySheet(
+    sheetState: SheetState,
+    historyList: List<HistoryEntry>,
+    onDismiss: () -> Unit,
+    onEntryClick: (HistoryEntry) -> Unit,
+    onClearHistory: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = colorScheme.surface,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 32.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "History",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = colorScheme.onSurface
+                )
+                if (historyList.isNotEmpty()) {
+                    IconButton(onClick = onClearHistory) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = "Clear history",
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            if (historyList.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 48.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No history yet",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = colorScheme.outline
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
+                ) {
+                    items(historyList) { entry ->
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = Color.Transparent
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .clickable { onEntryClick(entry) }
+                                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = formatExpression(entry.expression),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colorScheme.outline,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "= ${entry.result}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = colorScheme.onSurface,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
