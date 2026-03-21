@@ -1,11 +1,14 @@
 <resources>
     <string name="app_name">Calculator</string>
 
-    <!-- Display -->
+    <!-- Error messages -->
     <string name="error">Error</string>
     <string name="error_division_by_zero">Can\'t divide by zero</string>
-    <string name="error_invalid_input">Invalid input</string>
+    <string name="error_negative_sqrt">Can\'t take √ of negative</string>
+    <string name="error_invalid_factorial">Invalid factorial</string>
     <string name="error_overflow">Overflow</string>
+    <string name="error_too_nested">Expression too nested</string>
+    <string name="error_invalid_input">Invalid input</string>
 
     <!-- History -->
     <string name="history">History</string>

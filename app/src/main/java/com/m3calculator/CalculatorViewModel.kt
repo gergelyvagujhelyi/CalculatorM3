@@ -33,6 +33,8 @@ class CalculatorViewModel : ViewModel() {
 
     companion object {
         private const val MAX_HISTORY_SIZE = 100
+        private const val MAX_EXPRESSION_LENGTH = 200
+        private const val MAX_PAREN_DEPTH = 20
     }
 
     fun moveCursorTo(position: Int) {
@@ -40,6 +42,7 @@ class CalculatorViewModel : ViewModel() {
     }
 
     private fun insertAtCursor(text: String) {
+        if (expression.length + text.length > MAX_EXPRESSION_LENGTH) return
         expression = expression.substring(0, cursorPosition) + text + expression.substring(cursorPosition)
         cursorPosition += text.length
     }
@@ -319,6 +322,7 @@ class CalculatorViewModel : ViewModel() {
                 e.message?.contains("Negative sqrt") == true -> "Error: √ of neg"
                 e.message?.contains("Invalid factorial") == true -> "Error: bad n!"
                 e.message?.contains("Non-finite") == true -> "Error: overflow"
+                e.message?.contains("Nesting too deep") == true -> "Error: too nested"
                 else -> "Error"
             }
         } catch (_: Exception) {
@@ -327,6 +331,11 @@ class CalculatorViewModel : ViewModel() {
     }
 
     private fun evaluateExpression(expr: String): BigDecimal {
+        val depth = expr.fold(0) { max, c ->
+            val cur = if (c == '(') max + 1 else max
+            if (cur > MAX_PAREN_DEPTH) throw ArithmeticException("Nesting too deep")
+            if (c == ')') cur - 1 else cur
+        }
         val tokens = tokenize(expr)
         val postfix = infixToPostfix(tokens)
         return evaluatePostfix(postfix)
