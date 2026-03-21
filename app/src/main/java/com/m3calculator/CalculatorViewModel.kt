@@ -375,8 +375,9 @@ class CalculatorViewModel(
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
-                // Implicit multiply after %: 50%3 → 50%*3
+                // Implicit multiply after %: 50%3 → 50%*3, 50%π → 50%*π
                 .replace(Regex("%(\\d)"), "%*$1")
+                .replace(Regex("%π"), "%*π")
                 // Implicit multiplication around π
                 .replace(Regex("(\\d)π"), "$1*π")
                 .replace(Regex("π(\\d)"), "π*$1")
@@ -589,7 +590,8 @@ class CalculatorViewModel(
                 else -> {}
             }
         }
-        return stack.lastOrNull()?.v ?: throw ArithmeticException("Empty expression")
+        if (stack.size != 1) throw ArithmeticException("Malformed expression")
+        return stack.last().v
     }
 
     private fun bigSqrt(a: BigDecimal): BigDecimal {
