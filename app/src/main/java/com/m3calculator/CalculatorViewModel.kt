@@ -1,12 +1,16 @@
 package com.m3calculator
 
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import android.os.Build
+import org.json.JSONArray
+import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
@@ -17,25 +21,92 @@ data class HistoryEntry(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class CalculatorViewModel : ViewModel() {
-    var expression by mutableStateOf("")
+class CalculatorViewModel(
+    private val prefs: SharedPreferences? = null,
+    private val savedState: SavedStateHandle = SavedStateHandle()
+) : ViewModel() {
+
+    var expression by mutableStateOf(savedState.get<String>("expression") ?: "")
         private set
-    var cursorPosition by mutableIntStateOf(0)
+    var cursorPosition by mutableIntStateOf(savedState.get<Int>("cursorPosition") ?: 0)
         private set
-    var result by mutableStateOf("")
+    var result by mutableStateOf(savedState.get<String>("result") ?: "")
         private set
-    var history by mutableStateOf("")
+    var history by mutableStateOf(savedState.get<String>("history") ?: "")
         private set
     var maxDisplayLength = 24
 
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
+    init {
+        // Restore history list: prefer saved state (process death), fall back to disk
+        val restored = restoreHistoryFromSavedState() || restoreHistoryFromDisk()
+    }
+
+    private fun restoreHistoryFromSavedState(): Boolean {
+        val expressions = savedState.get<List<String>>("historyExpressions") ?: return false
+        val results = savedState.get<List<String>>("historyResults") ?: return false
+        val timestamps = savedState.get<List<Long>>("historyTimestamps") ?: return false
+        expressions.indices.forEach { i ->
+            _historyList.add(HistoryEntry(expressions[i], results[i], timestamps[i]))
+        }
+        return expressions.isNotEmpty()
+    }
+
+    private fun restoreHistoryFromDisk(): Boolean {
+        val json = prefs?.getString("history_json", null) ?: return false
+        return try {
+            val arr = JSONArray(json)
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                _historyList.add(HistoryEntry(
+                    expression = obj.getString("expr"),
+                    result = obj.getString("result"),
+                    timestamp = obj.getLong("ts")
+                ))
+            }
+            arr.length() > 0
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun saveState() {
+        savedState["expression"] = expression
+        savedState["cursorPosition"] = cursorPosition
+        savedState["result"] = result
+        savedState["history"] = history
+        savedState["historyExpressions"] = _historyList.map { it.expression }
+        savedState["historyResults"] = _historyList.map { it.result }
+        savedState["historyTimestamps"] = _historyList.map { it.timestamp }
+    }
+
+    private fun saveHistoryToDisk() {
+        prefs ?: return
+        val arr = JSONArray()
+        _historyList.forEach { entry ->
+            arr.put(JSONObject().apply {
+                put("expr", entry.expression)
+                put("result", entry.result)
+                put("ts", entry.timestamp)
+            })
+        }
+        prefs.edit().putString("history_json", arr.toString()).apply()
+    }
+
+    companion object {
+        private const val MAX_HISTORY_SIZE = 100
+        private const val MAX_EXPRESSION_LENGTH = 200
+        private const val MAX_PAREN_DEPTH = 20
+    }
+
     fun moveCursorTo(position: Int) {
         cursorPosition = position.coerceIn(0, expression.length)
     }
 
     private fun insertAtCursor(text: String) {
+        if (expression.length + text.length > MAX_EXPRESSION_LENGTH) return
         expression = expression.substring(0, cursorPosition) + text + expression.substring(cursorPosition)
         cursorPosition += text.length
     }
@@ -58,10 +129,13 @@ class CalculatorViewModel : ViewModel() {
         cursorPosition = plain.length
         result = ""
         history = "${entry.expression} ="
+        saveState()
     }
 
     fun clearHistory() {
         _historyList.clear()
+        saveState()
+        saveHistoryToDisk()
     }
 
     fun onButtonPress(label: String) {
@@ -111,11 +185,15 @@ class CalculatorViewModel : ViewModel() {
                     cursorPosition = expression.length
                     val res = evaluate(expression)
                     history = "$expression ="
-                    if (res != "Error") {
+                    if (!res.startsWith("Error")) {
                         _historyList.add(0, HistoryEntry(expression, formatForDisplay(res)))
+                        if (_historyList.size > MAX_HISTORY_SIZE) {
+                            _historyList.removeRange(MAX_HISTORY_SIZE, _historyList.size)
+                        }
+                        saveHistoryToDisk()
                     }
                     result = res
-                    expression = if (res == "Error") "" else res
+                    expression = if (res.startsWith("Error")) "" else res
                     cursorPosition = expression.length
                 }
             }
@@ -203,6 +281,7 @@ class CalculatorViewModel : ViewModel() {
                 updatePreview()
             }
         }
+        saveState()
     }
 
     private fun findMatchingClose(expr: String, openIndex: Int): Int? {
@@ -230,7 +309,7 @@ class CalculatorViewModel : ViewModel() {
     private fun updatePreview() {
         if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
-            result = if (preview != "Error") formatForDisplay(preview) else ""
+            result = if (!preview.startsWith("Error")) formatForDisplay(preview) else ""
         }
     }
 
@@ -241,7 +320,7 @@ class CalculatorViewModel : ViewModel() {
 
     /** Format a plain value string as E notation when it exceeds display width. */
     fun formatForDisplay(value: String): String {
-        if (value != "Error" && value.length > maxDisplayLength) {
+        if (!value.startsWith("Error") && value.length > maxDisplayLength) {
             try {
                 val bd = BigDecimal(value)
                 val rounded = bd.round(DISPLAY_PRECISION).stripTrailingZeros()
@@ -306,12 +385,26 @@ class CalculatorViewModel : ViewModel() {
                 val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
                 formatted.toPlainString()
             }
-        } catch (e: Exception) {
+        } catch (e: ArithmeticException) {
+            when {
+                e.message?.contains("Division by zero") == true -> "Error: ÷ by 0"
+                e.message?.contains("Negative sqrt") == true -> "Error: √ of neg"
+                e.message?.contains("Invalid factorial") == true -> "Error: bad n!"
+                e.message?.contains("Non-finite") == true -> "Error: overflow"
+                e.message?.contains("Nesting too deep") == true -> "Error: too nested"
+                else -> "Error"
+            }
+        } catch (_: Exception) {
             "Error"
         }
     }
 
     private fun evaluateExpression(expr: String): BigDecimal {
+        val depth = expr.fold(0) { max, c ->
+            val cur = if (c == '(') max + 1 else max
+            if (cur > MAX_PAREN_DEPTH) throw ArithmeticException("Nesting too deep")
+            if (c == ')') cur - 1 else cur
+        }
         val tokens = tokenize(expr)
         val postfix = infixToPostfix(tokens)
         return evaluatePostfix(postfix)

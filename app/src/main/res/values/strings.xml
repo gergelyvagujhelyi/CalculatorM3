@@ -1,3 +1,33 @@
 <resources>
     <string name="app_name">Calculator</string>
+
+    <!-- Error messages -->
+    <string name="error">Error</string>
+    <string name="error_division_by_zero">Can\'t divide by zero</string>
+    <string name="error_negative_sqrt">Can\'t take √ of negative</string>
+    <string name="error_invalid_factorial">Invalid factorial</string>
+    <string name="error_overflow">Overflow</string>
+    <string name="error_too_nested">Expression too nested</string>
+    <string name="error_invalid_input">Invalid input</string>
+
+    <!-- History -->
+    <string name="history">History</string>
+    <string name="clear_history">Clear history</string>
+    <string name="no_history_yet">No history yet</string>
+
+    <!-- Button accessibility -->
+    <string name="btn_backspace">Backspace</string>
+    <string name="btn_all_clear">All clear</string>
+    <string name="btn_percent">Percent</string>
+    <string name="btn_divide">Divide</string>
+    <string name="btn_multiply">Multiply</string>
+    <string name="btn_subtract">Subtract</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_equals">Equals</string>
+    <string name="btn_decimal">Decimal point</string>
+    <string name="btn_toggle_sign">Toggle sign</string>
+    <string name="btn_square_root">Square root</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Power</string>
+    <string name="btn_factorial">Factorial</string>
 </resources>
