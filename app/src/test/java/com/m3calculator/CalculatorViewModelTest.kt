@@ -236,9 +236,15 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun noLeadingOperator() {
+    fun leadingOperatorAllowed() {
         tap("+")
-        assertExpression("")
+        assertExpression("+")
+    }
+
+    @Test
+    fun leadingOperatorStrippedOnEquals() {
+        tap("+", "5", "=")
+        assertExpression("5")
     }
 
     // ── Preview ─────────────────────────────────────────────────────
@@ -563,10 +569,10 @@ class CalculatorViewModelTest {
 
     @Test
     fun percentageInAddition() {
-        // 200 + 50% = 200 + 0.5 = 200.5
+        // 200 + 50% = 200 + (50% of 200) = 200 + 100 = 300
         tap("2", "0", "0", "+", "5", "0", "%")
         tapEquals()
-        assertExpression("200.5")
+        assertExpression("300")
     }
 
     @Test
@@ -622,14 +628,64 @@ class CalculatorViewModelTest {
         tap("5", "+", "3")
         assertResult("8")
         tap("+/−")
-        // -5+3 = -2
-        assertResult("-2")
+        // 5+-3 = 2 (negates current operand "3", not whole expression)
+        assertExpression("5+-3")
+        assertResult("2")
     }
 
     @Test
     fun signToggleOnEmpty() {
         tap("+/−")
         assertExpression("")
+    }
+
+    @Test
+    fun signToggleSecondOperand() {
+        // 5+3, toggle → 5+-3, toggle again → 5+3
+        tap("5", "+", "3")
+        tap("+/−")
+        assertExpression("5+-3")
+        tap("+/−")
+        assertExpression("5+3")
+    }
+
+    @Test
+    fun signToggleFirstOperandViaCursor() {
+        // 5+3, move cursor into first operand, toggle
+        tap("5", "+", "3")
+        vm.moveCursorTo(1) // after "5"
+        tap("+/−")
+        assertExpression("-5+3")
+    }
+
+    @Test
+    fun signToggleSecondOperandEvaluates() {
+        // 10+−3 = 7
+        tap("1", "0", "+", "3")
+        tap("+/−")
+        assertExpression("10+-3")
+        tapEquals()
+        assertExpression("7")
+    }
+
+    @Test
+    fun signToggleInsideSqrtNegatesNumber() {
+        // √(9) with cursor inside → negate number, not whole sqrt
+        tap("9", "√")
+        assertExpression("√(9)")
+        vm.moveCursorTo(2) // right after (
+        tap("+/−")
+        assertExpression("√(-9)")
+    }
+
+    @Test
+    fun signToggleInsideSqrtTogglesBack() {
+        tap("9", "√")
+        vm.moveCursorTo(3) // on the 9
+        tap("+/−")
+        assertExpression("√(-9)")
+        tap("+/−") // toggle back
+        assertExpression("√(9)")
     }
 
     // ── Result carry-over complex ──────────────────────────────────────
@@ -768,15 +824,32 @@ class CalculatorViewModelTest {
     // ── Input guard stress tests ───────────────────────────────────────
 
     @Test
-    fun allOperatorsBlockedAtStart() {
+    fun allOperatorsAllowedAtStart() {
         tap("+")
-        assertExpression("")
+        assertExpression("+")
+        tap("AC")
         tap("−")
-        assertExpression("")
+        assertExpression("−")
+        tap("AC")
         tap("×")
-        assertExpression("")
+        assertExpression("×")
+        tap("AC")
         tap("÷")
-        assertExpression("")
+        assertExpression("÷")
+    }
+
+    @Test
+    fun leadingMultiplyStrippedOnEquals() {
+        tap("×", "3", "=")
+        assertExpression("3")
+    }
+
+    @Test
+    fun leadingMinusKeptOnEquals() {
+        // − is valid unary minus, should not be stripped
+        tap("−", "5", "=")
+        // evaluates −5 → result is -5
+        assertExpression("-5")
     }
 
     @Test
@@ -790,40 +863,12 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun unaryMinusAfterOperator() {
-        // − after operator inserts as unary minus
+    fun minusReplacesOperator() {
+        // − after + should replace it, just like any other operator
         tap("5", "+", "−")
-        assertExpression("5+−")
-    }
-
-    @Test
-    fun unaryMinusInExpression() {
-        // 6+−5 = 1
-        tap("6", "+", "−", "5")
-        tapEquals()
-        assertExpression("1")
-    }
-
-    @Test
-    fun unaryMinusWithMultiply() {
-        // 6×−5 = -30
-        tap("6", "×", "−", "5")
-        tapEquals()
-        assertExpression("-30")
-    }
-
-    @Test
-    fun replaceUnaryMinusWithOperator() {
-        // Typing × after +− should collapse to just ×
-        tap("5", "+", "−", "×")
-        assertExpression("5×")
-    }
-
-    @Test
-    fun doubleUnaryMinusBlocked() {
-        // −− should not be allowed, second − replaces first
-        tap("5", "+", "−", "−")
         assertExpression("5−")
+        tap("+")
+        assertExpression("5+")
     }
 
     @Test
@@ -1055,6 +1100,22 @@ class CalculatorViewModelTest {
         tap("5", "0", "%", "×", "2", "0", "0")
         tapEquals()
         assertExpression("100")
+    }
+
+    @Test
+    fun percentageInSubtraction() {
+        // 200 - 10% = 200 - (10% of 200) = 200 - 20 = 180
+        tap("2", "0", "0", "−", "1", "0", "%")
+        tapEquals()
+        assertExpression("180")
+    }
+
+    @Test
+    fun percentageStandalone() {
+        // 50% = 0.5
+        tap("5", "0", "%")
+        tapEquals()
+        assertExpression("0.5")
     }
 
     @Test
@@ -1612,6 +1673,22 @@ class CalculatorViewModelTest {
         tap("×")
         tapEquals()
         assertExpression("12")
+    }
+
+    // ── Decimal guard with operand boundaries ──────────────────────────
+
+    @Test
+    fun decimalAllowedInExponentAfterCaret() {
+        // 2.5^3.5 — caret separates operands, so second decimal is valid
+        tap("2", ".", "5", "^", "3", ".", "5")
+        assertExpression("2.5^3.5")
+    }
+
+    @Test
+    fun decimalAllowedInsideParentheses() {
+        // √(2.5) then add decimal to outer operand
+        tap("2", ".", "5", "√", "+", "1", ".")
+        assertExpression("√(2.5)+1.")
     }
 
     // ── Expression length limit ───────────────────────────────────────
