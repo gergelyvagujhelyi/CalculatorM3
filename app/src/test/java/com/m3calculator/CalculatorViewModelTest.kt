@@ -1388,4 +1388,138 @@ class CalculatorViewModelTest {
         tap("1", "+", "2")
         assertEquals("1+2", vm.displayExpression)
     }
+
+    // ── Sqrt deletion from both ends ────────────────────────────────
+
+    // Delete √ from the opening end: cursor after √(, backspace removes √() wrapper
+    @Test
+    fun deleteSqrtFromOpeningEnd() {
+        tap("9", "√")
+        assertExpression("√(9)")
+        // Cursor is at end (4). Move to position 2 (right after "(")
+        vm.moveCursorTo(2)
+        tap("⌫")
+        // Should unwrap: remove √( and matching ), leaving just "9"
+        assertExpression("9")
+        assertEquals(0, vm.cursorPosition)
+    }
+
+    // Delete √ from the opening end with a complex inner expression
+    @Test
+    fun deleteSqrtFromOpeningEndComplex() {
+        tap("1", "6", "√")
+        assertExpression("√(16)")
+        vm.moveCursorTo(2) // after √(
+        tap("⌫")
+        assertExpression("16")
+        assertEquals(0, vm.cursorPosition)
+    }
+
+    // Delete √ from the closing end: cursor after ), backspace unwraps √()
+    @Test
+    fun deleteSqrtFromClosingEnd() {
+        tap("9", "√")
+        assertExpression("√(9)")
+        // Cursor is already at end (after ")")
+        assertEquals(4, vm.cursorPosition)
+        tap("⌫")
+        // Should unwrap: remove √( and ), leaving just "9"
+        assertExpression("9")
+        assertEquals(1, vm.cursorPosition)
+    }
+
+    // Delete √ from the closing end with a complex inner expression
+    @Test
+    fun deleteSqrtFromClosingEndComplex() {
+        tap("2", "5", "6", "√")
+        assertExpression("√(256)")
+        assertEquals(6, vm.cursorPosition)
+        tap("⌫")
+        assertExpression("256")
+        assertEquals(3, vm.cursorPosition)
+    }
+
+    // Delete nested √ from the inner closing paren
+    @Test
+    fun deleteInnerSqrtFromClosingEnd() {
+        // √(√(81)): type 81, √, √
+        tap("8", "1", "√", "√")
+        assertExpression("√(√(81))")
+        // Cursor at end (9). Move to position 7 (after inner ")")
+        vm.moveCursorTo(7)
+        tap("⌫")
+        // Should unwrap inner √: √(81)
+        assertExpression("√(81)")
+    }
+
+    // Delete nested √ from the inner opening paren
+    @Test
+    fun deleteInnerSqrtFromOpeningEnd() {
+        tap("8", "1", "√", "√")
+        assertExpression("√(√(81))")
+        // Move cursor to position 4 (right after inner "(")
+        vm.moveCursorTo(4)
+        tap("⌫")
+        // Should unwrap inner √(, leaving √(81)
+        assertExpression("√(81)")
+    }
+
+    // Delete √ from opening end when expression has trailing operator: √(9)+5
+    @Test
+    fun deleteSqrtFromOpeningEndWithTrailingExpr() {
+        tap("9", "√", "+", "5")
+        assertExpression("√(9)+5")
+        vm.moveCursorTo(2) // after √(
+        tap("⌫")
+        // Should unwrap √(): "9+5"
+        assertExpression("9+5")
+        assertEquals(0, vm.cursorPosition)
+    }
+
+    // Delete √ from closing end when expression has trailing content: √(9)+5
+    @Test
+    fun deleteSqrtFromClosingEndWithTrailingExpr() {
+        tap("9", "√", "+", "5")
+        assertExpression("√(9)+5")
+        vm.moveCursorTo(4) // after ")"
+        tap("⌫")
+        // Should unwrap √(): "9+5"
+        assertExpression("9+5")
+        assertEquals(1, vm.cursorPosition)
+    }
+
+    // BUG: The decimal guard only checks the substring BEFORE the cursor
+    // for an existing dot. Moving the cursor before a "." and typing "."
+    // bypasses the guard, creating "1..5" which BigDecimal rejects → Error.
+    @Test
+    fun decimalGuardShouldCheckFullOperand() {
+        tap("1", ".", "5")
+        assertExpression("1.5")
+        // Move cursor between "1" and "." (position 1)
+        vm.moveCursorTo(1)
+        tap(".")
+        // The second dot should be rejected — operand already has one
+        assertExpression("1.5")
+    }
+
+    // Same bug: cursor at start of a decimal number
+    @Test
+    fun decimalGuardAtStartOfDecimalNumber() {
+        tap("1", ".", "5")
+        vm.moveCursorTo(0)
+        tap(".")
+        // Should be rejected — ".1.5" has two dots in the same operand
+        assertExpression("1.5")
+    }
+
+    // Same bug: second operand with cursor editing
+    @Test
+    fun decimalGuardSecondOperandViaCursor() {
+        tap("1", "+", "2", ".", "5")
+        assertExpression("1+2.5")
+        vm.moveCursorTo(3) // between "2" and "."
+        tap(".")
+        // Should be rejected — second operand already has a dot
+        assertExpression("1+2.5")
+    }
 }
