@@ -31,6 +31,10 @@ class CalculatorViewModel : ViewModel() {
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
+    companion object {
+        private const val MAX_HISTORY_SIZE = 100
+    }
+
     fun moveCursorTo(position: Int) {
         cursorPosition = position.coerceIn(0, expression.length)
     }
@@ -111,11 +115,14 @@ class CalculatorViewModel : ViewModel() {
                     cursorPosition = expression.length
                     val res = evaluate(expression)
                     history = "$expression ="
-                    if (res != "Error") {
+                    if (!res.startsWith("Error")) {
                         _historyList.add(0, HistoryEntry(expression, formatForDisplay(res)))
+                        if (_historyList.size > MAX_HISTORY_SIZE) {
+                            _historyList.removeRange(MAX_HISTORY_SIZE, _historyList.size)
+                        }
                     }
                     result = res
-                    expression = if (res == "Error") "" else res
+                    expression = if (res.startsWith("Error")) "" else res
                     cursorPosition = expression.length
                 }
             }
@@ -230,7 +237,7 @@ class CalculatorViewModel : ViewModel() {
     private fun updatePreview() {
         if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
-            result = if (preview != "Error") formatForDisplay(preview) else ""
+            result = if (!preview.startsWith("Error")) formatForDisplay(preview) else ""
         }
     }
 
@@ -241,7 +248,7 @@ class CalculatorViewModel : ViewModel() {
 
     /** Format a plain value string as E notation when it exceeds display width. */
     fun formatForDisplay(value: String): String {
-        if (value != "Error" && value.length > maxDisplayLength) {
+        if (!value.startsWith("Error") && value.length > maxDisplayLength) {
             try {
                 val bd = BigDecimal(value)
                 val rounded = bd.round(DISPLAY_PRECISION).stripTrailingZeros()
@@ -306,7 +313,15 @@ class CalculatorViewModel : ViewModel() {
                 val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
                 formatted.toPlainString()
             }
-        } catch (e: Exception) {
+        } catch (e: ArithmeticException) {
+            when {
+                e.message?.contains("Division by zero") == true -> "Error: ÷ by 0"
+                e.message?.contains("Negative sqrt") == true -> "Error: √ of neg"
+                e.message?.contains("Invalid factorial") == true -> "Error: bad n!"
+                e.message?.contains("Non-finite") == true -> "Error: overflow"
+                else -> "Error"
+            }
+        } catch (_: Exception) {
             "Error"
         }
     }

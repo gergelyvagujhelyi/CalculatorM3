@@ -187,7 +187,7 @@ class CalculatorViewModelTest {
     fun divisionByZero() {
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 
@@ -385,7 +385,7 @@ class CalculatorViewModelTest {
         // 100! exceeds the limit
         tap("1", "0", "0", "!")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: bad n!")
         assertExpression("")
     }
 
@@ -479,7 +479,7 @@ class CalculatorViewModelTest {
         tap("+/−")
         tap("√")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: √ of neg")
         assertExpression("")
     }
 
@@ -664,7 +664,7 @@ class CalculatorViewModelTest {
         // 5÷0=Error, then 3+2=5
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
         tap("3", "+", "2")
         tapEquals()
@@ -857,7 +857,7 @@ class CalculatorViewModelTest {
         // 5 + 10÷0 = Error
         tap("5", "+", "1", "0", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 
@@ -865,7 +865,7 @@ class CalculatorViewModelTest {
     fun zeroByZero() {
         tap("0", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 

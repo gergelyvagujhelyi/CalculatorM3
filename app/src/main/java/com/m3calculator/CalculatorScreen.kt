@@ -32,12 +32,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 data class CalcButton(
     val label: String,
-    val type: ButtonType
+    val type: ButtonType,
+    val descriptionRes: Int? = null
 )
 
 enum class ButtonType {
@@ -53,34 +57,34 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 
     val buttons = listOf(
         listOf(
-            CalcButton("⌫", ButtonType.BACKSPACE),
-            CalcButton("AC", ButtonType.FUNCTION),
-            CalcButton("%", ButtonType.FUNCTION),
-            CalcButton("÷", ButtonType.OPERATOR),
+            CalcButton("⌫", ButtonType.BACKSPACE, R.string.btn_backspace),
+            CalcButton("AC", ButtonType.FUNCTION, R.string.btn_all_clear),
+            CalcButton("%", ButtonType.FUNCTION, R.string.btn_percent),
+            CalcButton("÷", ButtonType.OPERATOR, R.string.btn_divide),
         ),
         listOf(
             CalcButton("7", ButtonType.NUMBER),
             CalcButton("8", ButtonType.NUMBER),
             CalcButton("9", ButtonType.NUMBER),
-            CalcButton("×", ButtonType.OPERATOR),
+            CalcButton("×", ButtonType.OPERATOR, R.string.btn_multiply),
         ),
         listOf(
             CalcButton("4", ButtonType.NUMBER),
             CalcButton("5", ButtonType.NUMBER),
             CalcButton("6", ButtonType.NUMBER),
-            CalcButton("−", ButtonType.OPERATOR),
+            CalcButton("−", ButtonType.OPERATOR, R.string.btn_subtract),
         ),
         listOf(
             CalcButton("1", ButtonType.NUMBER),
             CalcButton("2", ButtonType.NUMBER),
             CalcButton("3", ButtonType.NUMBER),
-            CalcButton("+", ButtonType.OPERATOR),
+            CalcButton("+", ButtonType.OPERATOR, R.string.btn_add),
         ),
         listOf(
-            CalcButton("+/−", ButtonType.NUMBER),
+            CalcButton("+/−", ButtonType.NUMBER, R.string.btn_toggle_sign),
             CalcButton("0", ButtonType.NUMBER),
-            CalcButton(".", ButtonType.NUMBER),
-            CalcButton("=", ButtonType.EQUALS),
+            CalcButton(".", ButtonType.NUMBER, R.string.btn_decimal),
+            CalcButton("=", ButtonType.EQUALS, R.string.btn_equals),
         ),
     )
 
@@ -119,7 +123,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 IconButton(onClick = { showHistory = true }) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
-                        contentDescription = "History",
+                        contentDescription = stringResource(R.string.history),
                         tint = colorScheme.onSurfaceVariant
                     )
                 }
@@ -154,10 +158,18 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                listOf("√", "π", "^", "!").forEach { label ->
+                val sciButtons = listOf(
+                    "√" to stringResource(R.string.btn_square_root),
+                    "π" to stringResource(R.string.btn_pi),
+                    "^" to stringResource(R.string.btn_power),
+                    "!" to stringResource(R.string.btn_factorial),
+                )
+                sciButtons.forEach { (label, desc) ->
                     TextButton(
                         onClick = { viewModel.onButtonPress(label) },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .semantics { contentDescription = desc },
                         contentPadding = PaddingValues(0.dp)
                     ) {
                         Text(
@@ -344,7 +356,7 @@ fun DisplaySection(
             exit = fadeOut(animationSpec = tween(150))
         ) {
             Text(
-                text = if (result == "Error") result else "= $result",
+                text = if (result.startsWith("Error")) result else "= $result",
                 style = MaterialTheme.typography.headlineSmall,
                 color = colorScheme.primary.copy(alpha = 0.65f),
                 fontWeight = FontWeight.Medium,
@@ -371,6 +383,7 @@ fun CalcButtonView(
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val a11yDescription = button.descriptionRes?.let { stringResource(it) } ?: button.label
 
     LaunchedEffect(isPressed) {
         if (isPressed) {
@@ -419,6 +432,7 @@ fun CalcButtonView(
             onClick()
         },
         modifier = modifier
+            .semantics { contentDescription = a11yDescription }
             .then(
                 Modifier.graphicsLayer {
                     scaleX = scale
@@ -490,7 +504,7 @@ fun HistorySheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "History",
+                    text = stringResource(R.string.history),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Medium,
                     color = colorScheme.onSurface
@@ -499,7 +513,7 @@ fun HistorySheet(
                     IconButton(onClick = onClearHistory) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
-                            contentDescription = "Clear history",
+                            contentDescription = stringResource(R.string.clear_history),
                             tint = colorScheme.onSurfaceVariant
                         )
                     }
@@ -516,7 +530,7 @@ fun HistorySheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No history yet",
+                        text = stringResource(R.string.no_history_yet),
                         style = MaterialTheme.typography.bodyLarge,
                         color = colorScheme.outline
                     )
