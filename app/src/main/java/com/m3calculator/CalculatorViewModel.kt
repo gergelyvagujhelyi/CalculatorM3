@@ -257,7 +257,7 @@ class CalculatorViewModel(
             }
             "." -> {
                 // Check the full operand around the cursor (not just before it)
-                val operatorChars = setOf('+', '-', '×', '÷', '−')
+                val operatorChars = setOf('+', '-', '×', '÷', '−', '^', '(', ')', '√', '!')
                 val start = (cursorPosition - 1 downTo 0).firstOrNull { expression[it] in operatorChars }?.plus(1) ?: 0
                 val end = (cursorPosition until expression.length).firstOrNull { expression[it] in operatorChars } ?: expression.length
                 val operand = expression.substring(start, end)

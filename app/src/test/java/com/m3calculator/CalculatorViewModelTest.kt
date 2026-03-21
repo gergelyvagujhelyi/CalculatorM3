@@ -1586,6 +1586,22 @@ class CalculatorViewModelTest {
         assertExpression("12")
     }
 
+    // ── Decimal guard with operand boundaries ──────────────────────────
+
+    @Test
+    fun decimalAllowedInExponentAfterCaret() {
+        // 2.5^3.5 — caret separates operands, so second decimal is valid
+        tap("2", ".", "5", "^", "3", ".", "5")
+        assertExpression("2.5^3.5")
+    }
+
+    @Test
+    fun decimalAllowedInsideParentheses() {
+        // √(2.5) then add decimal to outer operand
+        tap("2", ".", "5", "√", "+", "1", ".")
+        assertExpression("√(2.5)+1.")
+    }
+
     // ── Expression length limit ───────────────────────────────────────
 
     @Test
