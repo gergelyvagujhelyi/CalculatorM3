@@ -353,11 +353,12 @@ class CalculatorViewModel(
         val negative = plain.startsWith("-")
         val abs = if (negative) plain.substring(1) else plain
         val intPartLen = abs.indexOf('.').let { if (it >= 0) it else abs.length }
-        val engExp = ((intPartLen - 1) / 3) * 3
-        val mantissaIntLen = intPartLen - engExp
+        val engExp = ((intPartLen - 1).coerceAtLeast(0) / 3) * 3
+        val mantissaIntLen = (intPartLen - engExp).coerceIn(1, abs.length)
         val allDigits = abs.replace(".", "")
-        val mantissaFrac = allDigits.substring(mantissaIntLen).trimEnd('0')
-        val mantissa = allDigits.substring(0, mantissaIntLen) +
+        val safeIntLen = mantissaIntLen.coerceAtMost(allDigits.length)
+        val mantissaFrac = allDigits.substring(safeIntLen).trimEnd('0')
+        val mantissa = allDigits.substring(0, safeIntLen) +
                 if (mantissaFrac.isNotEmpty()) ".$mantissaFrac" else ""
         val prefix = if (negative) "-" else ""
         return "${prefix}${mantissa}E+$engExp"

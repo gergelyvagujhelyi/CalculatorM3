@@ -1111,6 +1111,14 @@ class CalculatorViewModelTest {
     }
 
     @Test
+    fun percentageChainedAddSubtract() {
+        // 100 + 50% - 10% = (100 + 50) - 10% of 150 = 150 - 15 = 135
+        tap("1", "0", "0", "+", "5", "0", "%", "−", "1", "0", "%")
+        tapEquals()
+        assertExpression("135")
+    }
+
+    @Test
     fun percentageStandalone() {
         // 50% = 0.5
         tap("5", "0", "%")
