@@ -353,11 +353,12 @@ class CalculatorViewModel(
         val negative = plain.startsWith("-")
         val abs = if (negative) plain.substring(1) else plain
         val intPartLen = abs.indexOf('.').let { if (it >= 0) it else abs.length }
-        val engExp = ((intPartLen - 1) / 3) * 3
-        val mantissaIntLen = intPartLen - engExp
+        val engExp = ((intPartLen - 1).coerceAtLeast(0) / 3) * 3
+        val mantissaIntLen = (intPartLen - engExp).coerceIn(1, abs.length)
         val allDigits = abs.replace(".", "")
-        val mantissaFrac = allDigits.substring(mantissaIntLen).trimEnd('0')
-        val mantissa = allDigits.substring(0, mantissaIntLen) +
+        val safeIntLen = mantissaIntLen.coerceAtMost(allDigits.length)
+        val mantissaFrac = allDigits.substring(safeIntLen).trimEnd('0')
+        val mantissa = allDigits.substring(0, safeIntLen) +
                 if (mantissaFrac.isNotEmpty()) ".$mantissaFrac" else ""
         val prefix = if (negative) "-" else ""
         return "${prefix}${mantissa}E+$engExp"
@@ -388,6 +389,10 @@ class CalculatorViewModel(
                 .replace(Regex("(\\d)\\("), "$1*(")
                 .replace(Regex("(\\d)√"), "$1*√")
                 .replace(Regex("!(\\d)"), "!*$1")
+                // Implicit multiplication before √ from ), !, %
+                .replace(Regex("\\)√"), ")*√")
+                .replace(Regex("!√"), "!*√")
+                .replace(Regex("%√"), "%*√")
 
             val result = evaluateExpression(sanitized)
 
@@ -446,7 +451,8 @@ class CalculatorViewModel(
                         if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) i++
                         while (i < expr.length && expr[i].isDigit()) i++
                     }
-                    tokens.add(Token.Num(BigDecimal(expr.substring(start, i))))
+                    val numStr = expr.substring(start, i)
+                    tokens.add(Token.Num(if (numStr == ".") BigDecimal.ZERO else BigDecimal(numStr)))
                     continue
                 }
                 c == '(' -> tokens.add(Token.LParen)

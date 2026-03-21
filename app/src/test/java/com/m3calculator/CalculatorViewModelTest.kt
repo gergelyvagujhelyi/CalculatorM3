@@ -1111,6 +1111,14 @@ class CalculatorViewModelTest {
     }
 
     @Test
+    fun percentageChainedAddSubtract() {
+        // 100 + 50% - 10% = (100 + 50) - 10% of 150 = 150 - 15 = 135
+        tap("1", "0", "0", "+", "5", "0", "%", "−", "1", "0", "%")
+        tapEquals()
+        assertExpression("135")
+    }
+
+    @Test
     fun percentageStandalone() {
         // 50% = 0.5
         tap("5", "0", "%")
@@ -1758,5 +1766,38 @@ class CalculatorViewModelTest {
         tap("1", "0", "0", "!")
         tapEquals()
         assertResult("Error: bad n!")
+    }
+
+    // --- Implicit multiply before √ ---
+
+    @Test
+    fun implicitMultiplyFactorialBeforeSqrt() {
+        // Build "5!√(9)" via cursor: start with √(9), insert 5! before it
+        tap("9")
+        vm.onButtonPress("√") // √(9)
+        vm.moveCursorTo(0)
+        tap("5", "!")
+        // expression = "5!√(9)" → 120 * 3 = 360
+        tapEquals()
+        assertResult("360")
+    }
+
+    @Test
+    fun implicitMultiplyDigitBeforeSqrt() {
+        // Build "2√(9)" via cursor: start with √(9), insert 2 before it
+        tap("9")
+        vm.onButtonPress("√") // √(9)
+        vm.moveCursorTo(0)
+        tap("2")
+        // expression = "2√(9)" → 2 * 3 = 6
+        tapEquals()
+        assertResult("6")
+    }
+
+    @Test
+    fun loneDecimalPointEvaluatesToZero() {
+        tap(".")
+        tapEquals()
+        assertResult("0")
     }
 }
