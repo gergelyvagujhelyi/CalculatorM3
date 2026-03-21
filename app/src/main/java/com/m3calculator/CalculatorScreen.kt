@@ -454,7 +454,10 @@ fun DisplaySection(
 
                 if (cursorVisible && blinkVisible && readyToDraw) {
                     textLayoutResult.value?.let { layout ->
-                        val cursorOffset = cursorInFormatted.coerceAtMost(displayText.length)
+                        // Coerce to the layout's actual text length to avoid crash
+                        // when the layout is stale (not yet updated for the new expression)
+                        val layoutLen = layout.layoutInput.text.length
+                        val cursorOffset = cursorInFormatted.coerceIn(0, layoutLen)
                         val cursorRect = layout.getCursorRect(cursorOffset)
                         Box(
                             modifier = Modifier
@@ -715,9 +718,11 @@ fun HistorySheet(
 }
 
 private fun formatExpression(expr: String): String {
-    // Add spaces around binary operators but not a leading unary minus
-    // from +/− toggle and not the sign in E notation (e.g. E+30)
-    return expr.replace(Regex("(?<=.)(?<![Ee])[+\\-×÷−]")) { " ${it.value} " }
+    // Add spaces around binary operators (Unicode −, ×, ÷, and ASCII +).
+    // ASCII '-' (from +/− toggle or history load) is always a unary sign prefix,
+    // so it must NOT get spaces — otherwise cursor mapping breaks.
+    // Also skip the sign in E notation (e.g. E+30).
+    return expr.replace(Regex("(?<=.)(?<![Ee])[+×÷−]")) { " ${it.value} " }
 }
 
 private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
