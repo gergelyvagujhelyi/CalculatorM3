@@ -1,6 +1,1 @@
-# Keep Compose
--dontwarn androidx.compose.**
--keep class androidx.compose.** { *; }
-
-# Keep ViewModel
--keep class com.m3calculator.CalculatorViewModel { *; }
+# Compose BOM ships its own consumer ProGuard rules; no blanket keeps needed.

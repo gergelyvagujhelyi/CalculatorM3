@@ -44,12 +44,10 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: |
-          cat > keystore.properties << EOF
-          storeFile=../release-keystore.jks
-          storePassword=$STORE_PASSWORD
-          keyAlias=$KEY_ALIAS
-          keyPassword=$KEY_PASSWORD
-          EOF
+          printf '%s\n' "storeFile=../release-keystore.jks" > keystore.properties
+          printf 'storePassword=%s\n' "$STORE_PASSWORD" >> keystore.properties
+          printf 'keyAlias=%s\n' "$KEY_ALIAS" >> keystore.properties
+          printf 'keyPassword=%s\n' "$KEY_PASSWORD" >> keystore.properties
 
       - name: Build release APK
         run: ./gradlew assembleRelease
