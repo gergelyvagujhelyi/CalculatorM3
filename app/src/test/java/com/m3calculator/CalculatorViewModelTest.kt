@@ -236,9 +236,15 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun noLeadingOperator() {
+    fun leadingOperatorAllowed() {
         tap("+")
-        assertExpression("")
+        assertExpression("+")
+    }
+
+    @Test
+    fun leadingOperatorStrippedOnEquals() {
+        tap("+", "5", "=")
+        assertExpression("5")
     }
 
     // ── Preview ─────────────────────────────────────────────────────
@@ -798,15 +804,32 @@ class CalculatorViewModelTest {
     // ── Input guard stress tests ───────────────────────────────────────
 
     @Test
-    fun allOperatorsBlockedAtStart() {
+    fun allOperatorsAllowedAtStart() {
         tap("+")
-        assertExpression("")
+        assertExpression("+")
+        tap("AC")
         tap("−")
-        assertExpression("")
+        assertExpression("−")
+        tap("AC")
         tap("×")
-        assertExpression("")
+        assertExpression("×")
+        tap("AC")
         tap("÷")
-        assertExpression("")
+        assertExpression("÷")
+    }
+
+    @Test
+    fun leadingMultiplyStrippedOnEquals() {
+        tap("×", "3", "=")
+        assertExpression("3")
+    }
+
+    @Test
+    fun leadingMinusKeptOnEquals() {
+        // − is valid unary minus, should not be stripped
+        tap("−", "5", "=")
+        // evaluates −5 → result is -5
+        assertExpression("-5")
     }
 
     @Test

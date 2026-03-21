@@ -177,6 +177,10 @@ class CalculatorViewModel(
             }
             "=" -> {
                 if (expression.isNotEmpty()) {
+                    // Strip leading operators that need a left operand
+                    while (expression.isNotEmpty() && expression.first() in listOf('+', '×', '÷', '^')) {
+                        expression = expression.drop(1)
+                    }
                     // Strip trailing operator before evaluating
                     while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷', '^')) {
                         expression = expression.dropLast(1)
@@ -257,7 +261,7 @@ class CalculatorViewModel(
                 if (charBefore != null && charBefore in operators) {
                     // Replace the operator before cursor
                     expression = expression.substring(0, cursorPosition - 1) + label + expression.substring(cursorPosition)
-                } else if (charBefore != null && charBefore !in operators) {
+                } else {
                     if (charAfter != null && charAfter in operators) {
                         // Replace the operator after cursor
                         expression = expression.substring(0, cursorPosition) + label + expression.substring(cursorPosition + 1)
