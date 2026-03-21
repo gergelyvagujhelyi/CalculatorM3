@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import android.os.Build
 import java.math.BigDecimal
@@ -17,19 +18,40 @@ data class HistoryEntry(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class CalculatorViewModel : ViewModel() {
-    var expression by mutableStateOf("")
+class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateHandle()) : ViewModel() {
+    var expression by mutableStateOf(savedState.get<String>("expression") ?: "")
         private set
-    var cursorPosition by mutableIntStateOf(0)
+    var cursorPosition by mutableIntStateOf(savedState.get<Int>("cursorPosition") ?: 0)
         private set
-    var result by mutableStateOf("")
+    var result by mutableStateOf(savedState.get<String>("result") ?: "")
         private set
-    var history by mutableStateOf("")
+    var history by mutableStateOf(savedState.get<String>("history") ?: "")
         private set
     var maxDisplayLength = 24
 
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
+
+    init {
+        // Restore history list from saved state
+        savedState.get<List<String>>("historyExpressions")?.let { expressions ->
+            val results = savedState.get<List<String>>("historyResults") ?: return@let
+            val timestamps = savedState.get<List<Long>>("historyTimestamps") ?: return@let
+            expressions.indices.forEach { i ->
+                _historyList.add(HistoryEntry(expressions[i], results[i], timestamps[i]))
+            }
+        }
+    }
+
+    private fun saveState() {
+        savedState["expression"] = expression
+        savedState["cursorPosition"] = cursorPosition
+        savedState["result"] = result
+        savedState["history"] = history
+        savedState["historyExpressions"] = _historyList.map { it.expression }
+        savedState["historyResults"] = _historyList.map { it.result }
+        savedState["historyTimestamps"] = _historyList.map { it.timestamp }
+    }
 
     companion object {
         private const val MAX_HISTORY_SIZE = 100
@@ -65,10 +87,12 @@ class CalculatorViewModel : ViewModel() {
         cursorPosition = plain.length
         result = ""
         history = "${entry.expression} ="
+        saveState()
     }
 
     fun clearHistory() {
         _historyList.clear()
+        saveState()
     }
 
     fun onButtonPress(label: String) {
@@ -213,6 +237,7 @@ class CalculatorViewModel : ViewModel() {
                 updatePreview()
             }
         }
+        saveState()
     }
 
     private fun findMatchingClose(expr: String, openIndex: Int): Int? {
