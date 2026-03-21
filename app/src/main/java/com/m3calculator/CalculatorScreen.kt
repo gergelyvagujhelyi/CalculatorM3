@@ -565,10 +565,7 @@ fun CalcButtonView(
     val shape = if (compact) RoundedCornerShape(16.dp) else CircleShape
 
     Surface(
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
+        onClick = onClick,
         modifier = modifier
             .semantics { contentDescription = a11yDescription }
             .then(
