@@ -230,24 +230,22 @@ fun DisplaySection(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Expression
-        val fontSize = when {
-            expression.length > 16 -> 32.sp
-            expression.length > 12 -> 38.sp
-            expression.length > 8 -> 46.sp
-            else -> 56.sp
-        }
-
-        val animatedFontSize by animateFloatAsState(
-            targetValue = fontSize.value,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessLow
-            ),
-            label = "fontSize"
-        )
-
+        // Expression with auto-sizing font
         val displayText = formatted.ifEmpty { "0" }
+
+        val fontSizeSteps = remember { listOf(56f, 46f, 38f, 32f, 28f) }
+        var fontStepIndex by remember { mutableIntStateOf(0) }
+        var readyToDraw by remember { mutableStateOf(true) }
+
+        // When expression gets shorter, try growing back to largest font
+        val prevExprLength = remember { mutableIntStateOf(0) }
+        if (expression.length < prevExprLength.intValue && fontStepIndex > 0) {
+            fontStepIndex = 0
+            readyToDraw = false
+        }
+        prevExprLength.intValue = expression.length
+
+        val currentFontSize = fontSizeSteps[fontStepIndex]
         val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
 
         val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
@@ -274,17 +272,26 @@ fun DisplaySection(
         Box(modifier = Modifier.fillMaxWidth()) {
             Text(
                 text = displayText,
-                fontSize = animatedFontSize.sp,
+                fontSize = currentFontSize.sp,
                 fontWeight = FontWeight.Light,
                 color = if (expression.isEmpty()) colorScheme.outlineVariant else colorScheme.onSurface,
                 textAlign = TextAlign.End,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                lineHeight = (animatedFontSize * 1.15).sp,
+                lineHeight = (currentFontSize * 1.15).sp,
                 letterSpacing = (-0.5).sp,
-                onTextLayout = { textLayoutResult.value = it },
+                onTextLayout = { result ->
+                    textLayoutResult.value = result
+                    if (result.hasVisualOverflow && fontStepIndex < fontSizeSteps.lastIndex) {
+                        fontStepIndex++
+                        readyToDraw = false
+                    } else {
+                        readyToDraw = true
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .graphicsLayer { alpha = if (readyToDraw) 1f else 0f }
                     .pointerInput(displayText) {
                         detectTapGestures { offset ->
                             textLayoutResult.value?.let { layout ->
@@ -296,7 +303,7 @@ fun DisplaySection(
                     }
             )
 
-            if (cursorVisible && blinkVisible) {
+            if (cursorVisible && blinkVisible && readyToDraw) {
                 textLayoutResult.value?.let { layout ->
                     val cursorOffset = cursorInFormatted.coerceAtMost(displayText.length)
                     val cursorRect = layout.getCursorRect(cursorOffset)
