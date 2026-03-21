@@ -96,6 +96,12 @@ class CalculatorViewModel : ViewModel() {
             }
             "=" -> {
                 if (expression.isNotEmpty()) {
+                    // Strip trailing operator before evaluating
+                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷')) {
+                        expression = expression.dropLast(1)
+                    }
+                    if (expression.isEmpty()) return
+                    cursorPosition = expression.length
                     val res = evaluate(expression)
                     history = "$expression ="
                     if (res != "Error") {
