@@ -1,5 +1,7 @@
 <div align="center">
 
+  <img src="screenshots/app-icon.png" width="120" alt="CalculatorM3 icon">
+  <br><br>
   <h1>CalculatorM3</h1>
 
   <p>A clean, private calculator that never collects your data.</p>
