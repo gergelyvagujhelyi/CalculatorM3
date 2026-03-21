@@ -230,9 +230,9 @@ class CalculatorViewModelTest {
     // ── Operator guards ─────────────────────────────────────────────
 
     @Test
-    fun noConsecutiveOperators() {
+    fun operatorReplacesOperator() {
         tap("5", "+", "×")
-        assertExpression("5+")
+        assertExpression("5×")
     }
 
     @Test
@@ -780,13 +780,50 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun operatorAfterOperatorBlocked() {
-        tap("5", "+", "−")
-        assertExpression("5+")
-        tap("×")
-        assertExpression("5+")
+    fun operatorAfterOperatorReplaces() {
+        tap("5", "+", "×")
+        assertExpression("5×")
         tap("÷")
+        assertExpression("5÷")
+        tap("+")
         assertExpression("5+")
+    }
+
+    @Test
+    fun unaryMinusAfterOperator() {
+        // − after operator inserts as unary minus
+        tap("5", "+", "−")
+        assertExpression("5+−")
+    }
+
+    @Test
+    fun unaryMinusInExpression() {
+        // 6+−5 = 1
+        tap("6", "+", "−", "5")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun unaryMinusWithMultiply() {
+        // 6×−5 = -30
+        tap("6", "×", "−", "5")
+        tapEquals()
+        assertExpression("-30")
+    }
+
+    @Test
+    fun replaceUnaryMinusWithOperator() {
+        // Typing × after +− should collapse to just ×
+        tap("5", "+", "−", "×")
+        assertExpression("5×")
+    }
+
+    @Test
+    fun doubleUnaryMinusBlocked() {
+        // −− should not be allowed, second − replaces first
+        tap("5", "+", "−", "−")
+        assertExpression("5−")
     }
 
     @Test
@@ -1110,22 +1147,22 @@ class CalculatorViewModelTest {
     // guard only checks against {+, −, ×, ÷} and ^ is not in that set.
     // This lets users create unevaluable expressions like 2^×3.
     @Test
-    fun operatorBlockedAfterCaret() {
+    fun operatorReplacesCaretFromEnd() {
         tap("2", "^", "×")
-        // × should be rejected after ^
-        assertExpression("2^")
+        // × replaces ^
+        assertExpression("2×")
     }
 
     @Test
-    fun plusBlockedAfterCaret() {
+    fun plusReplacesCaretFromEnd() {
         tap("2", "^", "+")
-        assertExpression("2^")
+        assertExpression("2+")
     }
 
     @Test
-    fun divideBlockedAfterCaret() {
+    fun divideReplacesCaretFromEnd() {
         tap("2", "^", "÷")
-        assertExpression("2^")
+        assertExpression("2÷")
     }
 
     // BUG: ππ concatenates two pi decimal expansions into one huge
@@ -1521,5 +1558,59 @@ class CalculatorViewModelTest {
         tap(".")
         // Should be rejected — second operand already has a dot
         assertExpression("1+2.5")
+    }
+
+    // ── Operator replacement via cursor ───────────────────────────────
+
+    // Cursor after an operator: typing a new operator replaces it
+    @Test
+    fun operatorReplacedWhenCursorAfterOperator() {
+        tap("5", "+", "3")
+        assertExpression("5+3")
+        // Cursor at 2 (after "+"), type ×
+        vm.moveCursorTo(2)
+        tap("×")
+        assertExpression("5×3")
+        assertEquals(2, vm.cursorPosition)
+    }
+
+    // Cursor before an operator: typing a new operator replaces it
+    @Test
+    fun operatorReplacedWhenCursorBeforeOperator() {
+        tap("5", "+", "3")
+        assertExpression("5+3")
+        // Cursor at 1 (before "+"), type ×
+        vm.moveCursorTo(1)
+        tap("×")
+        assertExpression("5×3")
+        assertEquals(2, vm.cursorPosition)
+    }
+
+    // Replace with the same operator is a no-op (idempotent)
+    @Test
+    fun operatorReplacedWithSameOperator() {
+        tap("5", "+", "3")
+        vm.moveCursorTo(2) // after "+"
+        tap("+")
+        assertExpression("5+3")
+    }
+
+    // Replace works for all operator types
+    @Test
+    fun replaceMinusWithDivide() {
+        tap("8", "−", "2")
+        vm.moveCursorTo(2) // after "−"
+        tap("÷")
+        assertExpression("8÷2")
+    }
+
+    // Replacement then evaluate gives correct result
+    @Test
+    fun replacedOperatorEvaluatesCorrectly() {
+        tap("6", "+", "2")
+        vm.moveCursorTo(2)
+        tap("×")
+        tapEquals()
+        assertExpression("12")
     }
 }
