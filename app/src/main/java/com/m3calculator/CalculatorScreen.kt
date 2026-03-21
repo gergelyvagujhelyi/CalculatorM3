@@ -211,118 +211,126 @@ fun DisplaySection(
 
     Column(
         modifier = modifier.clipToBounds(),
-        verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.End
     ) {
-        // History
-        AnimatedVisibility(
-            visible = history.isNotEmpty(),
-            enter = fadeIn() + slideInVertically { -it / 2 },
-            exit = fadeOut()
+        // Upper area: history + expression (takes remaining space)
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.End
         ) {
-            Text(
-                text = history,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colorScheme.outline,
-                textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+            // History
+            AnimatedVisibility(
+                visible = history.isNotEmpty(),
+                enter = fadeIn() + slideInVertically { -it / 2 },
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = history,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colorScheme.outline,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Expression with auto-sizing font
-        val displayText = formatted.ifEmpty { "0" }
+            // Expression with auto-sizing font
+            val displayText = formatted.ifEmpty { "0" }
 
-        val fontSizeSteps = remember { listOf(56f, 46f, 38f, 32f, 28f) }
-        var fontStepIndex by remember { mutableIntStateOf(0) }
-        var readyToDraw by remember { mutableStateOf(true) }
+            val fontSizeSteps = remember { listOf(56f, 46f, 38f, 32f, 28f) }
+            var fontStepIndex by remember { mutableIntStateOf(0) }
+            var readyToDraw by remember { mutableStateOf(true) }
 
-        // When expression gets shorter, try growing back to largest font
-        val prevExprLength = remember { mutableIntStateOf(0) }
-        if (expression.length < prevExprLength.intValue && fontStepIndex > 0) {
-            fontStepIndex = 0
-            readyToDraw = false
-        }
-        prevExprLength.intValue = expression.length
+            // When expression gets shorter, try growing back to largest font
+            val prevExprLength = remember { mutableIntStateOf(0) }
+            if (expression.length < prevExprLength.intValue && fontStepIndex > 0) {
+                fontStepIndex = 0
+                readyToDraw = false
+            }
+            prevExprLength.intValue = expression.length
 
-        val currentFontSize = fontSizeSteps[fontStepIndex]
-        val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
+            val currentFontSize = fontSizeSteps[fontStepIndex]
+            val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
 
-        val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
-        val blinkVisible = if (cursorVisible) {
-            val infiniteTransition = rememberInfiniteTransition(label = "cursorBlink")
-            val alpha by infiniteTransition.animateFloat(
-                initialValue = 1f,
-                targetValue = 0f,
-                animationSpec = infiniteRepeatable(
-                    animation = keyframes {
-                        durationMillis = 1000
-                        1f at 0
-                        1f at 500
-                        0f at 501
-                        0f at 1000
+            val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
+            val blinkVisible = if (cursorVisible) {
+                val infiniteTransition = rememberInfiniteTransition(label = "cursorBlink")
+                val alpha by infiniteTransition.animateFloat(
+                    initialValue = 1f,
+                    targetValue = 0f,
+                    animationSpec = infiniteRepeatable(
+                        animation = keyframes {
+                            durationMillis = 1000
+                            1f at 0
+                            1f at 500
+                            0f at 501
+                            0f at 1000
+                        },
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "cursorAlpha"
+                )
+                alpha > 0.5f
+            } else false
+
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = displayText,
+                    fontSize = currentFontSize.sp,
+                    fontWeight = FontWeight.Light,
+                    color = if (expression.isEmpty()) colorScheme.outlineVariant else colorScheme.onSurface,
+                    textAlign = TextAlign.End,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    lineHeight = (currentFontSize * 1.15).sp,
+                    letterSpacing = (-0.5).sp,
+                    onTextLayout = { result ->
+                        textLayoutResult.value = result
+                        if (result.hasVisualOverflow && fontStepIndex < fontSizeSteps.lastIndex) {
+                            fontStepIndex++
+                            readyToDraw = false
+                        } else {
+                            readyToDraw = true
+                        }
                     },
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "cursorAlpha"
-            )
-            alpha > 0.5f
-        } else false
-
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = displayText,
-                fontSize = currentFontSize.sp,
-                fontWeight = FontWeight.Light,
-                color = if (expression.isEmpty()) colorScheme.outlineVariant else colorScheme.onSurface,
-                textAlign = TextAlign.End,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = (currentFontSize * 1.15).sp,
-                letterSpacing = (-0.5).sp,
-                onTextLayout = { result ->
-                    textLayoutResult.value = result
-                    if (result.hasVisualOverflow && fontStepIndex < fontSizeSteps.lastIndex) {
-                        fontStepIndex++
-                        readyToDraw = false
-                    } else {
-                        readyToDraw = true
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer { alpha = if (readyToDraw) 1f else 0f }
-                    .pointerInput(displayText) {
-                        detectTapGestures { offset ->
-                            textLayoutResult.value?.let { layout ->
-                                val tappedOffset = layout.getOffsetForPosition(offset)
-                                val rawCursor = mapCursorFromFormatted(expression, tappedOffset)
-                                onCursorChange(rawCursor)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { alpha = if (readyToDraw) 1f else 0f }
+                        .pointerInput(displayText) {
+                            detectTapGestures { offset ->
+                                textLayoutResult.value?.let { layout ->
+                                    val tappedOffset = layout.getOffsetForPosition(offset)
+                                    val rawCursor = mapCursorFromFormatted(expression, tappedOffset)
+                                    onCursorChange(rawCursor)
+                                }
                             }
                         }
-                    }
-            )
+                )
 
-            if (cursorVisible && blinkVisible && readyToDraw) {
-                textLayoutResult.value?.let { layout ->
-                    val cursorOffset = cursorInFormatted.coerceAtMost(displayText.length)
-                    val cursorRect = layout.getCursorRect(cursorOffset)
-                    Box(
-                        modifier = Modifier
-                            .offset(
-                                x = with(LocalDensity.current) { cursorRect.left.toDp() },
-                                y = with(LocalDensity.current) { cursorRect.top.toDp() }
-                            )
-                            .width(2.dp)
-                            .height(with(LocalDensity.current) { (cursorRect.bottom - cursorRect.top).toDp() })
-                            .background(colorScheme.primary)
-                    )
+                if (cursorVisible && blinkVisible && readyToDraw) {
+                    textLayoutResult.value?.let { layout ->
+                        val cursorOffset = cursorInFormatted.coerceAtMost(displayText.length)
+                        val cursorRect = layout.getCursorRect(cursorOffset)
+                        Box(
+                            modifier = Modifier
+                                .offset(
+                                    x = with(LocalDensity.current) { cursorRect.left.toDp() },
+                                    y = with(LocalDensity.current) { cursorRect.top.toDp() }
+                                )
+                                .width(2.dp)
+                                .height(with(LocalDensity.current) { (cursorRect.bottom - cursorRect.top).toDp() })
+                                .background(colorScheme.primary)
+                        )
+                    }
                 }
             }
         }
 
-        // Live preview
+        // Lower area: preview (fixed height, always visible above buttons)
         val showPreview = result.isNotEmpty() && expression != result && expression.isNotEmpty()
         AnimatedVisibility(
             visible = showPreview,
