@@ -187,7 +187,7 @@ class CalculatorViewModelTest {
     fun divisionByZero() {
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 
@@ -385,7 +385,7 @@ class CalculatorViewModelTest {
         // 100! exceeds the limit
         tap("1", "0", "0", "!")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: bad n!")
         assertExpression("")
     }
 
@@ -479,7 +479,7 @@ class CalculatorViewModelTest {
         tap("+/−")
         tap("√")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: √ of neg")
         assertExpression("")
     }
 
@@ -664,7 +664,7 @@ class CalculatorViewModelTest {
         // 5÷0=Error, then 3+2=5
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
         tap("3", "+", "2")
         tapEquals()
@@ -857,7 +857,7 @@ class CalculatorViewModelTest {
         // 5 + 10÷0 = Error
         tap("5", "+", "1", "0", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 
@@ -865,7 +865,7 @@ class CalculatorViewModelTest {
     fun zeroByZero() {
         tap("0", "÷", "0")
         tapEquals()
-        assertResult("Error")
+        assertResult("Error: ÷ by 0")
         assertExpression("")
     }
 
@@ -1612,5 +1612,74 @@ class CalculatorViewModelTest {
         tap("×")
         tapEquals()
         assertExpression("12")
+    }
+
+    // ── Expression length limit ───────────────────────────────────────
+
+    @Test
+    fun expressionLengthCapped() {
+        // Fill expression to max length, then verify further input is ignored
+        val digits = "1".repeat(200)
+        digits.forEach { tap(it.toString()) }
+        assertEquals(200, vm.expression.length)
+        tap("2")
+        // Should still be 200 — extra digit rejected
+        assertEquals(200, vm.expression.length)
+    }
+
+    @Test
+    fun expressionAcceptsUpToLimit() {
+        val digits = "1".repeat(199)
+        digits.forEach { tap(it.toString()) }
+        assertEquals(199, vm.expression.length)
+        tap("2")
+        assertEquals(200, vm.expression.length)
+    }
+
+    // ── Nesting depth limit ───────────────────────────────────────────
+
+    @Test
+    fun deeplyNestedSqrtErrors() {
+        // Build √(√(√(...√(4)...))) with 21 levels — exceeds MAX_PAREN_DEPTH of 20
+        tap("4")
+        repeat(21) { tap("√") }
+        tapEquals()
+        assertResult("Error: too nested")
+        assertExpression("")
+    }
+
+    @Test
+    fun maxNestingDepthAllowed() {
+        // 20 levels should be fine
+        tap("4")
+        repeat(20) { tap("√") }
+        tapEquals()
+        // √ of 4 repeatedly: 4→2→√2→... should produce a number, not an error
+        assert(!vm.result.startsWith("Error")) { "Should succeed at depth 20, got: ${vm.result}" }
+    }
+
+    // ── Specific error messages ───────────────────────────────────────
+
+    @Test
+    fun divisionByZeroMessage() {
+        tap("1", "÷", "0")
+        tapEquals()
+        assertResult("Error: ÷ by 0")
+    }
+
+    @Test
+    fun negativeSqrtMessage() {
+        tap("4")
+        tap("+/−")
+        tap("√")
+        tapEquals()
+        assertResult("Error: √ of neg")
+    }
+
+    @Test
+    fun invalidFactorialMessage() {
+        tap("1", "0", "0", "!")
+        tapEquals()
+        assertResult("Error: bad n!")
     }
 }
