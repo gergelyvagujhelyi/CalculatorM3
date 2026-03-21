@@ -9,19 +9,23 @@
   <br>
 
   <!-- Screenshots -->
-  <div>
-    <img src="screenshots/portrait-light.png" width="22%" alt="Portrait Light Theme">
-    <img src="screenshots/portrait-dark.png" width="22%" alt="Portrait Dark Theme">
-    <img src="screenshots/scientific-functions.png" width="22%" alt="Scientific Functions">
-    <img src="screenshots/history-sheet.png" width="22%" alt="History Sheet">
-  </div>
+  <table>
+    <tr>
+      <td align="center"><img src="screenshots/portrait-light.png" width="180" alt="Portrait Light Theme"><br><sub>Light Theme</sub></td>
+      <td align="center"><img src="screenshots/portrait-dark.png" width="180" alt="Portrait Dark Theme"><br><sub>Dark Theme</sub></td>
+      <td align="center"><img src="screenshots/scientific-functions.png" width="180" alt="Scientific Functions"><br><sub>Scientific Functions</sub></td>
+      <td align="center"><img src="screenshots/history-sheet.png" width="180" alt="History Sheet"><br><sub>Calculation History</sub></td>
+    </tr>
+  </table>
 
   <br>
 
-  <div>
-    <img src="screenshots/landscape.png" width="45%" alt="Landscape Mode">
-    <img src="screenshots/foldable.png" width="30%" alt="Foldable Device">
-  </div>
+  <table>
+    <tr>
+      <td align="center"><img src="screenshots/landscape.png" width="400" alt="Landscape Mode"><br><sub>Landscape Mode</sub></td>
+      <td align="center"><img src="screenshots/foldable.png" width="280" alt="Foldable Device"><br><sub>Foldable Support</sub></td>
+    </tr>
+  </table>
 
 </div>
 
