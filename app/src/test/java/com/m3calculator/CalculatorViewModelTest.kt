@@ -1800,4 +1800,12 @@ class CalculatorViewModelTest {
         tapEquals()
         assertResult("0")
     }
+
+    @Test
+    fun percentTimesPi() {
+        // 50%π = 0.5 × π ≈ 1.570796327
+        tap("5", "0", "%", "π")
+        tapEquals()
+        assertExpression("1.570796327")
+    }
 }
