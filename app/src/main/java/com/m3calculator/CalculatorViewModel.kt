@@ -243,19 +243,8 @@ class CalculatorViewModel(
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
                 val charAfter = if (cursorPosition < expression.length) expression[cursorPosition] else null
                 if (charBefore != null && charBefore in operators) {
-                    if (label == "−" && charBefore != '−') {
-                        // Allow minus after operator as unary minus (e.g. 6+−5)
-                        // But don't allow −− (double unary minus)
-                        insertAtCursor(label)
-                    } else {
-                        // Replace operator(s) before cursor — collapse unary minus + operator
-                        var replaceStart = cursorPosition - 1
-                        if (replaceStart > 0 && expression[replaceStart - 1] in operators) {
-                            replaceStart-- // also remove the operator before unary minus
-                        }
-                        expression = expression.substring(0, replaceStart) + label + expression.substring(cursorPosition)
-                        cursorPosition = replaceStart + 1
-                    }
+                    // Replace the operator before cursor
+                    expression = expression.substring(0, cursorPosition - 1) + label + expression.substring(cursorPosition)
                 } else if (charBefore != null && charBefore !in operators) {
                     if (charAfter != null && charAfter in operators) {
                         // Replace the operator after cursor

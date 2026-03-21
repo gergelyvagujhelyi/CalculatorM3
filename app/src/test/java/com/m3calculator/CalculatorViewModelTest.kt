@@ -790,40 +790,12 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun unaryMinusAfterOperator() {
-        // − after operator inserts as unary minus
+    fun minusReplacesOperator() {
+        // − after + should replace it, just like any other operator
         tap("5", "+", "−")
-        assertExpression("5+−")
-    }
-
-    @Test
-    fun unaryMinusInExpression() {
-        // 6+−5 = 1
-        tap("6", "+", "−", "5")
-        tapEquals()
-        assertExpression("1")
-    }
-
-    @Test
-    fun unaryMinusWithMultiply() {
-        // 6×−5 = -30
-        tap("6", "×", "−", "5")
-        tapEquals()
-        assertExpression("-30")
-    }
-
-    @Test
-    fun replaceUnaryMinusWithOperator() {
-        // Typing × after +− should collapse to just ×
-        tap("5", "+", "−", "×")
-        assertExpression("5×")
-    }
-
-    @Test
-    fun doubleUnaryMinusBlocked() {
-        // −− should not be allowed, second − replaces first
-        tap("5", "+", "−", "−")
         assertExpression("5−")
+        tap("+")
+        assertExpression("5+")
     }
 
     @Test
