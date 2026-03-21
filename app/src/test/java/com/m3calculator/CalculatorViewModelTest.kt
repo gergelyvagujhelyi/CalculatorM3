@@ -1767,4 +1767,37 @@ class CalculatorViewModelTest {
         tapEquals()
         assertResult("Error: bad n!")
     }
+
+    // --- Implicit multiply before √ ---
+
+    @Test
+    fun implicitMultiplyFactorialBeforeSqrt() {
+        // Build "5!√(9)" via cursor: start with √(9), insert 5! before it
+        tap("9")
+        vm.onButtonPress("√") // √(9)
+        vm.moveCursorTo(0)
+        tap("5", "!")
+        // expression = "5!√(9)" → 120 * 3 = 360
+        tapEquals()
+        assertResult("360")
+    }
+
+    @Test
+    fun implicitMultiplyDigitBeforeSqrt() {
+        // Build "2√(9)" via cursor: start with √(9), insert 2 before it
+        tap("9")
+        vm.onButtonPress("√") // √(9)
+        vm.moveCursorTo(0)
+        tap("2")
+        // expression = "2√(9)" → 2 * 3 = 6
+        tapEquals()
+        assertResult("6")
+    }
+
+    @Test
+    fun loneDecimalPointEvaluatesToZero() {
+        tap(".")
+        tapEquals()
+        assertResult("0")
+    }
 }

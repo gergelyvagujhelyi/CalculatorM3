@@ -389,6 +389,10 @@ class CalculatorViewModel(
                 .replace(Regex("(\\d)\\("), "$1*(")
                 .replace(Regex("(\\d)√"), "$1*√")
                 .replace(Regex("!(\\d)"), "!*$1")
+                // Implicit multiplication before √ from ), !, %
+                .replace(Regex("\\)√"), ")*√")
+                .replace(Regex("!√"), "!*√")
+                .replace(Regex("%√"), "%*√")
 
             val result = evaluateExpression(sanitized)
 
@@ -447,7 +451,8 @@ class CalculatorViewModel(
                         if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) i++
                         while (i < expr.length && expr[i].isDigit()) i++
                     }
-                    tokens.add(Token.Num(BigDecimal(expr.substring(start, i))))
+                    val numStr = expr.substring(start, i)
+                    tokens.add(Token.Num(if (numStr == ".") BigDecimal.ZERO else BigDecimal(numStr)))
                     continue
                 }
                 c == '(' -> tokens.add(Token.LParen)
