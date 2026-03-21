@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -47,6 +48,8 @@ enum class ButtonType {
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val colorScheme = MaterialTheme.colorScheme
+    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    viewModel.maxDisplayLength = (screenWidthDp - 48) / 15
 
     val buttons = listOf(
         listOf(
@@ -331,7 +334,7 @@ fun DisplaySection(
         }
 
         // Lower area: preview (fixed height, always visible above buttons)
-        val showPreview = result.isNotEmpty() && expression != result && expression.isNotEmpty()
+        val showPreview = result.isNotEmpty() && expression != result
         AnimatedVisibility(
             visible = showPreview,
             enter = fadeIn(animationSpec = tween(200)) +
@@ -339,7 +342,7 @@ fun DisplaySection(
             exit = fadeOut(animationSpec = tween(150))
         ) {
             Text(
-                text = "= $result",
+                text = if (result == "Error") result else "= $result",
                 style = MaterialTheme.typography.headlineSmall,
                 color = colorScheme.primary.copy(alpha = 0.65f),
                 fontWeight = FontWeight.Medium,
@@ -561,7 +564,8 @@ fun HistorySheet(
 }
 
 private fun formatExpression(expr: String): String {
-    return expr.replace(Regex("([+\\-×÷])")) { " ${it.value} " }
+    // Add spaces around binary operators but not a leading unary minus from +/− toggle
+    return expr.replace(Regex("(?<=.)[+\\-×÷−]")) { " ${it.value} " }
 }
 
 private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {

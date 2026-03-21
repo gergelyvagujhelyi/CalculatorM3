@@ -26,6 +26,7 @@ class CalculatorViewModel : ViewModel() {
         private set
     var history by mutableStateOf("")
         private set
+    var maxDisplayLength = 24
 
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
@@ -142,7 +143,7 @@ class CalculatorViewModel : ViewModel() {
             }
             "^" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π')) {
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π' || charBefore == '!')) {
                     insertAtCursor("^")
                 }
             }
@@ -155,13 +156,13 @@ class CalculatorViewModel : ViewModel() {
             }
             "+", "−", "×", "÷" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && charBefore !in listOf('+', '−', '×', '÷')) {
+                if (charBefore != null && charBefore !in listOf('+', '−', '×', '÷', '^')) {
                     insertAtCursor(label)
                 }
             }
             "." -> {
                 val before = expression.substring(0, cursorPosition)
-                val lastPart = before.split(Regex("[+\\-×÷]")).lastOrNull() ?: ""
+                val lastPart = before.split(Regex("[+\\-×÷−]")).lastOrNull() ?: ""
                 if (!lastPart.contains(".")) {
                     insertAtCursor(label)
                 }
@@ -198,9 +199,7 @@ class CalculatorViewModel : ViewModel() {
     private fun updatePreview() {
         if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
-            if (preview != "Error") {
-                result = preview
-            }
+            result = if (preview != "Error") preview else ""
         }
     }
 
@@ -217,18 +216,29 @@ class CalculatorViewModel : ViewModel() {
                 .replace("÷", "/")
                 .replace("−", "-")
                 .replace("%", "/100")
-                .replace(Regex("(\\d)π"), "$1*$piPlain")
-                .replace(Regex("π(\\d)"), "$piPlain*$1")
+                // Implicit multiplication around π
+                .replace(Regex("(\\d)π"), "$1*π")
+                .replace(Regex("π(\\d)"), "π*$1")
+                .replace(Regex("π(?=π)"), "π*")
+                .replace(Regex("\\)π"), ")*π")
+                .replace(Regex("π\\("), "π*(")
                 .replace("π", piPlain)
 
             val result = evaluateExpression(sanitized)
 
             val stripped = result.stripTrailingZeros()
-            if (stripped.scale() <= 0) {
+            val plain = if (stripped.scale() <= 0) {
                 stripped.toBigInteger().toString()
             } else {
-                val formatted = result.round(DISPLAY_PRECISION)
-                formatted.stripTrailingZeros().toPlainString()
+                val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
+                formatted.toPlainString()
+            }
+            // Use E notation only when the number won't fit the display
+            if (plain.length > maxDisplayLength) {
+                val rounded = result.round(DISPLAY_PRECISION).stripTrailingZeros()
+                rounded.toEngineeringString()
+            } else {
+                plain
             }
         } catch (e: Exception) {
             "Error"
@@ -271,6 +281,10 @@ class CalculatorViewModel : ViewModel() {
                         while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
                         if (start < i) {
                             tokens.add(Token.Num(BigDecimal(expr.substring(start, i)).negate()))
+                        } else {
+                            // Unary minus before non-digit (e.g., √, parenthesis): treat as 0 - x
+                            tokens.add(Token.Num(BigDecimal.ZERO))
+                            tokens.add(Token.Op('-', 1))
                         }
                         continue
                     } else {
@@ -374,7 +388,7 @@ class CalculatorViewModel : ViewModel() {
                         }
                         '!' -> {
                             val intVal = try { a.intValueExact() } catch (_: ArithmeticException) { -1 }
-                            if (intVal < 0 || intVal > 20) throw ArithmeticException("Invalid factorial")
+                            if (intVal < 0 || intVal > 99) throw ArithmeticException("Invalid factorial")
                             factorial(intVal.toLong())
                         }
                         else -> throw ArithmeticException("Unknown operator")
