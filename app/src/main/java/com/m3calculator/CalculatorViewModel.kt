@@ -209,8 +209,17 @@ class CalculatorViewModel(
                     .firstOrNull { expression[it] in boundaryChars }
                     ?.plus(1) ?: 0
 
-                // If no operand at cursor (e.g. cursor after ')'), negate whole expression
-                val effectiveStart = if (operandStart >= cursorPosition && operandStart > 0) 0 else operandStart
+                // If cursor is right at a boundary, check if there's an operand ahead
+                val effectiveStart = if (operandStart >= cursorPosition && operandStart > 0) {
+                    val ch = expression.getOrNull(operandStart)
+                    if (ch != null && (ch.isDigit() || ch == '.' || ch == '-' || ch == 'π')) {
+                        operandStart // negate the operand starting here
+                    } else {
+                        0 // no operand ahead (e.g. after ')'), negate whole expression
+                    }
+                } else {
+                    operandStart
+                }
 
                 if (effectiveStart < expression.length && expression[effectiveStart] == '-') {
                     // Remove existing negative sign

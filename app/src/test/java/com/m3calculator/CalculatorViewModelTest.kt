@@ -668,6 +668,26 @@ class CalculatorViewModelTest {
         assertExpression("7")
     }
 
+    @Test
+    fun signToggleInsideSqrtNegatesNumber() {
+        // √(9) with cursor inside → negate number, not whole sqrt
+        tap("9", "√")
+        assertExpression("√(9)")
+        vm.moveCursorTo(2) // right after (
+        tap("+/−")
+        assertExpression("√(-9)")
+    }
+
+    @Test
+    fun signToggleInsideSqrtTogglesBack() {
+        tap("9", "√")
+        vm.moveCursorTo(3) // on the 9
+        tap("+/−")
+        assertExpression("√(-9)")
+        tap("+/−") // toggle back
+        assertExpression("√(9)")
+    }
+
     // ── Result carry-over complex ──────────────────────────────────────
 
     @Test
