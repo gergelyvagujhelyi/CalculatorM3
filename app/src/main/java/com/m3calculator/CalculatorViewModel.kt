@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import android.os.Build
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
@@ -362,7 +363,7 @@ class CalculatorViewModel : ViewModel() {
                     val result = when (token.op) {
                         '√' -> {
                             if (a < BigDecimal.ZERO) throw ArithmeticException("Negative sqrt")
-                            a.sqrt(MC)
+                            bigSqrt(a)
                         }
                         '!' -> {
                             val intVal = try { a.intValueExact() } catch (_: ArithmeticException) { -1 }
@@ -377,6 +378,20 @@ class CalculatorViewModel : ViewModel() {
             }
         }
         return stack.lastOrNull() ?: throw ArithmeticException("Empty expression")
+    }
+
+    private fun bigSqrt(a: BigDecimal): BigDecimal {
+        if (a.compareTo(BigDecimal.ZERO) == 0) return BigDecimal.ZERO
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return a.sqrt(MC)
+        }
+        // Newton's method for API < 33
+        var x = BigDecimal.valueOf(Math.sqrt(a.toDouble()))
+        val two = BigDecimal(2)
+        repeat(3) {
+            x = a.divide(x, MC).add(x, MC).divide(two, MC)
+        }
+        return x
     }
 
     private fun factorial(n: Long): BigDecimal {
