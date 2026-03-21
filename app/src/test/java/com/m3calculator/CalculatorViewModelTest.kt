@@ -1165,7 +1165,9 @@ class CalculatorViewModelTest {
     fun factorialOf30() {
         tap("3", "0", "!")
         tapEquals()
-        assertExpression("265.2528598E+30")
+        // Expression stores plain format; display shows E notation
+        assert(!vm.expression.contains("E")) { "Expression should be plain, got: ${vm.expression}" }
+        assertEquals("265.2528598E+30", vm.displayExpression)
     }
 
     // BUG: A lone decimal point at the start produces "Error" because
@@ -1178,17 +1180,15 @@ class CalculatorViewModelTest {
         assertExpression("3.5")
     }
 
-    // BUG: E notation result breaks further calculations.
-    // After =, expression becomes e.g. "265.2528598E+30". Pressing +1=
-    // should add 1, but the tokenizer can't parse 'E' — it skips it,
-    // and the '+' in "E+30" is treated as addition, producing garbage.
+    // Expression stores plain format, so chaining operations after large
+    // results works correctly (no E notation corruption).
     @Test
-    fun eNotationResultCanBeUsedForFurtherCalculation() {
-        vm.maxDisplayLength = 5 // force E notation for numbers > 5 chars
+    fun largeResultCanBeUsedForFurtherCalculation() {
         tap("9", "9", "9", "×", "9", "9", "9")
         tapEquals()
-        // 999×999 = 998001, displayed in E notation "998.001E+3"
-        // Now use the result: subtract 998001 should give 0
+        // 999×999 = 998001, stored as plain in expression
+        assertExpression("998001")
+        // Subtract 998001 should give 0
         tap("−", "9", "9", "8", "0", "0", "1")
         tapEquals()
         assertExpression("0")
@@ -1215,6 +1215,72 @@ class CalculatorViewModelTest {
         tap("5", "^")
         tapEquals()
         assertExpression("5")
+    }
+
+    // BUG: Typing a digit right after ! produces no implicit multiply.
+    // "5!3" tokenizes as [5, !, 3] — two values with no operator.
+    // evaluatePostfix silently returns the last value (3).
+    @Test
+    fun digitAfterFactorialShouldMultiply() {
+        tap("5", "!", "3")
+        // 5!3 should be 120×3 = 360
+        tapEquals()
+        assertExpression("360")
+    }
+
+    // BUG: % → /100 naive replacement concatenates with a following digit.
+    // "50%5" sanitizes to "50/1005" instead of "50/100*5".
+    @Test
+    fun digitAfterPercentShouldMultiply() {
+        tap("5", "0", "%", "5")
+        // 50%5 should be 0.5×5 = 2.5
+        tapEquals()
+        assertExpression("2.5")
+    }
+
+    // BUG: Inserting a digit before √ via cursor produces no implicit multiply.
+    // "2√(9)" has no operator between 2 and √ — the tokenizer drops the 2.
+    @Test
+    fun digitBeforeSqrtShouldMultiply() {
+        tap("9", "√")
+        vm.moveCursorTo(0)
+        tap("2")
+        // expression is "2√(9)", should be 2×√(9) = 6
+        assertExpression("2√(9)")
+        tapEquals()
+        assertExpression("6")
+    }
+
+    // FIX VERIFIED: Expression now stores plain format, so backspace
+    // removes a plain digit instead of corrupting E notation exponents.
+    @Test
+    fun backspaceOnLargeResultRemovesPlainDigit() {
+        tap("3", "0", "!")
+        tapEquals()
+        // Expression stores plain (no E), display shows E notation
+        assert(!vm.expression.contains("E")) { "Expression should be plain: ${vm.expression}" }
+        assertEquals("265.2528598E+30", vm.displayExpression)
+        // Backspace removes last digit of the plain number
+        tap("⌫")
+        assert(!vm.expression.contains("E")) { "After backspace, still plain: ${vm.expression}" }
+        // Preview should still be in the E+30 range (the number barely changed)
+        val preview = vm.result
+        assert(preview.contains("E+3")) {
+            "Preview should still be large: $preview"
+        }
+    }
+
+    // FIX VERIFIED: Double backspace on plain number works normally.
+    @Test
+    fun doubleBackspaceOnLargeResultWorks() {
+        tap("3", "0", "!")
+        tapEquals()
+        tap("⌫", "⌫")
+        // Should still be evaluable — no dangling "E+"
+        assert(!vm.expression.contains("E")) { "Should be plain: ${vm.expression}" }
+        assert(vm.result.isNotEmpty()) {
+            "Should still produce a preview, got empty. Expression: ${vm.expression}"
+        }
     }
 
     // ── Additional regression tests for the 3 bug fixes ────────────
@@ -1267,40 +1333,59 @@ class CalculatorViewModelTest {
         assertExpression("6")
     }
 
-    // E notation: multiply after E notation result
+    // Large result: multiply after large result
     @Test
-    fun eNotationResultMultiply() {
-        vm.maxDisplayLength = 5
+    fun largeResultMultiply() {
         tap("9", "9", "9", "×", "9", "9", "9")
         tapEquals()
-        // 998001 in E notation. Multiply by 0 should give 0
+        assertExpression("998001")
+        // Multiply by 0 should give 0
         tap("×", "0")
         tapEquals()
         assertExpression("0")
     }
 
-    // E notation: E notation result then sqrt
+    // Large result: apply sqrt after large result
     @Test
-    fun eNotationResultThenSqrt() {
-        vm.maxDisplayLength = 5
+    fun largeResultThenSqrt() {
         tap("1", "0", "0", "0", "0", "0")
         tapEquals()
-        // 100000 in E notation "100E+3". Apply sqrt
+        assertExpression("100000")
+        // Apply sqrt
         tap("√")
         tapEquals()
         // √(100000) ≈ 316.227766
         assertExpression("316.227766")
     }
 
-    // E notation: addition with E notation result
+    // Large result: addition after large result
     @Test
-    fun eNotationResultAdd() {
-        vm.maxDisplayLength = 5
+    fun largeResultAdd() {
         tap("1", "0", "0", "0", "0", "0")
         tapEquals()
-        // 100000 → E notation. Add 1
+        assertExpression("100000")
+        // Add 1
         tap("+", "1")
         tapEquals()
         assertExpression("100001")
+    }
+
+    // Display expression: E notation for large standalone numbers
+    @Test
+    fun displayExpressionUsesENotation() {
+        vm.maxDisplayLength = 5
+        tap("9", "9", "9", "×", "9", "9", "9")
+        tapEquals()
+        // Internal expression is plain
+        assertExpression("998001")
+        // Display shows E notation
+        assertEquals("998.001E+3", vm.displayExpression)
+    }
+
+    // Display expression: regular expressions shown as-is
+    @Test
+    fun displayExpressionPassesThroughNormalExpr() {
+        tap("1", "+", "2")
+        assertEquals("1+2", vm.displayExpression)
     }
 }

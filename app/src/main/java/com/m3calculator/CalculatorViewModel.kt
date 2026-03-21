@@ -48,8 +48,14 @@ class CalculatorViewModel : ViewModel() {
     }
 
     fun loadHistoryEntry(entry: HistoryEntry) {
-        expression = entry.result
-        cursorPosition = entry.result.length
+        // Convert E notation back to plain for safe editing
+        val plain = try {
+            BigDecimal(entry.result).toPlainString()
+        } catch (_: Exception) {
+            entry.result
+        }
+        expression = plain
+        cursorPosition = plain.length
         result = ""
         history = "${entry.expression} ="
     }
@@ -106,7 +112,7 @@ class CalculatorViewModel : ViewModel() {
                     val res = evaluate(expression)
                     history = "$expression ="
                     if (res != "Error") {
-                        _historyList.add(0, HistoryEntry(expression, res))
+                        _historyList.add(0, HistoryEntry(expression, formatForDisplay(res)))
                     }
                     result = res
                     expression = if (res == "Error") "" else res
@@ -199,7 +205,7 @@ class CalculatorViewModel : ViewModel() {
     private fun updatePreview() {
         if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
-            result = if (preview != "Error") preview else ""
+            result = if (preview != "Error") formatForDisplay(preview) else ""
         }
     }
 
@@ -208,6 +214,41 @@ class CalculatorViewModel : ViewModel() {
     private val HUNDRED = BigDecimal("100")
     private val DISPLAY_PRECISION = MathContext(10, RoundingMode.HALF_UP)
 
+    /** Format a plain value string as E notation when it exceeds display width. */
+    fun formatForDisplay(value: String): String {
+        if (value != "Error" && value.length > maxDisplayLength) {
+            try {
+                val bd = BigDecimal(value)
+                val rounded = bd.round(DISPLAY_PRECISION).stripTrailingZeros()
+                val eng = rounded.toEngineeringString()
+                // toEngineeringString may return plain for small integers (scale 0).
+                // In that case, build engineering notation manually.
+                if (eng.contains('E') || eng.length <= maxDisplayLength) return eng
+                return buildEngineeringString(rounded)
+            } catch (_: NumberFormatException) {}
+        }
+        return value
+    }
+
+    private fun buildEngineeringString(bd: BigDecimal): String {
+        val plain = bd.toPlainString()
+        val negative = plain.startsWith("-")
+        val abs = if (negative) plain.substring(1) else plain
+        val intPartLen = abs.indexOf('.').let { if (it >= 0) it else abs.length }
+        val engExp = ((intPartLen - 1) / 3) * 3
+        val mantissaIntLen = intPartLen - engExp
+        val allDigits = abs.replace(".", "")
+        val mantissaFrac = allDigits.substring(mantissaIntLen).trimEnd('0')
+        val mantissa = allDigits.substring(0, mantissaIntLen) +
+                if (mantissaFrac.isNotEmpty()) ".$mantissaFrac" else ""
+        val prefix = if (negative) "-" else ""
+        return "${prefix}${mantissa}E+$engExp"
+    }
+
+    /** Expression formatted for display (E notation for standalone large numbers). */
+    val displayExpression: String
+        get() = formatForDisplay(expression)
+
     private fun evaluate(expr: String): String {
         return try {
             val piPlain = PI.toPlainString()
@@ -215,6 +256,8 @@ class CalculatorViewModel : ViewModel() {
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
+                // % → /100, with implicit multiply when followed by a digit
+                .replace(Regex("%(\\d)"), "/100*$1")
                 .replace("%", "/100")
                 // Implicit multiplication around π
                 .replace(Regex("(\\d)π"), "$1*π")
@@ -223,25 +266,20 @@ class CalculatorViewModel : ViewModel() {
                 .replace(Regex("\\)π"), ")*π")
                 .replace(Regex("π\\("), "π*(")
                 .replace("π", piPlain)
-                // Implicit multiplication between ) and digit or digit and (
+                // Implicit multiplication between ) and digit, digit and (, digit and √, ! and digit
                 .replace(Regex("\\)(\\d)"), ")*$1")
                 .replace(Regex("(\\d)\\("), "$1*(")
+                .replace(Regex("(\\d)√"), "$1*√")
+                .replace(Regex("!(\\d)"), "!*$1")
 
             val result = evaluateExpression(sanitized)
 
             val stripped = result.stripTrailingZeros()
-            val plain = if (stripped.scale() <= 0) {
+            if (stripped.scale() <= 0) {
                 stripped.toBigInteger().toString()
             } else {
                 val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
                 formatted.toPlainString()
-            }
-            // Use E notation only when the number won't fit the display
-            if (plain.length > maxDisplayLength) {
-                val rounded = result.round(DISPLAY_PRECISION).stripTrailingZeros()
-                rounded.toEngineeringString()
-            } else {
-                plain
             }
         } catch (e: Exception) {
             "Error"

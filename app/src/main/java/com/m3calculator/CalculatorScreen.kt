@@ -128,6 +128,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             // Display area
             DisplaySection(
                 expression = viewModel.expression,
+                displayExpression = viewModel.displayExpression,
                 cursorPosition = viewModel.cursorPosition,
                 onCursorChange = { viewModel.moveCursorTo(it) },
                 result = viewModel.result,
@@ -201,6 +202,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 @Composable
 fun DisplaySection(
     expression: String,
+    displayExpression: String,
     cursorPosition: Int,
     onCursorChange: (Int) -> Unit,
     result: String,
@@ -209,7 +211,7 @@ fun DisplaySection(
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    val formatted = formatExpression(expression)
+    val formatted = formatExpression(displayExpression)
     val cursorInFormatted = mapCursorToFormatted(expression, cursorPosition)
 
     Column(
@@ -564,8 +566,9 @@ fun HistorySheet(
 }
 
 private fun formatExpression(expr: String): String {
-    // Add spaces around binary operators but not a leading unary minus from +/− toggle
-    return expr.replace(Regex("(?<=.)[+\\-×÷−]")) { " ${it.value} " }
+    // Add spaces around binary operators but not a leading unary minus
+    // from +/− toggle and not the sign in E notation (e.g. E+30)
+    return expr.replace(Regex("(?<=.)(?<![Ee])[+\\-×÷−]")) { " ${it.value} " }
 }
 
 private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
