@@ -26,6 +26,7 @@ class CalculatorViewModel : ViewModel() {
         private set
     var history by mutableStateOf("")
         private set
+    var maxDisplayLength = 24
 
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
@@ -47,8 +48,14 @@ class CalculatorViewModel : ViewModel() {
     }
 
     fun loadHistoryEntry(entry: HistoryEntry) {
-        expression = entry.result
-        cursorPosition = entry.result.length
+        // Convert E notation back to plain for safe editing
+        val plain = try {
+            BigDecimal(entry.result).toPlainString()
+        } catch (_: Exception) {
+            entry.result
+        }
+        expression = plain
+        cursorPosition = plain.length
         result = ""
         history = "${entry.expression} ="
     }
@@ -97,7 +104,7 @@ class CalculatorViewModel : ViewModel() {
             "=" -> {
                 if (expression.isNotEmpty()) {
                     // Strip trailing operator before evaluating
-                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷')) {
+                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷', '^')) {
                         expression = expression.dropLast(1)
                     }
                     if (expression.isEmpty()) return
@@ -105,7 +112,7 @@ class CalculatorViewModel : ViewModel() {
                     val res = evaluate(expression)
                     history = "$expression ="
                     if (res != "Error") {
-                        _historyList.add(0, HistoryEntry(expression, res))
+                        _historyList.add(0, HistoryEntry(expression, formatForDisplay(res)))
                     }
                     result = res
                     expression = if (res == "Error") "" else res
@@ -120,6 +127,7 @@ class CalculatorViewModel : ViewModel() {
                     expression = "-$expression"
                     cursorPosition++
                 }
+                updatePreview()
             }
             "%" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
@@ -141,7 +149,7 @@ class CalculatorViewModel : ViewModel() {
             }
             "^" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π')) {
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π' || charBefore == '!')) {
                     insertAtCursor("^")
                 }
             }
@@ -153,15 +161,40 @@ class CalculatorViewModel : ViewModel() {
                 }
             }
             "+", "−", "×", "÷" -> {
+                val operators = listOf('+', '−', '×', '÷', '^')
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && charBefore !in listOf('+', '−', '×', '÷')) {
-                    insertAtCursor(label)
+                val charAfter = if (cursorPosition < expression.length) expression[cursorPosition] else null
+                if (charBefore != null && charBefore in operators) {
+                    if (label == "−" && charBefore != '−') {
+                        // Allow minus after operator as unary minus (e.g. 6+−5)
+                        // But don't allow −− (double unary minus)
+                        insertAtCursor(label)
+                    } else {
+                        // Replace operator(s) before cursor — collapse unary minus + operator
+                        var replaceStart = cursorPosition - 1
+                        if (replaceStart > 0 && expression[replaceStart - 1] in operators) {
+                            replaceStart-- // also remove the operator before unary minus
+                        }
+                        expression = expression.substring(0, replaceStart) + label + expression.substring(cursorPosition)
+                        cursorPosition = replaceStart + 1
+                    }
+                } else if (charBefore != null && charBefore !in operators) {
+                    if (charAfter != null && charAfter in operators) {
+                        // Replace the operator after cursor
+                        expression = expression.substring(0, cursorPosition) + label + expression.substring(cursorPosition + 1)
+                        cursorPosition++
+                    } else {
+                        insertAtCursor(label)
+                    }
                 }
             }
             "." -> {
-                val before = expression.substring(0, cursorPosition)
-                val lastPart = before.split(Regex("[+\\-×÷]")).lastOrNull() ?: ""
-                if (!lastPart.contains(".")) {
+                // Check the full operand around the cursor (not just before it)
+                val operatorChars = setOf('+', '-', '×', '÷', '−')
+                val start = (cursorPosition - 1 downTo 0).firstOrNull { expression[it] in operatorChars }?.plus(1) ?: 0
+                val end = (cursorPosition until expression.length).firstOrNull { expression[it] in operatorChars } ?: expression.length
+                val operand = expression.substring(start, end)
+                if (!operand.contains(".")) {
                     insertAtCursor(label)
                 }
             }
@@ -197,9 +230,7 @@ class CalculatorViewModel : ViewModel() {
     private fun updatePreview() {
         if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
             val preview = evaluate(expression)
-            if (preview != "Error") {
-                result = preview
-            }
+            result = if (preview != "Error") formatForDisplay(preview) else ""
         }
     }
 
@@ -208,6 +239,41 @@ class CalculatorViewModel : ViewModel() {
     private val HUNDRED = BigDecimal("100")
     private val DISPLAY_PRECISION = MathContext(10, RoundingMode.HALF_UP)
 
+    /** Format a plain value string as E notation when it exceeds display width. */
+    fun formatForDisplay(value: String): String {
+        if (value != "Error" && value.length > maxDisplayLength) {
+            try {
+                val bd = BigDecimal(value)
+                val rounded = bd.round(DISPLAY_PRECISION).stripTrailingZeros()
+                val eng = rounded.toEngineeringString()
+                // toEngineeringString may return plain for small integers (scale 0).
+                // In that case, build engineering notation manually.
+                if (eng.contains('E') || eng.length <= maxDisplayLength) return eng
+                return buildEngineeringString(rounded)
+            } catch (_: NumberFormatException) {}
+        }
+        return value
+    }
+
+    private fun buildEngineeringString(bd: BigDecimal): String {
+        val plain = bd.toPlainString()
+        val negative = plain.startsWith("-")
+        val abs = if (negative) plain.substring(1) else plain
+        val intPartLen = abs.indexOf('.').let { if (it >= 0) it else abs.length }
+        val engExp = ((intPartLen - 1) / 3) * 3
+        val mantissaIntLen = intPartLen - engExp
+        val allDigits = abs.replace(".", "")
+        val mantissaFrac = allDigits.substring(mantissaIntLen).trimEnd('0')
+        val mantissa = allDigits.substring(0, mantissaIntLen) +
+                if (mantissaFrac.isNotEmpty()) ".$mantissaFrac" else ""
+        val prefix = if (negative) "-" else ""
+        return "${prefix}${mantissa}E+$engExp"
+    }
+
+    /** Expression formatted for display (E notation for standalone large numbers). */
+    val displayExpression: String
+        get() = formatForDisplay(expression)
+
     private fun evaluate(expr: String): String {
         return try {
             val piPlain = PI.toPlainString()
@@ -215,10 +281,21 @@ class CalculatorViewModel : ViewModel() {
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
+                // % → /100, with implicit multiply when followed by a digit
+                .replace(Regex("%(\\d)"), "/100*$1")
                 .replace("%", "/100")
-                .replace(Regex("(\\d)π"), "$1*$piPlain")
-                .replace(Regex("π(\\d)"), "$piPlain*$1")
+                // Implicit multiplication around π
+                .replace(Regex("(\\d)π"), "$1*π")
+                .replace(Regex("π(\\d)"), "π*$1")
+                .replace(Regex("π(?=π)"), "π*")
+                .replace(Regex("\\)π"), ")*π")
+                .replace(Regex("π\\("), "π*(")
                 .replace("π", piPlain)
+                // Implicit multiplication between ) and digit, digit and (, digit and √, ! and digit
+                .replace(Regex("\\)(\\d)"), ")*$1")
+                .replace(Regex("(\\d)\\("), "$1*(")
+                .replace(Regex("(\\d)√"), "$1*√")
+                .replace(Regex("!(\\d)"), "!*$1")
 
             val result = evaluateExpression(sanitized)
 
@@ -226,8 +303,8 @@ class CalculatorViewModel : ViewModel() {
             if (stripped.scale() <= 0) {
                 stripped.toBigInteger().toString()
             } else {
-                val formatted = result.round(DISPLAY_PRECISION)
-                formatted.stripTrailingZeros().toPlainString()
+                val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
+                formatted.toPlainString()
             }
         } catch (e: Exception) {
             "Error"
@@ -257,6 +334,12 @@ class CalculatorViewModel : ViewModel() {
                 c.isDigit() || c == '.' -> {
                     val start = i
                     while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
+                    // Consume E notation suffix (e.g., E+18, E-3, E6)
+                    if (i < expr.length && (expr[i] == 'E' || expr[i] == 'e')) {
+                        i++
+                        if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) i++
+                        while (i < expr.length && expr[i].isDigit()) i++
+                    }
                     tokens.add(Token.Num(BigDecimal(expr.substring(start, i))))
                     continue
                 }
@@ -270,6 +353,10 @@ class CalculatorViewModel : ViewModel() {
                         while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
                         if (start < i) {
                             tokens.add(Token.Num(BigDecimal(expr.substring(start, i)).negate()))
+                        } else {
+                            // Unary minus before non-digit (e.g., √, parenthesis): treat as 0 - x
+                            tokens.add(Token.Num(BigDecimal.ZERO))
+                            tokens.add(Token.Op('-', 1))
                         }
                         continue
                     } else {
@@ -373,7 +460,7 @@ class CalculatorViewModel : ViewModel() {
                         }
                         '!' -> {
                             val intVal = try { a.intValueExact() } catch (_: ArithmeticException) { -1 }
-                            if (intVal < 0 || intVal > 20) throw ArithmeticException("Invalid factorial")
+                            if (intVal < 0 || intVal > 99) throw ArithmeticException("Invalid factorial")
                             factorial(intVal.toLong())
                         }
                         else -> throw ArithmeticException("Unknown operator")
