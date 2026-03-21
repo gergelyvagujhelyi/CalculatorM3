@@ -98,7 +98,7 @@ class CalculatorViewModel : ViewModel() {
             "=" -> {
                 if (expression.isNotEmpty()) {
                     // Strip trailing operator before evaluating
-                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷')) {
+                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷', '^')) {
                         expression = expression.dropLast(1)
                     }
                     if (expression.isEmpty()) return
@@ -223,6 +223,9 @@ class CalculatorViewModel : ViewModel() {
                 .replace(Regex("\\)π"), ")*π")
                 .replace(Regex("π\\("), "π*(")
                 .replace("π", piPlain)
+                // Implicit multiplication between ) and digit or digit and (
+                .replace(Regex("\\)(\\d)"), ")*$1")
+                .replace(Regex("(\\d)\\("), "$1*(")
 
             val result = evaluateExpression(sanitized)
 
@@ -268,6 +271,12 @@ class CalculatorViewModel : ViewModel() {
                 c.isDigit() || c == '.' -> {
                     val start = i
                     while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
+                    // Consume E notation suffix (e.g., E+18, E-3, E6)
+                    if (i < expr.length && (expr[i] == 'E' || expr[i] == 'e')) {
+                        i++
+                        if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) i++
+                        while (i < expr.length && expr[i].isDigit()) i++
+                    }
                     tokens.add(Token.Num(BigDecimal(expr.substring(start, i))))
                     continue
                 }

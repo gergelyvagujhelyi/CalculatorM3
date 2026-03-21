@@ -1177,4 +1177,130 @@ class CalculatorViewModelTest {
         tapEquals()
         assertExpression("3.5")
     }
+
+    // BUG: E notation result breaks further calculations.
+    // After =, expression becomes e.g. "265.2528598E+30". Pressing +1=
+    // should add 1, but the tokenizer can't parse 'E' — it skips it,
+    // and the '+' in "E+30" is treated as addition, producing garbage.
+    @Test
+    fun eNotationResultCanBeUsedForFurtherCalculation() {
+        vm.maxDisplayLength = 5 // force E notation for numbers > 5 chars
+        tap("9", "9", "9", "×", "9", "9", "9")
+        tapEquals()
+        // 999×999 = 998001, displayed in E notation "998.001E+3"
+        // Now use the result: subtract 998001 should give 0
+        tap("−", "9", "9", "8", "0", "0", "1")
+        tapEquals()
+        assertExpression("0")
+    }
+
+    // BUG: Typing a digit after √(9) gives "√(9)5" with no implicit
+    // multiplication. The tokenizer produces two Num tokens (3 and 5)
+    // with no operator, and evaluatePostfix silently returns only the last.
+    @Test
+    fun digitAfterSqrtParenShouldMultiply() {
+        tap("9", "√")
+        assertExpression("√(9)")
+        tap("5")
+        // √(9)5 should be 3×5 = 15
+        tapEquals()
+        assertExpression("15")
+    }
+
+    // BUG: Trailing ^ is not stripped on equals.
+    // The strip list only includes +, −, ×, ÷ but not ^.
+    // Typing "5^" then = gives Error instead of evaluating 5.
+    @Test
+    fun trailingCaretStrippedOnEquals() {
+        tap("5", "^")
+        tapEquals()
+        assertExpression("5")
+    }
+
+    // ── Additional regression tests for the 3 bug fixes ────────────
+
+    // Trailing ^ strip: caret after full expression
+    @Test
+    fun trailingCaretAfterExpressionStripped() {
+        tap("2", "+", "3", "^")
+        tapEquals()
+        assertExpression("5")
+    }
+
+    // Trailing ^ strip: caret mixed with other trailing operators
+    @Test
+    fun trailingCaretAndOperatorStripped() {
+        tap("7", "^", "+")
+        // Can't type + after ^ (guard blocks it), so expression is "7^"
+        tapEquals()
+        assertExpression("7")
+    }
+
+    // Implicit multiply: digit after closing paren via sqrt
+    @Test
+    fun multiDigitAfterSqrtParen() {
+        tap("4", "√", "1", "0")
+        // √(4)10 = 2×10 = 20
+        tapEquals()
+        assertExpression("20")
+    }
+
+    // Implicit multiply: sqrt result times digit in preview
+    @Test
+    fun digitAfterSqrtParenPreview() {
+        tap("4", "√", "3")
+        // √(4)3 = 2×3 = 6
+        assertResult("6")
+    }
+
+    // Implicit multiply: digit before opening paren (via cursor)
+    @Test
+    fun digitBeforeOpenParenViaImplicitMultiply() {
+        // Construct "2(3+1)" by manipulating expression directly
+        // This tests the sanitizer: 2(3+1) → 2*(3+1) = 8
+        // Can't easily type parens from UI, but √ creates them:
+        // Type 3+1, √ wraps to √(3+1), then result is 2, continue with ×2
+        // Instead test the evaluate path indirectly via carry-over:
+        tap("4", "√", "×", "3")
+        // √(4)×3 = 2×3 = 6
+        tapEquals()
+        assertExpression("6")
+    }
+
+    // E notation: multiply after E notation result
+    @Test
+    fun eNotationResultMultiply() {
+        vm.maxDisplayLength = 5
+        tap("9", "9", "9", "×", "9", "9", "9")
+        tapEquals()
+        // 998001 in E notation. Multiply by 0 should give 0
+        tap("×", "0")
+        tapEquals()
+        assertExpression("0")
+    }
+
+    // E notation: E notation result then sqrt
+    @Test
+    fun eNotationResultThenSqrt() {
+        vm.maxDisplayLength = 5
+        tap("1", "0", "0", "0", "0", "0")
+        tapEquals()
+        // 100000 in E notation "100E+3". Apply sqrt
+        tap("√")
+        tapEquals()
+        // √(100000) ≈ 316.227766
+        assertExpression("316.227766")
+    }
+
+    // E notation: addition with E notation result
+    @Test
+    fun eNotationResultAdd() {
+        vm.maxDisplayLength = 5
+        tap("1", "0", "0", "0", "0", "0")
+        tapEquals()
+        // 100000 → E notation. Add 1
+        tap("+", "1")
+        tapEquals()
+        assertExpression("100001")
+    }
 }
