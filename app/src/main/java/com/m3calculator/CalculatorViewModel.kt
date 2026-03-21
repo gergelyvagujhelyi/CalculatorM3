@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
+import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 
 data class HistoryEntry(
     val expression: String,
@@ -193,39 +196,45 @@ class CalculatorViewModel : ViewModel() {
         }
     }
 
+    private val MC = MathContext.DECIMAL128
+    private val PI = BigDecimal("3.14159265358979323846264338327950288")
+    private val HUNDRED = BigDecimal("100")
+    private val DISPLAY_PRECISION = MathContext(10, RoundingMode.HALF_UP)
+
     private fun evaluate(expr: String): String {
         return try {
+            val piPlain = PI.toPlainString()
             val sanitized = expr
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
-                .replace("%", "/100.0")
-                .replace(Regex("(\\d)π"), "$1*${Math.PI}")
-                .replace(Regex("π(\\d)"), "${Math.PI}*$1")
-                .replace("π", Math.PI.toString())
+                .replace("%", "/100")
+                .replace(Regex("(\\d)π"), "$1*$piPlain")
+                .replace(Regex("π(\\d)"), "$piPlain*$1")
+                .replace("π", piPlain)
 
             val result = evaluateExpression(sanitized)
-            if (!result.isFinite()) return "Error"
 
-            if (result == result.toLong().toDouble()) {
-                result.toLong().toString()
+            val stripped = result.stripTrailingZeros()
+            if (stripped.scale() <= 0) {
+                stripped.toBigInteger().toString()
             } else {
-                val formatted = "%.10g".format(result)
-                formatted.trimEnd('0').trimEnd('.')
+                val formatted = result.round(DISPLAY_PRECISION)
+                formatted.stripTrailingZeros().toPlainString()
             }
         } catch (e: Exception) {
             "Error"
         }
     }
 
-    private fun evaluateExpression(expr: String): Double {
+    private fun evaluateExpression(expr: String): BigDecimal {
         val tokens = tokenize(expr)
         val postfix = infixToPostfix(tokens)
         return evaluatePostfix(postfix)
     }
 
     private sealed class Token {
-        data class Num(val value: Double) : Token()
+        data class Num(val value: BigDecimal) : Token()
         data class Op(val op: Char, val precedence: Int, val leftAssoc: Boolean = true) : Token()
         data class UnaryOp(val op: Char) : Token()
         data object LParen : Token()
@@ -241,7 +250,7 @@ class CalculatorViewModel : ViewModel() {
                 c.isDigit() || c == '.' -> {
                     val start = i
                     while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
-                    tokens.add(Token.Num(expr.substring(start, i).toDouble()))
+                    tokens.add(Token.Num(BigDecimal(expr.substring(start, i))))
                     continue
                 }
                 c == '(' -> tokens.add(Token.LParen)
@@ -253,7 +262,7 @@ class CalculatorViewModel : ViewModel() {
                         val start = i
                         while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
                         if (start < i) {
-                            tokens.add(Token.Num(-expr.substring(start, i).toDouble()))
+                            tokens.add(Token.Num(BigDecimal(expr.substring(start, i)).negate()))
                         }
                         continue
                     } else {
@@ -315,44 +324,64 @@ class CalculatorViewModel : ViewModel() {
         return output
     }
 
-    private fun evaluatePostfix(tokens: List<Token>): Double {
-        val stack = ArrayDeque<Double>()
+    private fun evaluatePostfix(tokens: List<Token>): BigDecimal {
+        val stack = ArrayDeque<BigDecimal>()
         for (token in tokens) {
             when (token) {
                 is Token.Num -> stack.addLast(token.value)
                 is Token.Op -> {
-                    if (stack.size < 2) return Double.NaN
+                    if (stack.size < 2) throw ArithmeticException("Insufficient operands")
                     val b = stack.removeLast()
                     val a = stack.removeLast()
                     val result = when (token.op) {
-                        '+' -> a + b
-                        '-' -> a - b
-                        '*' -> a * b
-                        '/' -> if (b == 0.0) Double.NaN else a / b
-                        '^' -> Math.pow(a, b)
-                        else -> Double.NaN
+                        '+' -> a.add(b, MC)
+                        '-' -> a.subtract(b, MC)
+                        '*' -> a.multiply(b, MC)
+                        '/' -> {
+                            if (b.compareTo(BigDecimal.ZERO) == 0) throw ArithmeticException("Division by zero")
+                            a.divide(b, MC)
+                        }
+                        '^' -> {
+                            val bExact = try { b.intValueExact() } catch (_: ArithmeticException) { null }
+                            if (bExact != null && bExact in -999..999) {
+                                if (bExact >= 0) a.pow(bExact, MC)
+                                else BigDecimal.ONE.divide(a.pow(-bExact, MC), MC)
+                            } else {
+                                val dResult = Math.pow(a.toDouble(), b.toDouble())
+                                if (!dResult.isFinite()) throw ArithmeticException("Non-finite result")
+                                BigDecimal.valueOf(dResult)
+                            }
+                        }
+                        else -> throw ArithmeticException("Unknown operator")
                     }
                     stack.addLast(result)
                 }
                 is Token.UnaryOp -> {
-                    if (stack.isEmpty()) return Double.NaN
+                    if (stack.isEmpty()) throw ArithmeticException("Insufficient operands")
                     val a = stack.removeLast()
                     val result = when (token.op) {
-                        '√' -> if (a < 0) Double.NaN else Math.sqrt(a)
-                        '!' -> if (a < 0 || a != Math.floor(a) || a > 20) Double.NaN else factorial(a.toLong()).toDouble()
-                        else -> Double.NaN
+                        '√' -> {
+                            if (a < BigDecimal.ZERO) throw ArithmeticException("Negative sqrt")
+                            a.sqrt(MC)
+                        }
+                        '!' -> {
+                            val intVal = try { a.intValueExact() } catch (_: ArithmeticException) { -1 }
+                            if (intVal < 0 || intVal > 20) throw ArithmeticException("Invalid factorial")
+                            factorial(intVal.toLong())
+                        }
+                        else -> throw ArithmeticException("Unknown operator")
                     }
                     stack.addLast(result)
                 }
                 else -> {}
             }
         }
-        return stack.lastOrNull() ?: Double.NaN
+        return stack.lastOrNull() ?: throw ArithmeticException("Empty expression")
     }
 
-    private fun factorial(n: Long): Long {
-        var result = 1L
-        for (i in 2..n) result *= i
+    private fun factorial(n: Long): BigDecimal {
+        var result = BigDecimal.ONE
+        for (i in 2..n) result = result.multiply(BigDecimal(i), MC)
         return result
     }
 }
