@@ -120,6 +120,7 @@ class CalculatorViewModel : ViewModel() {
                     expression = "-$expression"
                     cursorPosition++
                 }
+                updatePreview()
             }
             "%" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
