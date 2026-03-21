@@ -1,5 +1,6 @@
 package com.m3calculator
 
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -8,6 +9,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import android.os.Build
+import org.json.JSONArray
+import org.json.JSONObject
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
@@ -18,7 +21,11 @@ data class HistoryEntry(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateHandle()) : ViewModel() {
+class CalculatorViewModel(
+    private val prefs: SharedPreferences? = null,
+    private val savedState: SavedStateHandle = SavedStateHandle()
+) : ViewModel() {
+
     var expression by mutableStateOf(savedState.get<String>("expression") ?: "")
         private set
     var cursorPosition by mutableIntStateOf(savedState.get<Int>("cursorPosition") ?: 0)
@@ -33,13 +40,35 @@ class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateH
     val historyList: List<HistoryEntry> get() = _historyList
 
     init {
-        // Restore history list from saved state
-        savedState.get<List<String>>("historyExpressions")?.let { expressions ->
-            val results = savedState.get<List<String>>("historyResults") ?: return@let
-            val timestamps = savedState.get<List<Long>>("historyTimestamps") ?: return@let
-            expressions.indices.forEach { i ->
-                _historyList.add(HistoryEntry(expressions[i], results[i], timestamps[i]))
+        // Restore history list: prefer saved state (process death), fall back to disk
+        val restored = restoreHistoryFromSavedState() || restoreHistoryFromDisk()
+    }
+
+    private fun restoreHistoryFromSavedState(): Boolean {
+        val expressions = savedState.get<List<String>>("historyExpressions") ?: return false
+        val results = savedState.get<List<String>>("historyResults") ?: return false
+        val timestamps = savedState.get<List<Long>>("historyTimestamps") ?: return false
+        expressions.indices.forEach { i ->
+            _historyList.add(HistoryEntry(expressions[i], results[i], timestamps[i]))
+        }
+        return expressions.isNotEmpty()
+    }
+
+    private fun restoreHistoryFromDisk(): Boolean {
+        val json = prefs?.getString("history_json", null) ?: return false
+        return try {
+            val arr = JSONArray(json)
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                _historyList.add(HistoryEntry(
+                    expression = obj.getString("expr"),
+                    result = obj.getString("result"),
+                    timestamp = obj.getLong("ts")
+                ))
             }
+            arr.length() > 0
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -51,6 +80,19 @@ class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateH
         savedState["historyExpressions"] = _historyList.map { it.expression }
         savedState["historyResults"] = _historyList.map { it.result }
         savedState["historyTimestamps"] = _historyList.map { it.timestamp }
+    }
+
+    private fun saveHistoryToDisk() {
+        prefs ?: return
+        val arr = JSONArray()
+        _historyList.forEach { entry ->
+            arr.put(JSONObject().apply {
+                put("expr", entry.expression)
+                put("result", entry.result)
+                put("ts", entry.timestamp)
+            })
+        }
+        prefs.edit().putString("history_json", arr.toString()).apply()
     }
 
     companion object {
@@ -93,6 +135,7 @@ class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateH
     fun clearHistory() {
         _historyList.clear()
         saveState()
+        saveHistoryToDisk()
     }
 
     fun onButtonPress(label: String) {
@@ -147,6 +190,7 @@ class CalculatorViewModel(private val savedState: SavedStateHandle = SavedStateH
                         if (_historyList.size > MAX_HISTORY_SIZE) {
                             _historyList.removeRange(MAX_HISTORY_SIZE, _historyList.size)
                         }
+                        saveHistoryToDisk()
                     }
                     result = res
                     expression = if (res.startsWith("Error")) "" else res
