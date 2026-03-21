@@ -374,9 +374,8 @@ class CalculatorViewModel(
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
-                // % → /100, with implicit multiply when followed by a digit
-                .replace(Regex("%(\\d)"), "/100*$1")
-                .replace("%", "/100")
+                // Implicit multiply after %: 50%3 → 50%*3
+                .replace(Regex("%(\\d)"), "%*$1")
                 // Implicit multiplication around π
                 .replace(Regex("(\\d)π"), "$1*π")
                 .replace(Regex("π(\\d)"), "π*$1")
@@ -474,9 +473,8 @@ class CalculatorViewModel(
                 c == '/' -> tokens.add(Token.Op('/', 2))
                 c == '^' -> tokens.add(Token.Op('^', 3, leftAssoc = false))
                 c == '√' -> tokens.add(Token.UnaryOp('√'))
-                c == '!' -> {
-                    tokens.add(Token.UnaryOp('!'))
-                }
+                c == '!' -> tokens.add(Token.UnaryOp('!'))
+                c == '%' -> tokens.add(Token.UnaryOp('%'))
             }
             i++
         }
@@ -503,10 +501,10 @@ class CalculatorViewModel(
                     stack.addLast(token)
                 }
                 is Token.UnaryOp -> {
-                    if (token.op == '!') {
-                        output.add(token)
+                    if (token.op == '!' || token.op == '%') {
+                        output.add(token) // postfix unary: immediately output
                     } else {
-                        stack.addLast(token)
+                        stack.addLast(token) // prefix unary (√): push to stack
                     }
                 }
                 is Token.LParen -> stack.addLast(token)
@@ -525,59 +523,67 @@ class CalculatorViewModel(
         return output
     }
 
+    /** Stack entry: value + flag indicating it came from % (for consumer-style percent). */
+    private data class SVal(val v: BigDecimal, val pct: Boolean = false)
+
     private fun evaluatePostfix(tokens: List<Token>): BigDecimal {
-        val stack = ArrayDeque<BigDecimal>()
+        val stack = ArrayDeque<SVal>()
         for (token in tokens) {
             when (token) {
-                is Token.Num -> stack.addLast(token.value)
+                is Token.Num -> stack.addLast(SVal(token.value))
                 is Token.Op -> {
                     if (stack.size < 2) throw ArithmeticException("Insufficient operands")
                     val b = stack.removeLast()
                     val a = stack.removeLast()
                     val result = when (token.op) {
-                        '+' -> a.add(b, MC)
-                        '-' -> a.subtract(b, MC)
-                        '*' -> a.multiply(b, MC)
+                        '+' -> if (b.pct) a.v.add(a.v.multiply(b.v, MC), MC)
+                               else a.v.add(b.v, MC)
+                        '-' -> if (b.pct) a.v.subtract(a.v.multiply(b.v, MC), MC)
+                               else a.v.subtract(b.v, MC)
+                        '*' -> a.v.multiply(b.v, MC)
                         '/' -> {
-                            if (b.compareTo(BigDecimal.ZERO) == 0) throw ArithmeticException("Division by zero")
-                            a.divide(b, MC)
+                            if (b.v.compareTo(BigDecimal.ZERO) == 0) throw ArithmeticException("Division by zero")
+                            a.v.divide(b.v, MC)
                         }
                         '^' -> {
-                            val bExact = try { b.intValueExact() } catch (_: ArithmeticException) { null }
+                            val bExact = try { b.v.intValueExact() } catch (_: ArithmeticException) { null }
                             if (bExact != null && bExact in -999..999) {
-                                if (bExact >= 0) a.pow(bExact, MC)
-                                else BigDecimal.ONE.divide(a.pow(-bExact, MC), MC)
+                                if (bExact >= 0) a.v.pow(bExact, MC)
+                                else BigDecimal.ONE.divide(a.v.pow(-bExact, MC), MC)
                             } else {
-                                val dResult = Math.pow(a.toDouble(), b.toDouble())
+                                val dResult = Math.pow(a.v.toDouble(), b.v.toDouble())
                                 if (!dResult.isFinite()) throw ArithmeticException("Non-finite result")
                                 BigDecimal.valueOf(dResult)
                             }
                         }
                         else -> throw ArithmeticException("Unknown operator")
                     }
-                    stack.addLast(result)
+                    stack.addLast(SVal(result))
                 }
                 is Token.UnaryOp -> {
                     if (stack.isEmpty()) throw ArithmeticException("Insufficient operands")
                     val a = stack.removeLast()
-                    val result = when (token.op) {
+                    when (token.op) {
                         '√' -> {
-                            if (a < BigDecimal.ZERO) throw ArithmeticException("Negative sqrt")
-                            bigSqrt(a)
+                            if (a.v < BigDecimal.ZERO) throw ArithmeticException("Negative sqrt")
+                            stack.addLast(SVal(bigSqrt(a.v)))
                         }
                         '!' -> {
-                            val intVal = try { a.intValueExact() } catch (_: ArithmeticException) { -1 }
+                            val intVal = try { a.v.intValueExact() } catch (_: ArithmeticException) { -1 }
                             if (intVal < 0 || intVal > 99) throw ArithmeticException("Invalid factorial")
-                            factorial(intVal.toLong())
+                            stack.addLast(SVal(factorial(intVal.toLong())))
+                        }
+                        '%' -> {
+                            // Divide by 100, flag as percent for consumer-style + and -
+                            stack.addLast(SVal(a.v.divide(HUNDRED, MC), pct = true))
                         }
                         else -> throw ArithmeticException("Unknown operator")
                     }
-                    stack.addLast(result)
                 }
                 else -> {}
             }
         }
-        return stack.lastOrNull() ?: throw ArithmeticException("Empty expression")
+        return stack.lastOrNull()?.v ?: throw ArithmeticException("Empty expression")
     }
 
     private fun bigSqrt(a: BigDecimal): BigDecimal {

@@ -569,10 +569,10 @@ class CalculatorViewModelTest {
 
     @Test
     fun percentageInAddition() {
-        // 200 + 50% = 200 + 0.5 = 200.5
+        // 200 + 50% = 200 + (50% of 200) = 200 + 100 = 300
         tap("2", "0", "0", "+", "5", "0", "%")
         tapEquals()
-        assertExpression("200.5")
+        assertExpression("300")
     }
 
     @Test
@@ -1100,6 +1100,22 @@ class CalculatorViewModelTest {
         tap("5", "0", "%", "×", "2", "0", "0")
         tapEquals()
         assertExpression("100")
+    }
+
+    @Test
+    fun percentageInSubtraction() {
+        // 200 - 10% = 200 - (10% of 200) = 200 - 20 = 180
+        tap("2", "0", "0", "−", "1", "0", "%")
+        tapEquals()
+        assertExpression("180")
+    }
+
+    @Test
+    fun percentageStandalone() {
+        // 50% = 0.5
+        tap("5", "0", "%")
+        tapEquals()
+        assertExpression("0.5")
     }
 
     @Test
