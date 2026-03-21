@@ -622,14 +622,44 @@ class CalculatorViewModelTest {
         tap("5", "+", "3")
         assertResult("8")
         tap("+/−")
-        // -5+3 = -2
-        assertResult("-2")
+        // 5+-3 = 2 (negates current operand "3", not whole expression)
+        assertExpression("5+-3")
+        assertResult("2")
     }
 
     @Test
     fun signToggleOnEmpty() {
         tap("+/−")
         assertExpression("")
+    }
+
+    @Test
+    fun signToggleSecondOperand() {
+        // 5+3, toggle → 5+-3, toggle again → 5+3
+        tap("5", "+", "3")
+        tap("+/−")
+        assertExpression("5+-3")
+        tap("+/−")
+        assertExpression("5+3")
+    }
+
+    @Test
+    fun signToggleFirstOperandViaCursor() {
+        // 5+3, move cursor into first operand, toggle
+        tap("5", "+", "3")
+        vm.moveCursorTo(1) // after "5"
+        tap("+/−")
+        assertExpression("-5+3")
+    }
+
+    @Test
+    fun signToggleSecondOperandEvaluates() {
+        // 10+−3 = 7
+        tap("1", "0", "+", "3")
+        tap("+/−")
+        assertExpression("10+-3")
+        tapEquals()
+        assertExpression("7")
     }
 
     // ── Result carry-over complex ──────────────────────────────────────

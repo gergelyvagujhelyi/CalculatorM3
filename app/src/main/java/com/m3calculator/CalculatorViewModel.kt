@@ -198,11 +198,23 @@ class CalculatorViewModel(
                 }
             }
             "+/−" -> {
-                if (expression.startsWith("-")) {
-                    expression = expression.drop(1)
-                    cursorPosition = (cursorPosition - 1).coerceAtLeast(0)
-                } else if (expression.isNotEmpty()) {
-                    expression = "-$expression"
+                if (expression.isEmpty()) return
+                // Find the start of the operand the cursor is in
+                val boundaryChars = setOf('+', '−', '×', '÷', '^', '(', ')', '√', '!')
+                val operandStart = (cursorPosition - 1 downTo 0)
+                    .firstOrNull { expression[it] in boundaryChars }
+                    ?.plus(1) ?: 0
+
+                // If no operand at cursor (e.g. cursor after ')'), negate whole expression
+                val effectiveStart = if (operandStart >= cursorPosition && operandStart > 0) 0 else operandStart
+
+                if (effectiveStart < expression.length && expression[effectiveStart] == '-') {
+                    // Remove existing negative sign
+                    expression = expression.removeRange(effectiveStart, effectiveStart + 1)
+                    cursorPosition = (cursorPosition - 1).coerceAtLeast(effectiveStart)
+                } else {
+                    // Insert negative sign at start of operand
+                    expression = expression.substring(0, effectiveStart) + "-" + expression.substring(effectiveStart)
                     cursorPosition++
                 }
                 updatePreview()
