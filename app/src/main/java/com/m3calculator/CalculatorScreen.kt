@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -52,7 +53,9 @@ enum class ButtonType {
 @Composable
 fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val colorScheme = MaterialTheme.colorScheme
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp
+    val configuration = LocalConfiguration.current
+    val screenWidthDp = configuration.screenWidthDp
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     viewModel.maxDisplayLength = (screenWidthDp - 48) / 15
 
     val buttons = listOf(
@@ -108,19 +111,113 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
         modifier = Modifier.fillMaxSize(),
         color = colorScheme.surface
     ) {
+        if (isLandscape) {
+            LandscapeLayout(
+                viewModel = viewModel,
+                buttons = buttons,
+                onShowHistory = { showHistory = true }
+            )
+        } else {
+            PortraitLayout(
+                viewModel = viewModel,
+                buttons = buttons,
+                onShowHistory = { showHistory = true }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PortraitLayout(
+    viewModel: CalculatorViewModel,
+    buttons: List<List<CalcButton>>,
+    onShowHistory: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+    ) {
+        // Top bar with history button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.End
+        ) {
+            IconButton(onClick = onShowHistory) {
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = stringResource(R.string.history),
+                    tint = colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Display area
+        DisplaySection(
+            expression = viewModel.expression,
+            displayExpression = viewModel.displayExpression,
+            cursorPosition = viewModel.cursorPosition,
+            onCursorChange = { viewModel.moveCursorTo(it) },
+            result = viewModel.result,
+            history = viewModel.history,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+        )
+
+        // Divider
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            thickness = 0.5.dp,
+            color = colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+
+        // Scientific row
+        ScientificRow(viewModel = viewModel)
+
+        // Button grid
+        ButtonGrid(
+            buttons = buttons,
+            viewModel = viewModel,
+            usePortraitAspect = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .padding(bottom = 12.dp)
+        )
+    }
+}
+
+@Composable
+private fun LandscapeLayout(
+    viewModel: CalculatorViewModel,
+    buttons: List<List<CalcButton>>,
+    onShowHistory: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+    ) {
+        // Left side: display
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
+                .weight(1f)
+                .fillMaxHeight()
+                .padding(start = 16.dp, end = 8.dp)
         ) {
-            // Top bar with history button
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                IconButton(onClick = { showHistory = true }) {
+                IconButton(onClick = onShowHistory) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = stringResource(R.string.history),
@@ -129,7 +226,6 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 }
             }
 
-            // Display area
             DisplaySection(
                 expression = viewModel.expression,
                 displayExpression = viewModel.displayExpression,
@@ -140,71 +236,99 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
+                    .padding(horizontal = 8.dp)
             )
+        }
 
-            // Divider
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = 24.dp),
-                thickness = 0.5.dp,
-                color = colorScheme.outlineVariant.copy(alpha = 0.5f)
+        // Right side: buttons
+        Column(
+            modifier = Modifier
+                .weight(1.2f)
+                .fillMaxHeight()
+                .padding(end = 8.dp, top = 4.dp, bottom = 4.dp),
+            verticalArrangement = Arrangement.SpaceEvenly
+        ) {
+            ScientificRow(viewModel = viewModel, compact = true)
+
+            ButtonGrid(
+                buttons = buttons,
+                viewModel = viewModel,
+                usePortraitAspect = false,
+                compact = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             )
+        }
+    }
+}
 
-            // Scientific row
+@Composable
+private fun ScientificRow(
+    viewModel: CalculatorViewModel,
+    compact: Boolean = false
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = if (compact) 4.dp else 16.dp, vertical = if (compact) 0.dp else 4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val sciButtons = listOf(
+            "√" to stringResource(R.string.btn_square_root),
+            "π" to stringResource(R.string.btn_pi),
+            "^" to stringResource(R.string.btn_power),
+            "!" to stringResource(R.string.btn_factorial),
+        )
+        sciButtons.forEach { (label, desc) ->
+            TextButton(
+                onClick = { viewModel.onButtonPress(label) },
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { contentDescription = desc },
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Text(
+                    text = label,
+                    fontSize = if (compact) 16.sp else 20.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ButtonGrid(
+    buttons: List<List<CalcButton>>,
+    viewModel: CalculatorViewModel,
+    usePortraitAspect: Boolean,
+    compact: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 6.dp)
+    ) {
+        buttons.forEach { row ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                    .then(if (!usePortraitAspect) Modifier.weight(1f) else Modifier),
+                horizontalArrangement = Arrangement.spacedBy(if (compact) 3.dp else 6.dp)
             ) {
-                val sciButtons = listOf(
-                    "√" to stringResource(R.string.btn_square_root),
-                    "π" to stringResource(R.string.btn_pi),
-                    "^" to stringResource(R.string.btn_power),
-                    "!" to stringResource(R.string.btn_factorial),
-                )
-                sciButtons.forEach { (label, desc) ->
-                    TextButton(
-                        onClick = { viewModel.onButtonPress(label) },
+                row.forEach { button ->
+                    CalcButtonView(
+                        button = button,
+                        onClick = { viewModel.onButtonPress(button.label) },
+                        compact = compact,
                         modifier = Modifier
                             .weight(1f)
-                            .semantics { contentDescription = desc },
-                        contentPadding = PaddingValues(0.dp)
-                    ) {
-                        Text(
-                            text = label,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Normal,
-                            color = colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Button grid
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .padding(bottom = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                buttons.forEach { row ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        row.forEach { button ->
-                            CalcButtonView(
-                                button = button,
-                                onClick = { viewModel.onButtonPress(button.label) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f)
-                            )
-                        }
-                    }
+                            .then(if (usePortraitAspect) Modifier.aspectRatio(1f) else Modifier.fillMaxHeight())
+                    )
                 }
             }
         }
@@ -377,6 +501,7 @@ fun DisplaySection(
 fun CalcButtonView(
     button: CalcButton,
     onClick: () -> Unit,
+    compact: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -400,8 +525,6 @@ fun CalcButtonView(
         label = "buttonScale"
     )
 
-    val shape = CircleShape
-
     val containerColor = when (button.type) {
         ButtonType.NUMBER -> colorScheme.surfaceContainerHigh
         ButtonType.OPERATOR -> colorScheme.secondaryContainer
@@ -418,13 +541,25 @@ fun CalcButtonView(
         ButtonType.BACKSPACE -> colorScheme.onTertiaryContainer
     }
 
-    val fontSize = when (button.type) {
-        ButtonType.EQUALS -> 36.sp
-        ButtonType.OPERATOR -> 36.sp
-        ButtonType.NUMBER -> 32.sp
-        ButtonType.BACKSPACE -> 28.sp
-        else -> 28.sp
+    val fontSize = if (compact) {
+        when (button.type) {
+            ButtonType.EQUALS -> 24.sp
+            ButtonType.OPERATOR -> 24.sp
+            ButtonType.NUMBER -> 22.sp
+            ButtonType.BACKSPACE -> 20.sp
+            else -> 20.sp
+        }
+    } else {
+        when (button.type) {
+            ButtonType.EQUALS -> 36.sp
+            ButtonType.OPERATOR -> 36.sp
+            ButtonType.NUMBER -> 32.sp
+            ButtonType.BACKSPACE -> 28.sp
+            else -> 28.sp
+        }
     }
+
+    val shape = if (compact) RoundedCornerShape(16.dp) else CircleShape
 
     Surface(
         onClick = {
