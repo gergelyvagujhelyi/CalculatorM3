@@ -56,6 +56,12 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val screenHeightDp = configuration.screenHeightDp
+    // Foldables/tablets in portrait have a near-square aspect ratio (e.g. Pixel 9 Pro Fold ~1.04).
+    // Regular phones are typically ≥1.6. Use wide (split) layout for near-square screens so the
+    // button grid doesn't overflow vertically.
+    val useWideLayout = isLandscape ||
+        (screenHeightDp > 0 && screenHeightDp.toFloat() / screenWidthDp.toFloat() < 1.3f)
     viewModel.maxDisplayLength = (screenWidthDp - 48) / 15
 
     val buttons = listOf(
@@ -111,7 +117,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
         modifier = Modifier.fillMaxSize(),
         color = colorScheme.surface
     ) {
-        if (isLandscape) {
+        if (useWideLayout) {
             LandscapeLayout(
                 viewModel = viewModel,
                 buttons = buttons,
