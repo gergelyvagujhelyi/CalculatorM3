@@ -13,7 +13,7 @@ Repo: https://github.com/gergelyvagujhelyi/CalculatorM3.git
 Builds:
   - versionName: 1.2.0
     versionCode: 4
-    commit: 6137fc5e1ec7e28961977ef694038ea8a8c85814
+    commit: b151b8731917cc32df8fb1a6fa695e40d57c3383
     subdir: app
     gradle:
       - yes
