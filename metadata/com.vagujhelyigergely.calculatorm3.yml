@@ -5,19 +5,12 @@ AuthorName: Gergely Vagujhelyi
 SourceCode: https://github.com/gergelyvagujhelyi/CalculatorM3
 IssueTracker: https://github.com/gergelyvagujhelyi/CalculatorM3/issues
 
-AutoName: Calculator M3
+AutoName: Calculator
 
 RepoType: git
 Repo: https://github.com/gergelyvagujhelyi/CalculatorM3.git
 
 Builds:
-  - versionName: 1.1.1
-    versionCode: 3
-    commit: v1.1.1
-    subdir: app
-    gradle:
-      - yes
-
   - versionName: 1.2.0
     versionCode: 4
     commit: v1.2.0
