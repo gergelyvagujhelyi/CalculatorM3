@@ -98,7 +98,9 @@ jobs:
             app/build/outputs/bundle/release/*.aab
 
       - name: Upload to Google Play
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.GOOGLE_PLAY_JSON != '' }}
+        env:
+          GOOGLE_PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
