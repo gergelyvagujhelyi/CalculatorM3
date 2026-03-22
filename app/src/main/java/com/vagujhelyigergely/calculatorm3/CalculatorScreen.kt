@@ -9,6 +9,9 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -163,6 +166,10 @@ private fun PortraitLayout(
         }
 
         // Display area
+        val configuration = LocalConfiguration.current
+        val aspectRatio = configuration.screenHeightDp.toFloat() / configuration.screenWidthDp.toFloat()
+        val showInlineHistory = aspectRatio < 1.6f && viewModel.historyList.isNotEmpty()
+
         DisplaySection(
             expression = viewModel.expression,
             displayExpression = viewModel.displayExpression,
@@ -170,6 +177,8 @@ private fun PortraitLayout(
             onCursorChange = { viewModel.moveCursorTo(it) },
             result = viewModel.result,
             history = viewModel.history,
+            inlineHistoryList = if (showInlineHistory) viewModel.historyList else emptyList(),
+            onHistoryEntryClick = { entry -> viewModel.loadHistoryEntry(entry) },
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -239,6 +248,8 @@ private fun LandscapeLayout(
                 onCursorChange = { viewModel.moveCursorTo(it) },
                 result = viewModel.result,
                 history = viewModel.history,
+                inlineHistoryList = if (viewModel.historyList.isNotEmpty()) viewModel.historyList else emptyList(),
+                onHistoryEntryClick = { entry -> viewModel.loadHistoryEntry(entry) },
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -349,6 +360,8 @@ fun DisplaySection(
     onCursorChange: (Int) -> Unit,
     result: String,
     history: String,
+    inlineHistoryList: List<HistoryEntry> = emptyList(),
+    onHistoryEntryClick: (HistoryEntry) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -368,7 +381,55 @@ fun DisplaySection(
             verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.End
         ) {
-            // History
+            // Inline history for foldable devices with extra vertical space
+            if (inlineHistoryList.isNotEmpty()) {
+                val scrollState = rememberScrollState()
+                // Auto-scroll to bottom when history changes
+                LaunchedEffect(inlineHistoryList.size) {
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    inlineHistoryList.asReversed().forEach { entry ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onHistoryEntryClick(entry) }
+                                .padding(vertical = 6.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text(
+                                text = formatExpression(entry.expression),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colorScheme.outline,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = "= ${entry.result}",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Medium,
+                                color = colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = colorScheme.outlineVariant.copy(alpha = 0.3f),
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+            }
+
+            // History (last calculation label, e.g. "5+3 =")
             AnimatedVisibility(
                 visible = history.isNotEmpty(),
                 enter = fadeIn() + slideInVertically { -it / 2 },
