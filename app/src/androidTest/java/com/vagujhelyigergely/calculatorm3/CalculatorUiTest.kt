@@ -488,7 +488,7 @@ class CalculatorUiTest {
     fun piValue() {
         launch()
         tap("π", "=")
-        expressionShows("3.141592654")
+        expressionShows("3.1415926535")
     }
 
     @Test
@@ -910,7 +910,7 @@ class CalculatorUiTest {
     fun oneDividedBySeven() {
         launch()
         tap("1", "÷", "7", "=")
-        expressionShows("0.1428571429")
+        expressionShows("0.1428571428")
     }
 
     // ── Combined unary + binary (additional) ──────────────────────

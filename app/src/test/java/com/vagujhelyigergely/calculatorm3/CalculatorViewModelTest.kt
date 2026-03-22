@@ -125,7 +125,7 @@ class CalculatorViewModelTest {
     fun piValue() {
         tap("π")
         tapEquals()
-        assertExpression("3.141592654")
+        assertExpression("3.14159265358979323846264338328")
     }
 
     @Test
@@ -797,14 +797,14 @@ class CalculatorViewModelTest {
     fun piTimesTwo() {
         tap("π", "×", "2")
         tapEquals()
-        assertExpression("6.283185307")
+        assertExpression("6.28318530717958647692528676656")
     }
 
     @Test
     fun twoTimesPi() {
         tap("2", "×", "π")
         tapEquals()
-        assertExpression("6.283185307")
+        assertExpression("6.28318530717958647692528676656")
     }
 
     @Test
@@ -957,7 +957,7 @@ class CalculatorViewModelTest {
     fun oneDividedBySeven() {
         tap("1", "÷", "7")
         tapEquals()
-        assertExpression("0.1428571429")
+        assertExpression("0.142857142857142857142857142857")
     }
 
     @Test
@@ -1173,7 +1173,7 @@ class CalculatorViewModelTest {
     @Test
     fun previewAfterPi() {
         tap("π")
-        assertResult("3.141592654")
+        assertResult("3.1415926535897932385")
     }
 
     @Test
@@ -1240,8 +1240,8 @@ class CalculatorViewModelTest {
     fun piTimesPi() {
         tap("π", "π")
         tapEquals()
-        // Should be π×π ≈ 9.869604401
-        assertExpression("9.869604401")
+        // Should be π×π ≈ 9.8696044...
+        assertExpression("9.86960440108935861883449099988")
     }
 
     // BUG: √(4)π drops the sqrt result because no implicit multiply
@@ -1250,10 +1250,10 @@ class CalculatorViewModelTest {
     // silently returns only the last value.
     @Test
     fun sqrtThenPiShouldMultiply() {
-        // √(4) × π should be 2π ≈ 6.283185307
+        // √(4) × π should be 2π ≈ 6.2831853...
         tap("4", "√", "π")
         tapEquals()
-        assertExpression("6.283185307")
+        assertExpression("6.28318530717958647692528676656")
     }
 
     // BUG: Preview showed stale result when evaluation fails.
@@ -1273,7 +1273,7 @@ class CalculatorViewModelTest {
         tapEquals()
         // Expression stores plain format; display shows E notation
         assert(!vm.expression.contains("E")) { "Expression should be plain, got: ${vm.expression}" }
-        assertEquals("265.2528598E+30", vm.displayExpression)
+        assertEquals("265.25285981219105864E+30", vm.displayExpression)
     }
 
     // BUG: A lone decimal point at the start produces "Error" because
@@ -1365,7 +1365,7 @@ class CalculatorViewModelTest {
         tapEquals()
         // Expression stores plain (no E), display shows E notation
         assert(!vm.expression.contains("E")) { "Expression should be plain: ${vm.expression}" }
-        assertEquals("265.2528598E+30", vm.displayExpression)
+        assertEquals("265.25285981219105864E+30", vm.displayExpression)
         // Backspace removes last digit of the plain number
         tap("⌫")
         assert(!vm.expression.contains("E")) { "After backspace, still plain: ${vm.expression}" }
@@ -1460,8 +1460,8 @@ class CalculatorViewModelTest {
         // Apply sqrt
         tap("√")
         tapEquals()
-        // √(100000) ≈ 316.227766
-        assertExpression("316.227766")
+        // √(100000) ≈ 316.2277660...
+        assertExpression("316.227766016837933199889354443")
     }
 
     // Large result: addition after large result
@@ -1803,9 +1803,9 @@ class CalculatorViewModelTest {
 
     @Test
     fun percentTimesPi() {
-        // 50%π = 0.5 × π ≈ 1.570796327
+        // 50%π = 0.5 × π ≈ 1.5707963...
         tap("5", "0", "%", "π")
         tapEquals()
-        assertExpression("1.570796327")
+        assertExpression("1.57079632679489661923132169164")
     }
 }
