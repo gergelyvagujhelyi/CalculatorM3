@@ -66,6 +66,16 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 
 ---
 
+## 🔑 Checksums
+
+| Algorithm  | GitHub Release |
+|------------|----------------|
+| **MD5**    | <!-- md5 -->`56620d76df1208cb92e581f46eec81b1`<!-- /md5 --> |
+| **SHA1**   | <!-- sha1 -->`637b99085e5c1dfe069a35552221f73b27f481ec`<!-- /sha1 --> |
+| **SHA-256**| <!-- sha256 -->`024bb05ad63da4e08e5933e6984ba756eaafaa7cb3f2ff5e5eda3db0637e37b5`<!-- /sha256 --> |
+
+---
+
 ## License
 
     CalculatorM3
