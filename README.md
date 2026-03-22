@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="screenshots/app-icon.png" width="120" alt="CalculatorM3 icon">
+  <img src="metadata/en-US/images/icon.png" width="120" alt="CalculatorM3 icon">
   <br><br>
   <h1>CalculatorM3</h1>
 
@@ -11,10 +11,10 @@
   <!-- Screenshots -->
   <table>
     <tr>
-      <td align="center"><img src="screenshots/portrait-light.png" width="180" alt="Portrait Light Theme"><br><sub>Light Theme</sub></td>
-      <td align="center"><img src="screenshots/portrait-dark.png" width="180" alt="Portrait Dark Theme"><br><sub>Dark Theme</sub></td>
-      <td align="center"><img src="screenshots/scientific-functions.png" width="180" alt="Scientific Functions"><br><sub>Scientific Functions</sub></td>
-      <td align="center"><img src="screenshots/history-sheet.png" width="180" alt="History Sheet"><br><sub>Calculation History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/1.png" width="180" alt="Portrait Light Theme"><br><sub>Light Theme</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/2.png" width="180" alt="Portrait Dark Theme"><br><sub>Dark Theme</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/3.png" width="180" alt="Scientific Functions"><br><sub>Scientific Functions</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/4.png" width="180" alt="History Sheet"><br><sub>Calculation History</sub></td>
     </tr>
   </table>
 
@@ -22,8 +22,8 @@
 
   <table>
     <tr>
-      <td align="center"><img src="screenshots/landscape.png" width="400" alt="Landscape Mode"><br><sub>Landscape Mode</sub></td>
-      <td align="center"><img src="screenshots/foldable.png" width="280" alt="Foldable Device"><br><sub>Foldable Support</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/5.png" width="400" alt="Landscape Mode"><br><sub>Landscape Mode</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/6.png" width="280" alt="Foldable Device"><br><sub>Foldable Support</sub></td>
     </tr>
   </table>
 
