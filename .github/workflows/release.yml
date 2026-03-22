@@ -49,8 +49,8 @@ jobs:
           printf 'keyAlias=%s\n' "$KEY_ALIAS" >> keystore.properties
           printf 'keyPassword=%s\n' "$KEY_PASSWORD" >> keystore.properties
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease
+      - name: Build release APK and AAB
+        run: ./gradlew assembleRelease bundleRelease
 
       - name: Build debug APK (fallback)
         if: failure()
@@ -95,3 +95,4 @@ jobs:
           files: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/apk/debug/*.apk
+            app/build/outputs/bundle/release/*.aab
