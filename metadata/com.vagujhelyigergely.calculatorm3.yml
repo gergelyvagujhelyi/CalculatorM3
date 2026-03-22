@@ -13,9 +13,9 @@ Binaries:
   https://github.com/gergelyvagujhelyi/CalculatorM3/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: 1.3.0
-    versionCode: 6
-    commit: 58c645a9e79829822774067a46145cb4b4ff9ae5
+  - versionName: 1.4.0
+    versionCode: 7
+    commit: TBD
     subdir: app
     gradle:
       - yes
@@ -24,5 +24,5 @@ AllowedAPKSigningKeys: 49646ed216aa6e8f23326999052f6704b6e9228be310b56b6e8b3ab81
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.3.0
-CurrentVersionCode: 6
+CurrentVersion: 1.4.0
+CurrentVersionCode: 7

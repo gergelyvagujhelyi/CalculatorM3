@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import android.content.res.Configuration
@@ -446,22 +447,11 @@ fun DisplaySection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Expression with auto-sizing font
-            val displayText = formatted.ifEmpty { "0" }
-
+            // Expression with auto-sizing font — uses TextMeasurer to compute
+            // correct font size and front-trim in a single pass (no flicker)
             val fontSizeSteps = remember { listOf(56f, 46f, 38f, 32f, 28f) }
-            var fontStepIndex by remember { mutableIntStateOf(0) }
-            var readyToDraw by remember { mutableStateOf(true) }
+            val textMeasurer = rememberTextMeasurer()
 
-            // When expression gets shorter, try growing back to largest font
-            val prevExprLength = remember { mutableIntStateOf(0) }
-            if (expression.length < prevExprLength.intValue && fontStepIndex > 0) {
-                fontStepIndex = 0
-                readyToDraw = false
-            }
-            prevExprLength.intValue = expression.length
-
-            val currentFontSize = fontSizeSteps[fontStepIndex]
             val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
 
             val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
@@ -485,7 +475,77 @@ fun DisplaySection(
                 alpha > 0.5f
             } else false
 
-            Box(modifier = Modifier.fillMaxWidth()) {
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val rawText = formatted.ifEmpty { "0" }
+                val measureConstraints = androidx.compose.ui.unit.Constraints(
+                    maxWidth = constraints.maxWidth
+                )
+
+                // Find largest font that fits in 2 lines
+                fun makeStyle(step: Int) = androidx.compose.ui.text.TextStyle(
+                    fontSize = fontSizeSteps[step].sp,
+                    fontWeight = FontWeight.Light,
+                    lineHeight = (fontSizeSteps[step] * 1.15f).sp,
+                    letterSpacing = (-0.5).sp,
+                )
+
+                var bestStep = fontSizeSteps.lastIndex
+                for (i in fontSizeSteps.indices) {
+                    val result = textMeasurer.measure(
+                        text = androidx.compose.ui.text.AnnotatedString(rawText),
+                        style = makeStyle(i),
+                        constraints = measureConstraints,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (!result.hasVisualOverflow) {
+                        bestStep = i
+                        break
+                    }
+                }
+
+                // If at smallest font and still overflows, trim from front
+                var bestTrim = 0
+                if (bestStep == fontSizeSteps.lastIndex) {
+                    val style = makeStyle(bestStep)
+                    val fullResult = textMeasurer.measure(
+                        text = androidx.compose.ui.text.AnnotatedString(rawText),
+                        style = style,
+                        constraints = measureConstraints,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (fullResult.hasVisualOverflow) {
+                        // Estimate how many chars are hidden
+                        val visibleEnd = fullResult.getLineEnd(
+                            fullResult.lineCount - 1, true
+                        )
+                        val excess = rawText.length - visibleEnd
+                        bestTrim = (excess + 2).coerceAtLeast(1)
+
+                        // Fine-tune until it fits
+                        while (bestTrim < rawText.length) {
+                            val trimmedText = "… " + rawText.drop(bestTrim)
+                            val trimResult = textMeasurer.measure(
+                                text = androidx.compose.ui.text.AnnotatedString(trimmedText),
+                                style = style,
+                                constraints = measureConstraints,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            if (!trimResult.hasVisualOverflow) break
+                            bestTrim++
+                        }
+                    }
+                }
+
+                val displayText = if (bestTrim > 0 && rawText.length > bestTrim) {
+                    "… " + rawText.drop(bestTrim)
+                } else {
+                    rawText
+                }
+                val currentFontSize = fontSizeSteps[bestStep]
+
                 Text(
                     text = displayText,
                     fontSize = currentFontSize.sp,
@@ -498,33 +558,30 @@ fun DisplaySection(
                     letterSpacing = (-0.5).sp,
                     onTextLayout = { result ->
                         textLayoutResult.value = result
-                        if (result.hasVisualOverflow && fontStepIndex < fontSizeSteps.lastIndex) {
-                            fontStepIndex++
-                            readyToDraw = false
-                        } else {
-                            readyToDraw = true
-                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .graphicsLayer { alpha = if (readyToDraw) 1f else 0f }
-                        .pointerInput(displayText) {
+                        .pointerInput(displayText, bestTrim) {
                             detectTapGestures { offset ->
                                 textLayoutResult.value?.let { layout ->
                                     val tappedOffset = layout.getOffsetForPosition(offset)
-                                    val rawCursor = mapCursorFromFormatted(expression, tappedOffset)
+                                    val adjustedOffset = if (bestTrim > 0) {
+                                        (tappedOffset + bestTrim - 2).coerceAtLeast(0)
+                                    } else tappedOffset
+                                    val rawCursor = mapCursorFromFormatted(expression, adjustedOffset)
                                     onCursorChange(rawCursor)
                                 }
                             }
                         }
                 )
 
-                if (cursorVisible && blinkVisible && readyToDraw) {
+                if (cursorVisible && blinkVisible) {
                     textLayoutResult.value?.let { layout ->
-                        // Coerce to the layout's actual text length to avoid crash
-                        // when the layout is stale (not yet updated for the new expression)
                         val layoutLen = layout.layoutInput.text.length
-                        val cursorOffset = cursorInFormatted.coerceIn(0, layoutLen)
+                        val adjustedCursor = if (bestTrim > 0) {
+                            (cursorInFormatted - bestTrim + 2).coerceAtLeast(0)
+                        } else cursorInFormatted
+                        val cursorOffset = adjustedCursor.coerceIn(0, layoutLen)
                         val cursorRect = layout.getCursorRect(cursorOffset)
                         Box(
                             modifier = Modifier

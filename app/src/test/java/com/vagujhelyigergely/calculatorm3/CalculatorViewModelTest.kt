@@ -187,7 +187,7 @@ class CalculatorViewModelTest {
     fun divisionByZero() {
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error: ÷ by 0")
+        assertResult("Error: divisionByZero")
         assertExpression("")
     }
 
@@ -391,7 +391,7 @@ class CalculatorViewModelTest {
         // 100! exceeds the limit
         tap("1", "0", "0", "!")
         tapEquals()
-        assertResult("Error: bad n!")
+        assertResult("Error: invalidOperation")
         assertExpression("")
     }
 
@@ -485,7 +485,7 @@ class CalculatorViewModelTest {
         tap("+/−")
         tap("√")
         tapEquals()
-        assertResult("Error: √ of neg")
+        assertResult("Error: invalidOperation")
         assertExpression("")
     }
 
@@ -720,7 +720,7 @@ class CalculatorViewModelTest {
         // 5÷0=Error, then 3+2=5
         tap("5", "÷", "0")
         tapEquals()
-        assertResult("Error: ÷ by 0")
+        assertResult("Error: divisionByZero")
         assertExpression("")
         tap("3", "+", "2")
         tapEquals()
@@ -902,7 +902,7 @@ class CalculatorViewModelTest {
         // 5 + 10÷0 = Error
         tap("5", "+", "1", "0", "÷", "0")
         tapEquals()
-        assertResult("Error: ÷ by 0")
+        assertResult("Error: divisionByZero")
         assertExpression("")
     }
 
@@ -910,7 +910,7 @@ class CalculatorViewModelTest {
     fun zeroByZero() {
         tap("0", "÷", "0")
         tapEquals()
-        assertResult("Error: ÷ by 0")
+        assertResult("Error: divisionByZero")
         assertExpression("")
     }
 
@@ -1729,7 +1729,7 @@ class CalculatorViewModelTest {
         tap("4")
         repeat(21) { tap("√") }
         tapEquals()
-        assertResult("Error: too nested")
+        assertResult("Error: invalidOperation")
         assertExpression("")
     }
 
@@ -1743,13 +1743,13 @@ class CalculatorViewModelTest {
         assert(!vm.result.startsWith("Error")) { "Should succeed at depth 20, got: ${vm.result}" }
     }
 
-    // ── Specific error messages ───────────────────────────────────────
+    // ── IEEE 754 error messages ────────────────────────────────────────
 
     @Test
     fun divisionByZeroMessage() {
         tap("1", "÷", "0")
         tapEquals()
-        assertResult("Error: ÷ by 0")
+        assertResult("Error: divisionByZero")
     }
 
     @Test
@@ -1758,14 +1758,22 @@ class CalculatorViewModelTest {
         tap("+/−")
         tap("√")
         tapEquals()
-        assertResult("Error: √ of neg")
+        assertResult("Error: invalidOperation")
     }
 
     @Test
     fun invalidFactorialMessage() {
         tap("1", "0", "0", "!")
         tapEquals()
-        assertResult("Error: bad n!")
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun overflowMessage() {
+        // 9^9999 overflows Double → Non-finite
+        tap("9", "^", "9", "9", "9", "9")
+        tapEquals()
+        assertResult("Error: overflow")
     }
 
     // --- Implicit multiply before √ ---
