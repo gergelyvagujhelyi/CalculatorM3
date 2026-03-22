@@ -1,0 +1,4 @@
+- Fix implicit multiply with % and π
+- Reject malformed postfix expressions
+- Production readiness improvements
+- Calculator bug fixes and UI polish

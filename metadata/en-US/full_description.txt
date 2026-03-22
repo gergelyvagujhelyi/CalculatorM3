@@ -1,0 +1,61 @@
+Every calculation you make is your business — not Big Tech's. Calculator M3 is a beautifully designed calculator built with Material 3 that works entirely offline with zero data collection, zero analytics, and zero network permissions.
+
+Unlike other calculators, this app doesn't phone home. No usage tracking, no telemetry, no ad frameworks buried in the code. It does one thing and does it well: math.
+
+✓ Full expression evaluation
+✓ Live result preview
+✓ Scientific functions
+✓ Calculation history
+✓ Material 3 dynamic theming
+✓ Completely offline
+
+🔢 FULL EXPRESSION EVALUATION
+
+Type complete mathematical expressions with proper operator precedence (PEMDAS) and parentheses up to 20 levels deep. See the result update in real-time as you type.
+
+- Full PEMDAS operator precedence
+- Parentheses with 20 levels of nesting
+- Live result preview as you type
+- Tap anywhere in the expression to edit
+- High-precision BigDecimal arithmetic
+- Engineering notation for large numbers
+
+🔬 SCIENTIFIC FUNCTIONS
+
+- Square root (√)
+- Pi (π) constant
+- Power (^) exponentiation
+- Factorial (!) for values 0-99
+- Percent (%) with consumer-style support
+- Implicit multiplication (2π, 3√2, etc.)
+
+📜 CALCULATION HISTORY
+
+- Stores up to 100 recent calculations
+- Persists across app restarts
+- Tap entries to reload them
+- Clear history when needed
+
+🎨 MATERIAL 3 DESIGN
+
+- Material You dynamic colors (Android 12+)
+- Automatic light and dark mode
+- Smooth button press animations
+- Haptic feedback
+- Adaptive layout for portrait, landscape, and foldable devices
+- Auto-sizing display for long expressions
+
+🛡️ PRIVACY & OPEN SOURCE
+
+- 100% open source (GPL v3)
+- Zero permissions — no internet access
+- No tracking, analytics, or ads
+- No data collection of any kind
+- Your calculations stay on your device, period
+
+📱 WORKS ON ALL DEVICES
+
+- Phones in portrait and landscape
+- Foldable devices (Pixel Fold, Galaxy Z Fold)
+- Tablets
+- Responsive button sizing and layout

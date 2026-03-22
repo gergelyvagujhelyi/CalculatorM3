@@ -1,4 +1,4 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
@@ -185,7 +185,10 @@ class CalculatorViewModel(
                     while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷', '^')) {
                         expression = expression.dropLast(1)
                     }
-                    if (expression.isEmpty()) return
+                    if (expression.isEmpty()) {
+                        cursorPosition = 0
+                        return
+                    }
                     cursorPosition = expression.length
                     val res = evaluate(expression)
                     history = "$expression ="

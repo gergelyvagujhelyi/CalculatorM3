@@ -1,8 +1,8 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import com.m3calculator.ui.theme.CalculatorM3Theme
+import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 import org.junit.Rule
 import org.junit.Test
 
