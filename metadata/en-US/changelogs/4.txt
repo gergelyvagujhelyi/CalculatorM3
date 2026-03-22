@@ -1,0 +1,5 @@
+- Add foldable device support (Pixel Fold, Galaxy Z Fold)
+- Rename package to com.vagujhelyigergely.calculatorm3
+- Add F-Droid metadata and store listing
+- Checksums appended to GitHub Release notes
+- Redesigned README

@@ -1,4 +1,4 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import org.junit.Assert.assertEquals
 import org.junit.Before

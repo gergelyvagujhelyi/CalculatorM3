@@ -1,0 +1,4 @@
+- Add foldable device support (Pixel 9 Pro Fold, Galaxy Z Fold)
+- Adaptive layout for near-square screens
+- Redesigned README with screenshots
+- Auto-generate checksums in GitHub releases

@@ -1,4 +1,4 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*

@@ -1,0 +1,24 @@
+Categories:
+  - Science & Education
+License: GPL-3.0-only
+AuthorName: Gergely Vagujhelyi
+SourceCode: https://github.com/gergelyvagujhelyi/CalculatorM3
+IssueTracker: https://github.com/gergelyvagujhelyi/CalculatorM3/issues
+
+AutoName: Calculator M3
+
+RepoType: git
+Repo: https://github.com/gergelyvagujhelyi/CalculatorM3.git
+
+Builds:
+  - versionName: 1.1.1
+    versionCode: 3
+    commit: v1.1.1
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.1.1
+CurrentVersionCode: 3

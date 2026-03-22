@@ -1,4 +1,4 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import android.content.Context
 import android.os.Bundle
@@ -9,7 +9,7 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
-import com.m3calculator.ui.theme.CalculatorM3Theme
+import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
 class MainActivity : ComponentActivity() {
 
