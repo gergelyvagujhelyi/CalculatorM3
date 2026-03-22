@@ -1,0 +1,5 @@
+- Add Google Play integration with automated AAB deployment
+- Add privacy policy page
+- Fix F-Droid reproducible build issues
+- Exclude version-control-info.textproto for build reproducibility
+- Fix Binaries formatting in F-Droid metadata

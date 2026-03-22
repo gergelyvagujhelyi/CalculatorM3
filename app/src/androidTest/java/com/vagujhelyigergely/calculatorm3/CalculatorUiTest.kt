@@ -512,27 +512,27 @@ class CalculatorUiTest {
         expressionShows("9.869604401")
     }
 
-    // ── Division by zero ──────────────────────────────────────────
+    // ── IEEE 754 error messages ─────────────────────────────────────
 
     @Test
     fun divisionByZero() {
         launch()
         tap("5", "÷", "0", "=")
-        expressionShows("Error")
+        expressionShows("Error: divisionByZero")
     }
 
     @Test
     fun divisionByZeroInChain() {
         launch()
         tap("5", "+", "1", "0", "÷", "0", "=")
-        expressionShows("Error")
+        expressionShows("Error: divisionByZero")
     }
 
     @Test
     fun zeroByZero() {
         launch()
         tap("0", "÷", "0", "=")
-        expressionShows("Error")
+        expressionShows("Error: divisionByZero")
     }
 
     // ── Factorial (additional) ────────────────────────────────────
@@ -545,10 +545,10 @@ class CalculatorUiTest {
     }
 
     @Test
-    fun factorialAbove99ReturnsError() {
+    fun factorialAbove99ReturnsInvalidOperation() {
         launch()
         tap("1", "0", "0", "!", "=")
-        expressionShows("Error")
+        expressionShows("Error: invalidOperation")
     }
 
     @Test
@@ -598,10 +598,10 @@ class CalculatorUiTest {
     }
 
     @Test
-    fun sqrtOfNegativeReturnsError() {
+    fun sqrtOfNegativeReturnsInvalidOperation() {
         launch()
         tap("4", "+/−", "√", "=")
-        expressionShows("Error")
+        expressionShows("Error: invalidOperation")
     }
 
     @Test
@@ -949,5 +949,44 @@ class CalculatorUiTest {
         // .5 + 3 = 3.5
         tap(".", "5", "+", "3", "=")
         expressionShows("3.5")
+    }
+
+    // ── IEEE 754 overflow ────────────────────────────────────────────
+
+    @Test
+    fun overflowOnLargePower() {
+        launch()
+        // 9^9999 overflows Double → Error: overflow
+        tap("9", "^", "9", "9", "9", "9", "=")
+        expressionShows("Error: overflow")
+    }
+
+    // ── IEEE 754 error recovery ──────────────────────────────────────
+
+    @Test
+    fun newExpressionAfterDivisionByZero() {
+        launch()
+        tap("5", "÷", "0", "=")
+        expressionShows("Error: divisionByZero")
+        tap("3", "+", "2", "=")
+        expressionShows("5")
+    }
+
+    @Test
+    fun newExpressionAfterInvalidOperation() {
+        launch()
+        tap("4", "+/−", "√", "=")
+        expressionShows("Error: invalidOperation")
+        tap("9", "√", "=")
+        expressionShows("3")
+    }
+
+    @Test
+    fun newExpressionAfterOverflow() {
+        launch()
+        tap("9", "^", "9", "9", "9", "9", "=")
+        expressionShows("Error: overflow")
+        tap("2", "+", "3", "=")
+        expressionShows("5")
     }
 }

@@ -1,0 +1,2 @@
+- Increase arithmetic precision to 30 significant digits for IEEE 754 compatibility
+- Dynamic display precision based on screen width

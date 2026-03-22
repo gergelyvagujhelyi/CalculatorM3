@@ -410,15 +410,15 @@ class CalculatorViewModel(
             }
         } catch (e: ArithmeticException) {
             when {
-                e.message?.contains("Division by zero") == true -> "Error: ÷ by 0"
-                e.message?.contains("Negative sqrt") == true -> "Error: √ of neg"
-                e.message?.contains("Invalid factorial") == true -> "Error: bad n!"
+                e.message?.contains("Division by zero") == true -> "Error: divisionByZero"
+                e.message?.contains("Negative sqrt") == true -> "Error: invalidOperation"
+                e.message?.contains("Invalid factorial") == true -> "Error: invalidOperation"
                 e.message?.contains("Non-finite") == true -> "Error: overflow"
-                e.message?.contains("Nesting too deep") == true -> "Error: too nested"
-                else -> "Error"
+                e.message?.contains("Nesting too deep") == true -> "Error: invalidOperation"
+                else -> "Error: invalidOperation"
             }
         } catch (_: Exception) {
-            "Error"
+            "Error: invalidOperation"
         }
     }
 

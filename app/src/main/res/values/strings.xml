@@ -1,14 +1,11 @@
 <resources>
     <string name="app_name">Calculator</string>
 
-    <!-- Error messages -->
+    <!-- IEEE 754 standard error messages -->
     <string name="error">Error</string>
-    <string name="error_division_by_zero">Can\'t divide by zero</string>
-    <string name="error_negative_sqrt">Can\'t take √ of negative</string>
-    <string name="error_invalid_factorial">Invalid factorial</string>
-    <string name="error_overflow">Overflow</string>
-    <string name="error_too_nested">Expression too nested</string>
-    <string name="error_invalid_input">Invalid input</string>
+    <string name="error_division_by_zero">divisionByZero</string>
+    <string name="error_invalid_operation">invalidOperation</string>
+    <string name="error_overflow">overflow</string>
 
     <!-- History -->
     <string name="history">History</string>
