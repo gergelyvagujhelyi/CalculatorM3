@@ -147,7 +147,7 @@ private fun PortraitLayout(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
+            .safeDrawingPadding()
     ) {
         // Top bar with history button
         Row(
@@ -219,7 +219,7 @@ private fun LandscapeLayout(
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .systemBarsPadding()
+            .safeDrawingPadding()
     ) {
         // Left side: display
         Column(
