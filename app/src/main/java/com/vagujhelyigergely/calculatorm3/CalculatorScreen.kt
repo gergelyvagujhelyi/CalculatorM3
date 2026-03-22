@@ -368,7 +368,11 @@ fun DisplaySection(
     val colorScheme = MaterialTheme.colorScheme
 
     val formatted = formatExpression(displayExpression)
-    val cursorInFormatted = mapCursorToFormatted(expression, cursorPosition)
+    // When E notation is active, display differs from raw expression —
+    // cursor mapping is invalid, so disable cursor interaction
+    val eNotationActive = displayExpression != expression
+    val cursorInFormatted = if (eNotationActive) formatted.length
+        else mapCursorToFormatted(expression, cursorPosition)
 
     Column(
         modifier = modifier.clipToBounds(),
@@ -452,7 +456,7 @@ fun DisplaySection(
             val fontSizeSteps = remember { listOf(56f, 46f, 38f, 32f, 28f) }
             val textMeasurer = rememberTextMeasurer()
 
-            val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty()
+            val cursorVisible = cursorPosition < expression.length && expression.isNotEmpty() && !eNotationActive
 
             val textLayoutResult = remember { mutableStateOf<androidx.compose.ui.text.TextLayoutResult?>(null) }
             val blinkVisible = if (cursorVisible) {
@@ -477,66 +481,74 @@ fun DisplaySection(
 
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val rawText = formatted.ifEmpty { "0" }
-                val measureConstraints = androidx.compose.ui.unit.Constraints(
-                    maxWidth = constraints.maxWidth
-                )
+                val maxWidthPx = constraints.maxWidth
 
-                // Find largest font that fits in 2 lines
-                fun makeStyle(step: Int) = androidx.compose.ui.text.TextStyle(
-                    fontSize = fontSizeSteps[step].sp,
-                    fontWeight = FontWeight.Light,
-                    lineHeight = (fontSizeSteps[step] * 1.15f).sp,
-                    letterSpacing = (-0.5).sp,
-                )
-
-                var bestStep = fontSizeSteps.lastIndex
-                for (i in fontSizeSteps.indices) {
-                    val result = textMeasurer.measure(
-                        text = androidx.compose.ui.text.AnnotatedString(rawText),
-                        style = makeStyle(i),
-                        constraints = measureConstraints,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                // Cache measurement results — only recompute when text or width changes
+                val (bestStep, bestTrim) = remember(rawText, maxWidthPx) {
+                    val measureConstraints = androidx.compose.ui.unit.Constraints(
+                        maxWidth = maxWidthPx
                     )
-                    if (!result.hasVisualOverflow) {
-                        bestStep = i
-                        break
-                    }
-                }
 
-                // If at smallest font and still overflows, trim from front
-                var bestTrim = 0
-                if (bestStep == fontSizeSteps.lastIndex) {
-                    val style = makeStyle(bestStep)
-                    val fullResult = textMeasurer.measure(
-                        text = androidx.compose.ui.text.AnnotatedString(rawText),
-                        style = style,
-                        constraints = measureConstraints,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                    fun makeStyle(step: Int) = androidx.compose.ui.text.TextStyle(
+                        fontSize = fontSizeSteps[step].sp,
+                        fontWeight = FontWeight.Light,
+                        lineHeight = (fontSizeSteps[step] * 1.15f).sp,
+                        letterSpacing = (-0.5).sp,
                     )
-                    if (fullResult.hasVisualOverflow) {
-                        // Estimate how many chars are hidden
-                        val visibleEnd = fullResult.getLineEnd(
-                            fullResult.lineCount - 1, true
+
+                    // Find largest font that fits in 2 lines
+                    var step = fontSizeSteps.lastIndex
+                    for (i in fontSizeSteps.indices) {
+                        val result = textMeasurer.measure(
+                            text = androidx.compose.ui.text.AnnotatedString(rawText),
+                            style = makeStyle(i),
+                            constraints = measureConstraints,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
-                        val excess = rawText.length - visibleEnd
-                        bestTrim = (excess + 2).coerceAtLeast(1)
-
-                        // Fine-tune until it fits
-                        while (bestTrim < rawText.length) {
-                            val trimmedText = "… " + rawText.drop(bestTrim)
-                            val trimResult = textMeasurer.measure(
-                                text = androidx.compose.ui.text.AnnotatedString(trimmedText),
-                                style = style,
-                                constraints = measureConstraints,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            if (!trimResult.hasVisualOverflow) break
-                            bestTrim++
+                        if (!result.hasVisualOverflow) {
+                            step = i
+                            break
                         }
                     }
+
+                    // If at smallest font and still overflows, trim from front
+                    var trim = 0
+                    if (step == fontSizeSteps.lastIndex) {
+                        val style = makeStyle(step)
+                        val fullResult = textMeasurer.measure(
+                            text = androidx.compose.ui.text.AnnotatedString(rawText),
+                            style = style,
+                            constraints = measureConstraints,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (fullResult.hasVisualOverflow) {
+                            val visibleEnd = fullResult.getLineEnd(
+                                fullResult.lineCount - 1, true
+                            )
+                            val excess = rawText.length - visibleEnd
+                            trim = (excess + 2).coerceAtLeast(1)
+
+                            // Fine-tune until it fits (guard: max 20 extra iterations)
+                            var guard = 0
+                            while (trim < rawText.length - 1 && guard < 20) {
+                                val trimmedText = "… " + rawText.drop(trim)
+                                val trimResult = textMeasurer.measure(
+                                    text = androidx.compose.ui.text.AnnotatedString(trimmedText),
+                                    style = style,
+                                    constraints = measureConstraints,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (!trimResult.hasVisualOverflow) break
+                                trim++
+                                guard++
+                            }
+                        }
+                    }
+
+                    step to trim
                 }
 
                 val displayText = if (bestTrim > 0 && rawText.length > bestTrim) {
@@ -545,6 +557,8 @@ fun DisplaySection(
                     rawText
                 }
                 val currentFontSize = fontSizeSteps[bestStep]
+                // "… " prefix length — used to clamp cursor/tap offsets to visible area
+                val prefixLen = if (bestTrim > 0) 2 else 0
 
                 Text(
                     text = displayText,
@@ -561,13 +575,16 @@ fun DisplaySection(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .pointerInput(displayText, bestTrim) {
+                        .pointerInput(displayText, bestTrim, eNotationActive) {
+                            if (eNotationActive) return@pointerInput
                             detectTapGestures { offset ->
                                 textLayoutResult.value?.let { layout ->
                                     val tappedOffset = layout.getOffsetForPosition(offset)
+                                    // Clamp taps on "… " prefix to the first visible char
+                                    val clampedTap = tappedOffset.coerceAtLeast(prefixLen)
                                     val adjustedOffset = if (bestTrim > 0) {
-                                        (tappedOffset + bestTrim - 2).coerceAtLeast(0)
-                                    } else tappedOffset
+                                        clampedTap + bestTrim - prefixLen
+                                    } else clampedTap
                                     val rawCursor = mapCursorFromFormatted(expression, adjustedOffset)
                                     onCursorChange(rawCursor)
                                 }
@@ -575,11 +592,13 @@ fun DisplaySection(
                         }
                 )
 
-                if (cursorVisible && blinkVisible) {
+                // Hide cursor if it's in the trimmed-away portion
+                val cursorInVisibleRange = bestTrim == 0 || cursorInFormatted >= bestTrim
+                if (cursorVisible && blinkVisible && cursorInVisibleRange) {
                     textLayoutResult.value?.let { layout ->
                         val layoutLen = layout.layoutInput.text.length
                         val adjustedCursor = if (bestTrim > 0) {
-                            (cursorInFormatted - bestTrim + 2).coerceAtLeast(0)
+                            cursorInFormatted - bestTrim + prefixLen
                         } else cursorInFormatted
                         val cursorOffset = adjustedCursor.coerceIn(0, layoutLen)
                         val cursorRect = layout.getCursorRect(cursorOffset)

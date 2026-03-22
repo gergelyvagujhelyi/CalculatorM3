@@ -1,0 +1,3 @@
+- Fix cursor and tap interaction bugs in long expression display
+- Fix wrong cursor position when tapping E notation results
+- Improve display scroll performance with measurement caching
