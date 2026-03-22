@@ -1,0 +1,11 @@
+- Initial release
+- Full expression evaluation with operator precedence
+- Live result preview as you type
+- Scientific functions (√, π, ^, !)
+- Calculation history with persistence
+- Expression cursor with tap-to-position
+- Material 3 dynamic theming
+- Light and dark mode
+- Haptic feedback and animations
+- BigDecimal high-precision arithmetic
+- Security hardening and ProGuard
