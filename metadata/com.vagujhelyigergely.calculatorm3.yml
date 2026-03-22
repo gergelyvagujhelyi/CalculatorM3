@@ -9,7 +9,7 @@ AutoName: Calculator
 
 RepoType: git
 Repo: https://github.com/gergelyvagujhelyi/CalculatorM3.git
-Binaries:
+Binaries: 
   https://github.com/gergelyvagujhelyi/CalculatorM3/releases/download/v%v/app-release.apk
 
 Builds:
