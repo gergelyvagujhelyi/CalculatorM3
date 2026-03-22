@@ -65,6 +65,27 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Update README checksums
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
+          fi
+          MD5=$(md5sum "$APK" | awk '{print $1}')
+          SHA1=$(sha1sum "$APK" | awk '{print $1}')
+          SHA256=$(sha256sum "$APK" | awk '{print $1}')
+          sed -i "s|<!-- md5 -->.*<!-- /md5 -->|<!-- md5 -->\`${MD5}\`<!-- /md5 -->|" README.md
+          sed -i "s|<!-- sha1 -->.*<!-- /sha1 -->|<!-- sha1 -->\`${SHA1}\`<!-- /sha1 -->|" README.md
+          sed -i "s|<!-- sha256 -->.*<!-- /sha256 -->|<!-- sha256 -->\`${SHA256}\`<!-- /sha256 -->|" README.md
+
+      - name: Commit updated checksums
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git diff --cached --quiet || git commit -m "Update checksums for ${{ steps.version.outputs.tag }}"
+          git push origin HEAD:${{ github.event.repository.default_branch }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
