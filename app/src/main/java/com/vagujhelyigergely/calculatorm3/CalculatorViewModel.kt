@@ -340,13 +340,22 @@ class CalculatorViewModel(
         if (!value.startsWith("Error") && value.length > maxDisplayLength) {
             try {
                 val bd = BigDecimal(value)
-                val displayPrecision = MathContext((maxDisplayLength - 4).coerceIn(10, 30), RoundingMode.HALF_UP)
-                val rounded = bd.round(displayPrecision).stripTrailingZeros()
+                // Iteratively reduce precision until the E notation fits.
+                // Large exponents (E+197) and engineering notation (369.7E+195)
+                // need more overhead chars than a fixed estimate can provide.
+                var sigFigs = (maxDisplayLength - 4).coerceIn(6, 30)
+                while (sigFigs >= 6) {
+                    val rounded = bd.round(MathContext(sigFigs, RoundingMode.HALF_UP)).stripTrailingZeros()
+                    val eng = rounded.toEngineeringString()
+                    val result = if (eng.contains('E') || eng.length <= maxDisplayLength) eng
+                        else buildEngineeringString(rounded)
+                    if (result.length <= maxDisplayLength) return result
+                    sigFigs--
+                }
+                // Fallback: return the shortest E notation we could produce
+                val rounded = bd.round(MathContext(6, RoundingMode.HALF_UP)).stripTrailingZeros()
                 val eng = rounded.toEngineeringString()
-                // toEngineeringString may return plain for small integers (scale 0).
-                // In that case, build engineering notation manually.
-                if (eng.contains('E') || eng.length <= maxDisplayLength) return eng
-                return buildEngineeringString(rounded)
+                return if (eng.contains('E')) eng else buildEngineeringString(rounded)
             } catch (_: NumberFormatException) {}
         }
         return value

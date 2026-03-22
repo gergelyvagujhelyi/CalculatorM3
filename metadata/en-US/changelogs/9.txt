@@ -1,0 +1,2 @@
+- Fix E notation display overflow for huge numbers
+- Fix history text filling screen when using large results in calculations
