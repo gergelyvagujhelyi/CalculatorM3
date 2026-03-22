@@ -1,4 +1,8 @@
 - Add foldable device support (Pixel Fold, Galaxy Z Fold)
+- Show recent calculations inline on foldable devices
+- Fix camera cutout overlap in landscape mode
+- Fix crash when pressing operator then equals
+- Updated launcher icons
 - Rename package to com.vagujhelyigergely.calculatorm3
 - Add F-Droid metadata and store listing
 - Checksums appended to GitHub Release notes
