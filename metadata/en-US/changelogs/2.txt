@@ -1,4 +1,7 @@
-- Fix implicit multiply with % and π
-- Reject malformed postfix expressions
-- Production readiness improvements
-- Calculator bug fixes and UI polish
+- Add landscape layout with side-by-side display and button grid
+- Persist calculator state across process death
+- Persist calculation history across app restarts
+- Operator replacement when typing consecutive operators
+- Fix +/− to toggle sign of current operand, not whole expression
+- Consumer-style percentage semantics with + and −
+- Production readiness improvements and bug fixes

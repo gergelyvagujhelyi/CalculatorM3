@@ -1,0 +1,3 @@
+- Show end of long expressions instead of truncating with ellipsis
+- Flicker-free display using single-pass TextMeasurer
+- IEEE 754 standard error messages (divisionByZero, invalidOperation, overflow)
