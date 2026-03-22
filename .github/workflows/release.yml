@@ -65,36 +65,16 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Update README checksums
+      - name: Generate checksums
+        id: checksums
         run: |
           APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
           if [ -z "$APK" ]; then
             APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
           fi
-          MD5=$(md5sum "$APK" | awk '{print $1}')
-          SHA1=$(sha1sum "$APK" | awk '{print $1}')
-          SHA256=$(sha256sum "$APK" | awk '{print $1}')
-          sed -i "s|<!-- md5 -->.*<!-- /md5 -->|<!-- md5 -->\`${MD5}\`<!-- /md5 -->|" README.md
-          sed -i "s|<!-- sha1 -->.*<!-- /sha1 -->|<!-- sha1 -->\`${SHA1}\`<!-- /sha1 -->|" README.md
-          sed -i "s|<!-- sha256 -->.*<!-- /sha256 -->|<!-- sha256 -->\`${SHA256}\`<!-- /sha256 -->|" README.md
-
-      - name: Create checksums PR
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          BRANCH="chore/checksums-${{ steps.version.outputs.tag }}"
-          git checkout -b "$BRANCH"
-          git add README.md
-          if ! git diff --cached --quiet; then
-            git commit -m "Update checksums for ${{ steps.version.outputs.tag }}"
-            git push origin "$BRANCH"
-            gh pr create \
-              --title "Update checksums for ${{ steps.version.outputs.tag }}" \
-              --body "Auto-generated PR to update README checksums after release build." \
-              --base "${{ github.event.repository.default_branch }}"
-          fi
+          echo "md5=$(md5sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "sha1=$(sha1sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "sha256=$(sha256sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -102,6 +82,16 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Calculator M3 ${{ steps.version.outputs.tag }}
           generate_release_notes: true
+          append_body: true
+          body: |
+
+            ## 🔑 Checksums
+
+            | Algorithm  | Value |
+            |------------|-------|
+            | **MD5**    | `${{ steps.checksums.outputs.md5 }}` |
+            | **SHA1**   | `${{ steps.checksums.outputs.sha1 }}` |
+            | **SHA-256**| `${{ steps.checksums.outputs.sha256 }}` |
           files: |
             app/build/outputs/apk/release/*.apk
             app/build/outputs/apk/debug/*.apk
