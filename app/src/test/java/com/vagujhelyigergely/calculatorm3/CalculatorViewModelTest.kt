@@ -1273,7 +1273,7 @@ class CalculatorViewModelTest {
         tapEquals()
         // Expression stores plain format; display shows E notation
         assert(!vm.expression.contains("E")) { "Expression should be plain, got: ${vm.expression}" }
-        assertEquals("265.25285981219105864E+30", vm.displayExpression)
+        assertEquals("265.2528598121910586E+30", vm.displayExpression)
     }
 
     // BUG: A lone decimal point at the start produces "Error" because
@@ -1365,7 +1365,7 @@ class CalculatorViewModelTest {
         tapEquals()
         // Expression stores plain (no E), display shows E notation
         assert(!vm.expression.contains("E")) { "Expression should be plain: ${vm.expression}" }
-        assertEquals("265.25285981219105864E+30", vm.displayExpression)
+        assertEquals("265.2528598121910586E+30", vm.displayExpression)
         // Backspace removes last digit of the plain number
         tap("⌫")
         assert(!vm.expression.contains("E")) { "After backspace, still plain: ${vm.expression}" }

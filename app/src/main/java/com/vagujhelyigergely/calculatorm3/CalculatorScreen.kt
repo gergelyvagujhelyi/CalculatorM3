@@ -413,6 +413,8 @@ fun DisplaySection(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = colorScheme.outline,
                                 textAlign = TextAlign.End,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Text(
@@ -421,6 +423,8 @@ fun DisplaySection(
                                 fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.End,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -445,6 +449,8 @@ fun DisplaySection(
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.outline,
                     textAlign = TextAlign.End,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
