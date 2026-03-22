@@ -4,6 +4,8 @@
 - Fix crash when pressing operator then equals
 - Updated launcher icons
 - Rename package to com.vagujhelyigergely.calculatorm3
-- Add F-Droid metadata and store listing
+- Add F-Droid and Google Play store preparation
+- Privacy policy page
+- Automated AAB build and Play Store deployment
 - Checksums appended to GitHub Release notes
 - Redesigned README
