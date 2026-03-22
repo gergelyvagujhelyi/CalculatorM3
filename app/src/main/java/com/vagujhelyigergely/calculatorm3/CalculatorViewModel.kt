@@ -333,14 +333,15 @@ class CalculatorViewModel(
     private val MC = MathContext.DECIMAL128
     private val PI = BigDecimal("3.14159265358979323846264338327950288")
     private val HUNDRED = BigDecimal("100")
-    private val DISPLAY_PRECISION = MathContext(10, RoundingMode.HALF_UP)
+    private val RESULT_PRECISION = MathContext(30, RoundingMode.HALF_UP)
 
     /** Format a plain value string as E notation when it exceeds display width. */
     fun formatForDisplay(value: String): String {
         if (!value.startsWith("Error") && value.length > maxDisplayLength) {
             try {
                 val bd = BigDecimal(value)
-                val rounded = bd.round(DISPLAY_PRECISION).stripTrailingZeros()
+                val displayPrecision = MathContext((maxDisplayLength - 4).coerceIn(10, 30), RoundingMode.HALF_UP)
+                val rounded = bd.round(displayPrecision).stripTrailingZeros()
                 val eng = rounded.toEngineeringString()
                 // toEngineeringString may return plain for small integers (scale 0).
                 // In that case, build engineering notation manually.
@@ -404,7 +405,7 @@ class CalculatorViewModel(
             if (stripped.scale() <= 0) {
                 stripped.toBigInteger().toString()
             } else {
-                val formatted = result.round(DISPLAY_PRECISION).stripTrailingZeros()
+                val formatted = result.round(RESULT_PRECISION).stripTrailingZeros()
                 formatted.toPlainString()
             }
         } catch (e: ArithmeticException) {
