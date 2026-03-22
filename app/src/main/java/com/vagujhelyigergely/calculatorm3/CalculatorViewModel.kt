@@ -1,4 +1,4 @@
-package com.m3calculator
+package com.vagujhelyigergely.calculatorm3
 
 import android.content.SharedPreferences
 import androidx.compose.runtime.getValue

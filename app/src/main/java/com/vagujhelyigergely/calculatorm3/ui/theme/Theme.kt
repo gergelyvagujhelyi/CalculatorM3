@@ -1,4 +1,4 @@
-package com.m3calculator.ui.theme
+package com.vagujhelyigergely.calculatorm3.ui.theme
 
 import android.app.Activity
 import android.os.Build

@@ -14,7 +14,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.m3calculator"
+    namespace = "com.vagujhelyigergely.calculatorm3"
     compileSdk = 35
 
     signingConfigs {
@@ -29,11 +29,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.m3calculator"
+        applicationId = "com.vagujhelyigergely.calculatorm3"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = 4
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

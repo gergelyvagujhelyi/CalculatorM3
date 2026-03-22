@@ -1,12 +1,12 @@
 # Compose BOM ships its own consumer ProGuard rules; no blanket keeps needed.
 
 # Keep ViewModel and factory (accessed via reflection by ViewModelProvider)
--keep class com.m3calculator.CalculatorViewModel { *; }
--keep class com.m3calculator.CalculatorViewModelFactory { *; }
+-keep class com.vagujhelyigergely.calculatorm3.CalculatorViewModel { *; }
+-keep class com.vagujhelyigergely.calculatorm3.CalculatorViewModelFactory { *; }
 
 # Keep data classes used in state (Compose snapshots rely on field names)
--keep class com.m3calculator.HistoryEntry { *; }
+-keep class com.vagujhelyigergely.calculatorm3.HistoryEntry { *; }
 
 # Keep CalcButton and ButtonType used by Compose
--keep class com.m3calculator.CalcButton { *; }
--keep class com.m3calculator.ButtonType { *; }
+-keep class com.vagujhelyigergely.calculatorm3.CalcButton { *; }
+-keep class com.vagujhelyigergely.calculatorm3.ButtonType { *; }
