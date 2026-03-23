@@ -488,18 +488,24 @@ fun DisplaySection(
             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
                 val rawText = formatted.ifEmpty { "0" }
                 val maxWidthPx = constraints.maxWidth
+                val baseTextStyle = LocalTextStyle.current
 
                 // Cache measurement results — only recompute when text or width changes
-                val (bestStep, bestTrim) = remember(rawText, maxWidthPx) {
+                val (bestStep, bestTrim) = remember(rawText, maxWidthPx, baseTextStyle) {
                     val measureConstraints = androidx.compose.ui.unit.Constraints(
                         maxWidth = maxWidthPx
                     )
 
-                    fun makeStyle(step: Int) = androidx.compose.ui.text.TextStyle(
-                        fontSize = fontSizeSteps[step].sp,
-                        fontWeight = FontWeight.Light,
-                        lineHeight = (fontSizeSteps[step] * 1.15f).sp,
-                        letterSpacing = (-0.5).sp,
+                    // Merge with LocalTextStyle so the measurement uses the same
+                    // font family and platform style as the Text composable
+                    fun makeStyle(step: Int) = baseTextStyle.merge(
+                        androidx.compose.ui.text.TextStyle(
+                            fontSize = fontSizeSteps[step].sp,
+                            fontWeight = FontWeight.Light,
+                            lineHeight = (fontSizeSteps[step] * 1.15f).sp,
+                            letterSpacing = (-0.5).sp,
+                            textAlign = TextAlign.End,
+                        )
                     )
 
                     // Find largest font that fits in 2 lines
