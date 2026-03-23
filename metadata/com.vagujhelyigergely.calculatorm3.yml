@@ -20,8 +20,8 @@ Builds:
     gradle:
       - yes
 
-  - versionName: 1.4.2
-    versionCode: 9
+  - versionName: 1.4.3
+    versionCode: 10
     commit: TBD
     subdir: app
     gradle:
@@ -31,5 +31,5 @@ AllowedAPKSigningKeys: 49646ed216aa6e8f23326999052f6704b6e9228be310b56b6e8b3ab81
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.4.2
-CurrentVersionCode: 9
+CurrentVersion: 1.4.3
+CurrentVersionCode: 10
