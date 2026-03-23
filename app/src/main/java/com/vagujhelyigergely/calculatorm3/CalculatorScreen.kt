@@ -490,7 +490,7 @@ fun DisplaySection(
                 val maxWidthPx = constraints.maxWidth
 
                 // Cache measurement results — only recompute when text or width changes
-                val (bestStep, bestTrim) = remember(rawText, maxWidthPx) {
+                val (estimatedStep, bestTrim) = remember(rawText, maxWidthPx) {
                     val measureConstraints = androidx.compose.ui.unit.Constraints(
                         maxWidth = maxWidthPx
                     )
@@ -502,7 +502,7 @@ fun DisplaySection(
                         letterSpacing = (-0.5).sp,
                     )
 
-                    // Find largest font that fits in 2 lines
+                    // Find largest font that fits in 2 lines (best-effort estimate)
                     var step = fontSizeSteps.lastIndex
                     for (i in fontSizeSteps.indices) {
                         val result = textMeasurer.measure(
@@ -557,6 +557,13 @@ fun DisplaySection(
                     step to trim
                 }
 
+                // onTextLayout correction: TextMeasurer can disagree with the
+                // actual Text composable on some OEMs (e.g. Samsung One UI).
+                // Start from the TextMeasurer estimate and let onTextLayout
+                // step down further if the real rendering still overflows.
+                var fontCorrection by remember(rawText) { mutableIntStateOf(0) }
+                val bestStep = (estimatedStep + fontCorrection).coerceAtMost(fontSizeSteps.lastIndex)
+
                 val displayText = if (bestTrim > 0 && rawText.length > bestTrim) {
                     "… " + rawText.drop(bestTrim)
                 } else {
@@ -578,6 +585,9 @@ fun DisplaySection(
                     letterSpacing = (-0.5).sp,
                     onTextLayout = { result ->
                         textLayoutResult.value = result
+                        if (result.hasVisualOverflow && bestStep < fontSizeSteps.lastIndex) {
+                            fontCorrection++
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
