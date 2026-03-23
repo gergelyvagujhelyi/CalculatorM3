@@ -1,0 +1,1 @@
+- Fix expression wrapping on Samsung devices (e.g. S25) after continuing from a large result
