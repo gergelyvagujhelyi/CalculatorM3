@@ -118,6 +118,15 @@ class CalculatorViewModel(
         }
     }
 
+    fun setExpressionFromScan(expr: String) {
+        expression = expr
+        cursorPosition = expr.length
+        result = ""
+        history = ""
+        updatePreview()
+        saveState()
+    }
+
     fun loadHistoryEntry(entry: HistoryEntry) {
         // Convert E notation back to plain for safe editing
         val plain = try {
