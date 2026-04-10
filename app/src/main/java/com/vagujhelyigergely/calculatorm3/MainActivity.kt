@@ -9,8 +9,9 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
-import com.vagujhelyigergely.calculatorm3.ai.MathRecognizer
+import com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
@@ -21,9 +22,10 @@ class MainActivity : ComponentActivity() {
         androidx.lifecycle.ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
     }
 
-    private val mathRecognizer by lazy { MathRecognizer() }
+    private val nobodyWhoSolver by lazy { NobodyWhoSolver() }
+    private val liteRTSolver by lazy { LiteRTSolver() }
     private val modelManager by lazy { ModelManager(applicationContext) }
-    private val scanViewModel by lazy { ScanViewModel(mathRecognizer, modelManager) }
+    private val scanViewModel by lazy { ScanViewModel(nobodyWhoSolver, liteRTSolver, modelManager) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,7 +35,7 @@ class MainActivity : ComponentActivity() {
             CalculatorM3Theme {
                 CalculatorScreen(
                     viewModel = viewModel,
-                    scanViewModel = scanViewModel
+                    scanViewModel = if (modelManager.canRunAnyModel) scanViewModel else null
                 )
             }
         }
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mathRecognizer.release()
+        scanViewModel.releaseAll()
     }
 }
 

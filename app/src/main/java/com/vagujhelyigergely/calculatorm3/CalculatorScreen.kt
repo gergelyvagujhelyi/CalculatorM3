@@ -168,12 +168,12 @@ private fun PortraitLayout(
             .fillMaxSize()
             .safeDrawingPadding()
     ) {
-        // Top bar with camera and history buttons
+        // Top bar with camera (left) and history (right) buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = if (onShowCamera != null) Arrangement.SpaceBetween else Arrangement.End
         ) {
             if (onShowCamera != null) {
                 IconButton(onClick = onShowCamera) {
@@ -259,7 +259,7 @@ private fun LandscapeLayout(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = if (onShowCamera != null) Arrangement.SpaceBetween else Arrangement.End
             ) {
                 if (onShowCamera != null) {
                     IconButton(onClick = onShowCamera) {

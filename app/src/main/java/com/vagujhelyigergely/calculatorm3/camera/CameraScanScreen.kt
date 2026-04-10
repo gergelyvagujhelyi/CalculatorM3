@@ -1,7 +1,9 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -150,6 +152,27 @@ fun CameraScanScreen(
                         message = state.message,
                         rawResponse = state.rawResponse,
                         onRetry = { viewModel.retry() },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
+                        onContinue = { viewModel.showModelSelection() },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.MobileDataWarning -> MobileDataWarningContent(
+                        model = state.model,
+                        onContinue = { viewModel.confirmMobileDataDownload(state.model) },
+                        onCancel = { viewModel.showModelSelection() },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.AuthError -> AuthErrorContent(
+                        httpCode = state.httpCode,
+                        model = state.model,
+                        onRetry = { viewModel.startDownload(state.model) },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.TokenRequired -> TokenInputContent(
+                        model = state.model,
+                        onSubmit = { token -> viewModel.setHfTokenAndDownload(token, state.model) },
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Downloading -> DownloadingContent(
@@ -745,82 +768,353 @@ private fun ModelSelectionContent(
                 textAlign = TextAlign.Center
             )
 
-            AiModel.entries.forEach { model ->
-                val isDownloaded = model in downloadedModels
-                val isSelected = model == selectedModel
-                val tooLarge = model.minRamGb > deviceRamGb
+            val freeModels = AiModel.entries.filter { !it.requiresAuth }
+            val advancedModels = AiModel.entries.filter { it.requiresAuth }
 
-                Surface(
-                    onClick = {
-                        if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (isSelected) Modifier.border(
-                                2.dp,
-                                MaterialTheme.colorScheme.primary,
-                                RoundedCornerShape(12.dp)
-                            ) else Modifier
-                        ),
-                    shape = RoundedCornerShape(12.dp),
-                    color = if (tooLarge)
-                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 1.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = model.displayName,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = model.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "${model.totalSizeDisplay} | ${model.minRamGb} GB+ RAM",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (tooLarge) {
-                                Text(
-                                    text = stringResource(R.string.model_too_large, model.minRamGb, deviceRamGb),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                        if (isDownloaded) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = stringResource(R.string.downloaded),
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.CloudDownload,
-                                contentDescription = stringResource(R.string.download_model),
-                                tint = if (tooLarge)
-                                    MaterialTheme.colorScheme.error
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+            freeModels.forEach { model ->
+                ModelCard(model, model in downloadedModels, model == selectedModel,
+                    model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
+            }
+
+            if (advancedModels.isNotEmpty()) {
+                var showAdvanced by remember { mutableStateOf(false) }
+                TextButton(onClick = { showAdvanced = !showAdvanced }) {
+                    Text(
+                        text = stringResource(R.string.advanced_models),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Icon(
+                        imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                if (showAdvanced) {
+                    Text(
+                        text = stringResource(R.string.advanced_models_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    advancedModels.forEach { model ->
+                        ModelCard(model, model in downloadedModels, model == selectedModel,
+                            model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModelCard(
+    model: AiModel,
+    isDownloaded: Boolean,
+    isSelected: Boolean,
+    tooLarge: Boolean,
+    deviceRamGb: Int,
+    onSelectModel: (AiModel) -> Unit,
+    onDownloadModel: (AiModel) -> Unit
+) {
+    Surface(
+        onClick = {
+            if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(
+                if (isSelected) Modifier.border(
+                    2.dp,
+                    MaterialTheme.colorScheme.primary,
+                    RoundedCornerShape(12.dp)
+                ) else Modifier
+            ),
+        shape = RoundedCornerShape(12.dp),
+        color = if (tooLarge)
+            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 1.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = model.displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (model.requiresAuth) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.requires_login),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Text(
+                    text = model.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${model.totalSizeDisplay} | ${model.minRamGb} GB+ RAM",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (tooLarge) {
+                    Text(
+                        text = stringResource(R.string.model_too_large, model.minRamGb, deviceRamGb),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            if (isDownloaded) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = stringResource(R.string.downloaded),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.CloudDownload,
+                    contentDescription = stringResource(R.string.download_model),
+                    tint = if (tooLarge)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MobileDataWarningContent(
+    model: AiModel,
+    onContinue: () -> Unit,
+    onCancel: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = stringResource(R.string.mobile_data_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.mobile_data_description, model.totalSizeDisplay),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedButton(onClick = onCancel) {
+                    Text(stringResource(R.string.cancel))
+                }
+                Button(onClick = onContinue) {
+                    Text(stringResource(R.string.download_anyway))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FirstTimeWarningContent(
+    onContinue: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Psychology,
+                contentDescription = null,
+                modifier = Modifier.size(56.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(R.string.ai_feature_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = stringResource(R.string.ai_feature_description),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Button(onClick = onContinue) {
+                Text(stringResource(R.string.ai_feature_continue))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AuthErrorContent(
+    httpCode: Int,
+    model: AiModel,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
+
+            if (httpCode == 403) {
+                Text(
+                    text = stringResource(R.string.license_required_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.license_required_description, model.displayName),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+                Button(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(model.licenseUrl)))
+                }) {
+                    Text(stringResource(R.string.accept_license))
+                }
+            } else {
+                Text(
+                    text = stringResource(R.string.token_invalid_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.token_invalid_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+                Button(onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://huggingface.co/settings/tokens")))
+                }) {
+                    Text(stringResource(R.string.create_token))
+                }
+            }
+
+            OutlinedButton(onClick = onRetry) {
+                Text(stringResource(R.string.retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun TokenInputContent(
+    model: AiModel,
+    onSubmit: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var token by remember { mutableStateOf("") }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Storage,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(R.string.hf_token_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.hf_token_description, model.displayName),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            OutlinedTextField(
+                value = token,
+                onValueChange = { token = it },
+                label = { Text(stringResource(R.string.hf_token_label)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Button(
+                onClick = { onSubmit(token.trim()) },
+                enabled = token.trim().startsWith("hf_")
+            ) {
+                Text(stringResource(R.string.download_model))
             }
         }
     }

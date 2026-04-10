@@ -15,7 +15,8 @@
 -keep class com.vagujhelyigergely.calculatorm3.ai.NobodyWhoBridge { *; }
 
 # Keep AI/camera ViewModels and data classes
--keep class com.vagujhelyigergely.calculatorm3.ai.MathRecognizer { *; }
+-keep class com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver { *; }
+-keep class com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanViewModel { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanUiState { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanUiState$* { *; }
