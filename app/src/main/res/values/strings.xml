@@ -27,4 +27,23 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Power</string>
     <string name="btn_factorial">Factorial</string>
+
+    <!-- Camera / AI scan -->
+    <string name="scan_expression">Scan expression</string>
+    <string name="capture">Capture</string>
+    <string name="camera_hint">Point at a handwritten math expression</string>
+    <string name="camera_processing">Recognizing expression\u2026</string>
+    <string name="model_loading">Loading AI model\u2026</string>
+    <string name="recognized_expression">Recognized expression</string>
+    <string name="use_expression">Use</string>
+    <string name="retry">Retry</string>
+    <string name="close">Close</string>
+    <string name="recognition_error">Recognition failed</string>
+    <string name="camera_permission_needed">Camera permission is needed to scan handwritten expressions</string>
+    <string name="model_not_found">AI model required</string>
+    <string name="model_download_description">Expression scanning needs a vision AI model (Gemma 4 E2B, ~4.1 GB). The model runs entirely on your device.</string>
+    <string name="download_model">Download model</string>
+    <string name="downloading_model">Downloading AI model</string>
+    <string name="download_file_progress">File %1$d of %2$d</string>
+    <string name="download_warning">This is a large download. Use Wi-Fi if possible.</string>
 </resources>

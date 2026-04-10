@@ -18,6 +18,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -55,7 +56,10 @@ enum class ButtonType {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CalculatorScreen(viewModel: CalculatorViewModel) {
+fun CalculatorScreen(
+    viewModel: CalculatorViewModel,
+    scanViewModel: com.vagujhelyigergely.calculatorm3.camera.ScanViewModel? = null
+) {
     val colorScheme = MaterialTheme.colorScheme
     val configuration = LocalConfiguration.current
     val screenWidthDp = configuration.screenWidthDp
@@ -102,6 +106,7 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
     )
 
     var showHistory by remember { mutableStateOf(false) }
+    var showCamera by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (showHistory) {
@@ -117,6 +122,16 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
         )
     }
 
+    if (showCamera && scanViewModel != null) {
+        com.vagujhelyigergely.calculatorm3.camera.CameraScanScreen(
+            viewModel = scanViewModel,
+            onExpressionRecognized = { expr ->
+                viewModel.setExpressionFromScan(expr)
+            },
+            onDismiss = { showCamera = false }
+        )
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = colorScheme.surface
@@ -125,13 +140,15 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
             LandscapeLayout(
                 viewModel = viewModel,
                 buttons = buttons,
-                onShowHistory = { showHistory = true }
+                onShowHistory = { showHistory = true },
+                onShowCamera = if (scanViewModel != null) {{ showCamera = true }} else null
             )
         } else {
             PortraitLayout(
                 viewModel = viewModel,
                 buttons = buttons,
-                onShowHistory = { showHistory = true }
+                onShowHistory = { showHistory = true },
+                onShowCamera = if (scanViewModel != null) {{ showCamera = true }} else null
             )
         }
     }
@@ -141,7 +158,8 @@ fun CalculatorScreen(viewModel: CalculatorViewModel) {
 private fun PortraitLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
-    onShowHistory: () -> Unit
+    onShowHistory: () -> Unit,
+    onShowCamera: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -150,13 +168,22 @@ private fun PortraitLayout(
             .fillMaxSize()
             .safeDrawingPadding()
     ) {
-        // Top bar with history button
+        // Top bar with camera and history buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.End
         ) {
+            if (onShowCamera != null) {
+                IconButton(onClick = onShowCamera) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = stringResource(R.string.scan_expression),
+                        tint = colorScheme.onSurfaceVariant
+                    )
+                }
+            }
             IconButton(onClick = onShowHistory) {
                 Icon(
                     imageVector = Icons.Default.AccessTime,
@@ -213,7 +240,8 @@ private fun PortraitLayout(
 private fun LandscapeLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
-    onShowHistory: () -> Unit
+    onShowHistory: () -> Unit,
+    onShowCamera: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -233,6 +261,15 @@ private fun LandscapeLayout(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
+                if (onShowCamera != null) {
+                    IconButton(onClick = onShowCamera) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = stringResource(R.string.scan_expression),
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
                 IconButton(onClick = onShowHistory) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,

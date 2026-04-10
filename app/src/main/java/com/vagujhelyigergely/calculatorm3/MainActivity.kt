@@ -9,6 +9,9 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
+import com.vagujhelyigergely.calculatorm3.ai.MathRecognizer
+import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
 class MainActivity : ComponentActivity() {
@@ -18,15 +21,27 @@ class MainActivity : ComponentActivity() {
         androidx.lifecycle.ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
     }
 
+    private val mathRecognizer by lazy { MathRecognizer() }
+    private val modelManager by lazy { ModelManager(applicationContext) }
+    private val scanViewModel by lazy { ScanViewModel(mathRecognizer, modelManager) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
             CalculatorM3Theme {
-                CalculatorScreen(viewModel = viewModel)
+                CalculatorScreen(
+                    viewModel = viewModel,
+                    scanViewModel = scanViewModel
+                )
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mathRecognizer.release()
     }
 }
 
