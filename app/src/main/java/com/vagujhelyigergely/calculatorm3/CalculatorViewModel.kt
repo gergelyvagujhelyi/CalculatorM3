@@ -119,8 +119,9 @@ class CalculatorViewModel(
     }
 
     fun setExpressionFromScan(expr: String) {
-        expression = expr
-        cursorPosition = expr.length
+        val clamped = expr.take(MAX_EXPRESSION_LENGTH)
+        expression = clamped
+        cursorPosition = clamped.length
         result = ""
         history = ""
         updatePreview()
