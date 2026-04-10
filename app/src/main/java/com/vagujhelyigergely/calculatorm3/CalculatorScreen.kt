@@ -910,6 +910,11 @@ fun HistorySheet(
     }
 }
 
+private val BINARY_OPERATORS = setOf('+', '×', '÷', '−')
+
+private fun needsSeparator(indexInIntPart: Int, intPartLength: Int): Boolean =
+    indexInIntPart > 0 && (intPartLength - indexInIntPart) % 3 == 0
+
 internal fun formatExpression(expr: String): String {
     val sb = StringBuilder()
     var i = 0
@@ -922,7 +927,7 @@ internal fun formatExpression(expr: String): String {
                 while (i < expr.length && expr[i].isDigit()) i++
                 val intPart = expr.substring(intStart, i)
                 for (j in intPart.indices) {
-                    if (j > 0 && (intPart.length - j) % 3 == 0) sb.append(',')
+                    if (needsSeparator(j, intPart.length)) sb.append(',')
                     sb.append(intPart[j])
                 }
                 // Decimal part (no separators)
@@ -950,7 +955,7 @@ internal fun formatExpression(expr: String): String {
             }
             // Binary operators: space around them (not at position 0).
             // ASCII '-' (from +/− toggle) is unary, excluded from this set.
-            c in setOf('+', '×', '÷', '−') && sb.isNotEmpty() -> {
+            c in BINARY_OPERATORS && sb.isNotEmpty() -> {
                 sb.append(" $c ")
                 i++
             }
@@ -973,7 +978,7 @@ internal fun formatResultNumber(value: String): String {
     val rest = if (dotIndex >= 0) abs.substring(dotIndex) else ""
     val formatted = buildString {
         for (j in intPart.indices) {
-            if (j > 0 && (intPart.length - j) % 3 == 0) append(',')
+            if (needsSeparator(j, intPart.length)) append(',')
             append(intPart[j])
         }
     }
@@ -994,7 +999,7 @@ internal fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
                 val intLen = intEnd - intStart
                 val intLimit = limit.coerceAtMost(intEnd)
                 for (j in i until intLimit) {
-                    if (j - intStart > 0 && (intLen - (j - intStart)) % 3 == 0) fPos++
+                    if (needsSeparator(j - intStart, intLen)) fPos++
                     fPos++
                 }
                 i = intLimit
@@ -1008,7 +1013,7 @@ internal fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
                     while (i < limit && i < raw.length && raw[i].isDigit()) { fPos++; i++ }
                 }
             }
-            c in listOf('+', '−', '×', '÷') && i > 0 -> { fPos += 3; i++ }
+            c in BINARY_OPERATORS && i > 0 -> { fPos += 3; i++ }
             else -> { fPos++; i++ }
         }
     }
@@ -1028,7 +1033,7 @@ internal fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
                 val intLen = intEnd - intStart
                 while (i < intEnd && fPos < formattedCursor) {
                     val posInInt = i - intStart
-                    if (posInInt > 0 && (intLen - posInInt) % 3 == 0) {
+                    if (needsSeparator(posInInt, intLen)) {
                         fPos++
                         if (fPos >= formattedCursor) break
                     }
@@ -1044,7 +1049,7 @@ internal fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
                     while (i < raw.length && raw[i].isDigit() && fPos < formattedCursor) { fPos++; i++ }
                 }
             }
-            c in listOf('+', '−', '×', '÷') && i > 0 -> { fPos += 3; i++ }
+            c in BINARY_OPERATORS && i > 0 -> { fPos += 3; i++ }
             else -> { fPos++; i++ }
         }
     }
