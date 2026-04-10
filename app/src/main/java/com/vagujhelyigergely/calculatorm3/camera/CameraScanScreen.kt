@@ -9,18 +9,31 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -33,6 +46,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.vagujhelyigergely.calculatorm3.R
+import kotlinx.coroutines.delay
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -80,23 +94,32 @@ fun CameraScanScreen(
                 PermissionDeniedContent(onDismiss = onDismiss)
             } else {
                 when (val state = viewModel.uiState) {
-                    is ScanUiState.Idle,
-                    is ScanUiState.ModelLoading -> LoadingContent(
-                        message = stringResource(R.string.model_loading),
+                    is ScanUiState.Idle -> StatusContent(
+                        icon = Icons.Default.Psychology,
+                        title = stringResource(R.string.initializing),
+                        subtitle = null,
+                        showProgress = true,
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.ModelLoading -> ModelLoadingContent(
+                        startTimeMs = state.startTimeMs,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Capturing -> CameraContent(
                         onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.Processing -> LoadingContent(
-                        message = stringResource(R.string.camera_processing),
+                    is ScanUiState.Processing -> ProcessingContent(
+                        partialRaw = state.partialRaw,
+                        startTimeMs = state.startTimeMs,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Success -> SuccessContent(
-                        expression = state.expression,
+                        answer = state.answer,
+                        rawResponse = state.rawResponse,
+                        elapsedMs = state.elapsedMs,
                         onUse = {
-                            onExpressionRecognized(state.expression)
+                            onExpressionRecognized(state.answer)
                             onDismiss()
                         },
                         onRetry = { viewModel.retry() },
@@ -113,6 +136,13 @@ fun CameraScanScreen(
                         totalBytes = state.totalBytes,
                         fileIndex = state.fileIndex,
                         fileCount = state.fileCount,
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.DownloadComplete -> StatusContent(
+                        icon = Icons.Default.CheckCircle,
+                        title = stringResource(R.string.download_complete),
+                        subtitle = stringResource(R.string.model_loading),
+                        showProgress = true,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.ModelMissing -> ModelMissingContent(
@@ -136,6 +166,202 @@ private fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
             contentDescription = stringResource(R.string.close),
             tint = MaterialTheme.colorScheme.onSurface
         )
+    }
+}
+
+/** Elapsed time counter that updates every second. */
+@Composable
+private fun ElapsedTimeText(startTimeMs: Long) {
+    var elapsed by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(startTimeMs) {
+        while (true) {
+            elapsed = (System.currentTimeMillis() - startTimeMs) / 1000
+            delay(1000)
+        }
+    }
+    Text(
+        text = "${elapsed}s",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+/** Generic status screen with icon, title, optional subtitle and progress. */
+@Composable
+private fun StatusContent(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    showProgress: Boolean,
+    onDismiss: () -> Unit
+) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+            if (showProgress) {
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 32.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Storage,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(R.string.model_loading),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.model_loading_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp)
+            )
+            ElapsedTimeText(startTimeMs = startTimeMs)
+        }
+    }
+}
+
+@Composable
+private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: () -> Unit) {
+    val isGenerating = partialRaw.isNotEmpty()
+
+    // Pulsing icon
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.15f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = EaseInOutSine),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse_scale"
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        CloseButton(
+            onDismiss = onDismiss,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Psychology,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(48.dp)
+                    .graphicsLayer(scaleX = scale, scaleY = scale),
+                tint = MaterialTheme.colorScheme.primary
+            )
+
+            if (!isGenerating) {
+                // Phase 1: processing image (prefill) — no tokens yet
+                Text(
+                    text = stringResource(R.string.camera_processing_image),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = stringResource(R.string.processing_image_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                LinearProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                )
+            } else {
+                // Phase 2: generating tokens — show streaming output
+                Text(
+                    text = stringResource(R.string.camera_generating),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 1.dp
+                ) {
+                    Text(
+                        text = partialRaw,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .verticalScroll(rememberScrollState())
+                    )
+                }
+            }
+
+            ElapsedTimeText(startTimeMs = startTimeMs)
+        }
     }
 }
 
@@ -226,33 +452,16 @@ private fun CameraContent(
 }
 
 @Composable
-private fun LoadingContent(message: String, onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(text = message, style = MaterialTheme.typography.bodyLarge)
-        }
-    }
-}
-
-@Composable
 private fun SuccessContent(
-    expression: String,
+    answer: String,
+    rawResponse: String,
+    elapsedMs: Long,
     onUse: () -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showRaw by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         CloseButton(
             onDismiss = onDismiss,
@@ -266,17 +475,29 @@ private fun SuccessContent(
                 .align(Alignment.Center)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
-                text = stringResource(R.string.recognized_expression),
+                text = stringResource(R.string.answer_found),
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = expression,
-                style = MaterialTheme.typography.headlineLarge,
+                text = answer,
+                style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = onRetry) {
@@ -284,6 +505,40 @@ private fun SuccessContent(
                 }
                 Button(onClick = onUse) {
                     Text(stringResource(R.string.use_expression))
+                }
+            }
+
+            // Raw LLM output dropdown
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                TextButton(onClick = { showRaw = !showRaw }) {
+                    Text(
+                        text = stringResource(R.string.raw_model_output),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Icon(
+                        imageVector = if (showRaw) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                if (showRaw) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 1.dp
+                    ) {
+                        Text(
+                            text = rawResponse,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
             }
         }
@@ -311,6 +566,12 @@ private fun ErrorContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.ErrorOutline,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.error
+            )
             Text(
                 text = stringResource(R.string.recognition_error),
                 style = MaterialTheme.typography.titleMedium,
@@ -345,6 +606,12 @@ private fun PermissionDeniedContent(onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Text(
                 text = stringResource(R.string.camera_permission_needed),
                 style = MaterialTheme.typography.bodyLarge,
@@ -371,6 +638,12 @@ private fun ModelMissingContent(onDownload: () -> Unit, onDismiss: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.CloudDownload,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = stringResource(R.string.model_not_found),
                 style = MaterialTheme.typography.titleMedium
@@ -381,6 +654,12 @@ private fun ModelMissingContent(onDownload: () -> Unit, onDismiss: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Button(onClick = onDownload) {
+                Icon(
+                    imageVector = Icons.Default.CloudDownload,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.download_model))
             }
         }
@@ -411,6 +690,12 @@ private fun DownloadingContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Icon(
+                imageVector = Icons.Default.CloudDownload,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
             Text(
                 text = stringResource(R.string.downloading_model),
                 style = MaterialTheme.typography.titleMedium
@@ -435,7 +720,7 @@ private fun DownloadingContent(
                         .padding(horizontal = 16.dp),
                 )
                 Text(
-                    text = "${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)}",
+                    text = "${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)} (${(progress * 100).toInt()}%)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -469,5 +754,13 @@ private fun formatBytes(bytes: Long): String {
         bytes >= 1_048_576 -> "%.1f MB".format(bytes / 1_048_576.0)
         bytes >= 1_024 -> "%.0f KB".format(bytes / 1_024.0)
         else -> "$bytes B"
+    }
+}
+
+private fun formatElapsed(ms: Long): String {
+    val seconds = ms / 1000
+    return when {
+        seconds < 60 -> "${seconds}s"
+        else -> "${seconds / 60}m ${seconds % 60}s"
     }
 }

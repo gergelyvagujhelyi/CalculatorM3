@@ -1,7 +1,7 @@
 use jni::objects::{JClass, JString};
 use jni::sys::{jboolean, jint, jlong, jstring, JNI_FALSE};
 use jni::JNIEnv;
-use nobodywho::chat::{ChatBuilder, ChatHandle};
+use nobodywho::chat::{ChatBuilder, ChatHandle, TokenStream};
 use nobodywho::llm;
 use nobodywho::tokenizer::Prompt;
 use std::path::Path;
@@ -200,5 +200,80 @@ pub extern "system" fn Java_com_vagujhelyigergely_calculatorm3_ai_NobodyWhoBridg
             Err(e) => throw_and_return(&mut env, &format!("Failed to create Java string: {e}")),
         },
         Err(e) => throw_and_return(&mut env, &format!("Inference failed: {e}")),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Streaming inference
+// ---------------------------------------------------------------------------
+
+/// Start a multimodal prompt and return a TokenStream handle for polling tokens.
+#[no_mangle]
+pub extern "system" fn Java_com_vagujhelyigergely_calculatorm3_ai_NobodyWhoBridge_startAskWithImage(
+    mut env: JNIEnv,
+    _class: JClass,
+    chat_handle: jlong,
+    text_prompt: JString,
+    image_path: JString,
+) -> jlong {
+    if chat_handle == 0 {
+        return throw_and_return(&mut env, "Invalid chat handle (null)");
+    }
+
+    let prompt_str = match jstring_to_string(&mut env, &text_prompt) {
+        Ok(s) => s,
+        Err(e) => return throw_and_return(&mut env, &e),
+    };
+
+    let img_path = match jstring_to_string(&mut env, &image_path) {
+        Ok(s) => s,
+        Err(e) => return throw_and_return(&mut env, &e),
+    };
+
+    let mut prompt = Prompt::new();
+    prompt.push_text(&prompt_str);
+    prompt.push_image(Path::new(&img_path));
+
+    let chat: &ChatHandle = unsafe { &*(chat_handle as *const ChatHandle) };
+    let stream = chat.ask(prompt);
+
+    let boxed = Box::new(stream);
+    Box::into_raw(boxed) as jlong
+}
+
+/// Get the next token from a TokenStream. Blocks until available.
+/// Returns null when the stream is finished.
+#[no_mangle]
+pub extern "system" fn Java_com_vagujhelyigergely_calculatorm3_ai_NobodyWhoBridge_nextToken(
+    mut env: JNIEnv,
+    _class: JClass,
+    stream_handle: jlong,
+) -> jstring {
+    if stream_handle == 0 {
+        return throw_and_return(&mut env, "Invalid stream handle (null)");
+    }
+
+    let stream: &mut TokenStream = unsafe { &mut *(stream_handle as *mut TokenStream) };
+
+    match stream.next_token() {
+        Some(token) => match env.new_string(&token) {
+            Ok(js) => js.into_raw(),
+            Err(e) => throw_and_return(&mut env, &format!("Failed to create Java string: {e}")),
+        },
+        None => std::ptr::null_mut(), // null signals end of stream
+    }
+}
+
+/// Free a TokenStream handle.
+#[no_mangle]
+pub extern "system" fn Java_com_vagujhelyigergely_calculatorm3_ai_NobodyWhoBridge_freeTokenStream(
+    _env: JNIEnv,
+    _class: JClass,
+    handle: jlong,
+) {
+    if handle != 0 {
+        unsafe {
+            let _ = Box::from_raw(handle as *mut TokenStream);
+        }
     }
 }

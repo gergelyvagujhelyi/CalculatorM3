@@ -7,14 +7,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vagujhelyigergely.calculatorm3.ai.MathRecognizer
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed interface ScanUiState {
     data object Idle : ScanUiState
-    data object ModelLoading : ScanUiState
+    data class ModelLoading(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
     data object Capturing : ScanUiState
-    data object Processing : ScanUiState
-    data class Success(val expression: String) : ScanUiState
+    data class Processing(
+        val partialRaw: String = "",
+        val startTimeMs: Long = System.currentTimeMillis()
+    ) : ScanUiState
+    data class Success(val answer: String, val rawResponse: String, val elapsedMs: Long) : ScanUiState
     data class Error(val message: String) : ScanUiState
     data object ModelMissing : ScanUiState
     data class Downloading(
@@ -24,6 +29,7 @@ sealed interface ScanUiState {
         val fileIndex: Int,     // 0 = model, 1 = mmproj
         val fileCount: Int      // always 2
     ) : ScanUiState
+    data class DownloadComplete(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
 }
 
 class ScanViewModel(
@@ -55,7 +61,7 @@ class ScanViewModel(
             uiState = ScanUiState.Capturing
             return
         }
-        uiState = ScanUiState.ModelLoading
+        uiState = ScanUiState.ModelLoading()
         viewModelScope.launch {
             try {
                 recognizer.loadModel(modelManager.modelPath, modelManager.mmprojPath)
@@ -116,7 +122,8 @@ class ScanViewModel(
                     }
                 }
 
-                // Both files downloaded, now load the model
+                // Show download complete briefly, then load model
+                uiState = ScanUiState.DownloadComplete()
                 loadModel()
             } catch (e: Exception) {
                 uiState = ScanUiState.Error("Download failed: ${e.message}")
@@ -126,11 +133,20 @@ class ScanViewModel(
 
     /** Called when the user captures a photo. */
     fun onPhotoCaptured(imagePath: String) {
-        uiState = ScanUiState.Processing
+        val startTime = System.currentTimeMillis()
+        uiState = ScanUiState.Processing(startTimeMs = startTime)
         viewModelScope.launch {
-            val result = recognizer.recognizeExpression(imagePath)
+            val result = recognizer.solveFromImageStreaming(imagePath) { partialRaw ->
+                withContext(Dispatchers.Main) {
+                    uiState = ScanUiState.Processing(
+                        partialRaw = partialRaw,
+                        startTimeMs = startTime
+                    )
+                }
+            }
+            val elapsed = System.currentTimeMillis() - startTime
             uiState = result.fold(
-                onSuccess = { ScanUiState.Success(it) },
+                onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
                 onFailure = { ScanUiState.Error(it.message ?: "Recognition failed") }
             )
         }

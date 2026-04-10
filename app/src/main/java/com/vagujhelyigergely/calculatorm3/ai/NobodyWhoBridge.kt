@@ -51,4 +51,19 @@ object NobodyWhoBridge {
      * @return the model's complete response
      */
     external fun askWithImage(chatHandle: Long, textPrompt: String, imagePath: String): String
+
+    /**
+     * Start a multimodal prompt and return a token stream handle for polling tokens.
+     * @return opaque stream handle
+     */
+    external fun startAskWithImage(chatHandle: Long, textPrompt: String, imagePath: String): Long
+
+    /**
+     * Get the next token from a stream. Blocks until available.
+     * @return the next token, or null when the stream is finished
+     */
+    external fun nextToken(streamHandle: Long): String?
+
+    /** Free a token stream handle returned by [startAskWithImage]. */
+    external fun freeTokenStream(handle: Long)
 }
