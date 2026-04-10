@@ -30,10 +30,25 @@ object SolverPrompts {
     const val USER_PROMPT =
         "Calculate the result of the mathematical expression in this image."
 
-    /** Extract the last number from an LLM response (the final answer). */
+    /** Extract the numerical answer from the LLM response.
+     *  Checks the last non-empty line first (where the model is prompted to put the answer),
+     *  then falls back to the last number in the full response. */
     fun extractAnswer(raw: String): String {
         val numberPattern = Regex("-?\\d+\\.?\\d*")
-        val matches = numberPattern.findAll(raw).toList()
-        return matches.lastOrNull()?.value ?: ""
+        // Try the last non-empty line first (system prompt tells model to put answer there)
+        val lastLine = raw.trimEnd().lines().lastOrNull { it.isNotBlank() }?.trim() ?: ""
+        val lastLineMatch = numberPattern.find(lastLine)
+        if (lastLineMatch != null && lastLineMatch.value == lastLine) {
+            // Last line is purely a number — high confidence answer
+            return lastLineMatch.value
+        }
+        // Fall back to last number on the last line
+        val lastLineNumbers = numberPattern.findAll(lastLine).toList()
+        if (lastLineNumbers.isNotEmpty()) {
+            return lastLineNumbers.last().value
+        }
+        // Final fallback: last number anywhere in the response
+        val allNumbers = numberPattern.findAll(raw).toList()
+        return allNumbers.lastOrNull()?.value ?: ""
     }
 }

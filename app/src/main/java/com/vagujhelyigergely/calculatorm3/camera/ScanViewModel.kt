@@ -13,6 +13,7 @@ import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -53,6 +54,7 @@ class ScanViewModel(
 
     private var activeSolver: MathSolver? = null
     private var loadedModelId: String? = null
+    private var downloadJob: Job? = null
 
     private fun solverFor(model: AiModel): MathSolver = when (model.backend) {
         Backend.NOBODYWHO -> nobodyWhoSolver
@@ -141,10 +143,16 @@ class ScanViewModel(
         forceDownload(model)
     }
 
+    fun cancelDownload() {
+        downloadJob?.cancel()
+        downloadJob = null
+        showModelSelection()
+    }
+
     private fun forceDownload(model: AiModel) {
         modelManager.selectedModel = model
         val fileCount = if (model.needsMmproj) 2 else 1
-        viewModelScope.launch {
+        downloadJob = viewModelScope.launch {
             try {
                 if (!modelManager.isModelDownloaded(model)) {
                     uiState = ScanUiState.Downloading(
@@ -206,22 +214,27 @@ class ScanViewModel(
         val startTime = System.currentTimeMillis()
         uiState = ScanUiState.Processing(startTimeMs = startTime)
         viewModelScope.launch {
-            val result = solver.solveFromImageStreaming(imagePath) { partialRaw ->
-                withContext(Dispatchers.Main) {
-                    uiState = ScanUiState.Processing(
-                        partialRaw = partialRaw,
-                        startTimeMs = startTime
-                    )
+            try {
+                val result = solver.solveFromImageStreaming(imagePath) { partialRaw ->
+                    withContext(Dispatchers.Main) {
+                        uiState = ScanUiState.Processing(
+                            partialRaw = partialRaw,
+                            startTimeMs = startTime
+                        )
+                    }
                 }
+                val elapsed = System.currentTimeMillis() - startTime
+                uiState = result.fold(
+                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
+                    onFailure = {
+                        val raw = (it as? RecognitionException)?.rawResponse
+                        ScanUiState.Error(it.message ?: "Recognition failed", raw)
+                    }
+                )
+            } finally {
+                // Clean up captured photo
+                java.io.File(imagePath).delete()
             }
-            val elapsed = System.currentTimeMillis() - startTime
-            uiState = result.fold(
-                onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
-                onFailure = {
-                    val raw = (it as? RecognitionException)?.rawResponse
-                    ScanUiState.Error(it.message ?: "Recognition failed", raw)
-                }
-            )
         }
     }
 

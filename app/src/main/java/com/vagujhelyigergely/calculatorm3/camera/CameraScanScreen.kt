@@ -181,6 +181,7 @@ fun CameraScanScreen(
                         totalBytes = state.totalBytes,
                         fileIndex = state.fileIndex,
                         fileCount = state.fileCount,
+                        onCancel = { viewModel.cancelDownload() },
                         onDismiss = onDismiss
                     )
                     is ScanUiState.DownloadComplete -> StatusContent(
@@ -1127,6 +1128,7 @@ private fun DownloadingContent(
     totalBytes: Long,
     fileIndex: Int,
     fileCount: Int,
+    onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
@@ -1198,6 +1200,9 @@ private fun DownloadingContent(
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            OutlinedButton(onClick = onCancel) {
+                Text(stringResource(R.string.cancel))
+            }
         }
     }
 }

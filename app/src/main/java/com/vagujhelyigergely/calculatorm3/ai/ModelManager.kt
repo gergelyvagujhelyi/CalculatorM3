@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -229,6 +230,7 @@ class ModelManager(private val context: Context) {
             connection.inputStream.use { input ->
                 FileOutputStream(tmpFile).use { output ->
                     while (true) {
+                        ensureActive() // support coroutine cancellation
                         val bytesRead = input.read(buffer)
                         if (bytesRead == -1) break
                         output.write(buffer, 0, bytesRead)
@@ -238,9 +240,13 @@ class ModelManager(private val context: Context) {
                 }
             }
 
-            tmpFile.renameTo(destFile)
+            if (!tmpFile.renameTo(destFile)) {
+                // renameTo can fail on cross-filesystem; fall back to copy
+                tmpFile.copyTo(destFile, overwrite = true)
+                tmpFile.delete()
+            }
         } finally {
-            if (tmpFile.exists() && !File(dir, destFilename).exists()) {
+            if (tmpFile.exists() && !destFile.exists()) {
                 tmpFile.delete()
             }
         }
