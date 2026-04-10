@@ -910,7 +910,7 @@ fun HistorySheet(
     }
 }
 
-private fun formatExpression(expr: String): String {
+internal fun formatExpression(expr: String): String {
     val sb = StringBuilder()
     var i = 0
     while (i < expr.length) {
@@ -963,7 +963,7 @@ private fun formatExpression(expr: String): String {
     return sb.toString()
 }
 
-private fun formatResultNumber(value: String): String {
+internal fun formatResultNumber(value: String): String {
     if (value.isEmpty() || value.startsWith("Error") || value.contains('E') || value.contains('e')) return value
     val negative = value.startsWith("-")
     val abs = if (negative) value.substring(1) else value
@@ -980,7 +980,7 @@ private fun formatResultNumber(value: String): String {
     return (if (negative) "-" else "") + formatted + rest
 }
 
-private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
+internal fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
     var fPos = 0
     var i = 0
     val limit = rawCursor.coerceAtMost(raw.length)
@@ -1015,7 +1015,7 @@ private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
     return fPos
 }
 
-private fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
+internal fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
     var fPos = 0
     var i = 0
     while (i < raw.length && fPos < formattedCursor) {
