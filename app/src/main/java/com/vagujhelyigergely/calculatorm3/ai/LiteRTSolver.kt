@@ -8,6 +8,8 @@ import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -15,8 +17,9 @@ import kotlinx.coroutines.withContext
  */
 class LiteRTSolver : MathSolver {
 
-    private var engine: Engine? = null
-    private var conversation: Conversation? = null
+    private val mutex = Mutex()
+    @Volatile private var engine: Engine? = null
+    @Volatile private var conversation: Conversation? = null
 
     override val isModelLoaded: Boolean get() = engine != null && conversation != null
 
@@ -45,39 +48,43 @@ class LiteRTSolver : MathSolver {
     override suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
-    ): Result<RecognitionResult> = withContext(Dispatchers.IO) {
-        val conv = conversation
-            ?: return@withContext Result.failure(IllegalStateException("Model not loaded"))
-        try {
-            val rawBuilder = StringBuilder()
-            conv.sendMessageAsync(
-                Contents.of(
-                    Content.ImageFile(imagePath),
-                    Content.Text(SolverPrompts.USER_PROMPT)
-                )
-            ).collect { message ->
-                val text = message.contents.contents
-                    .filterIsInstance<Content.Text>()
-                    .joinToString("") { it.text }
-                rawBuilder.append(text)
-                onToken(rawBuilder.toString())
+    ): Result<RecognitionResult> = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            val conv = conversation
+                ?: return@withContext Result.failure(IllegalStateException("Model not loaded"))
+            try {
+                val rawBuilder = StringBuilder()
+                conv.sendMessageAsync(
+                    Contents.of(
+                        Content.ImageFile(imagePath),
+                        Content.Text(SolverPrompts.USER_PROMPT)
+                    )
+                ).collect { message ->
+                    val text = message.contents.contents
+                        .filterIsInstance<Content.Text>()
+                        .joinToString("") { it.text }
+                    rawBuilder.append(text)
+                    onToken(rawBuilder.toString())
+                }
+                val raw = rawBuilder.toString()
+                val answer = SolverPrompts.extractAnswer(raw)
+                if (answer.isBlank()) {
+                    Result.failure(RecognitionException("Could not extract a numerical answer", raw))
+                } else {
+                    Result.success(RecognitionResult(raw = raw, answer = answer))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
-            val raw = rawBuilder.toString()
-            val answer = SolverPrompts.extractAnswer(raw)
-            if (answer.isBlank()) {
-                Result.failure(RecognitionException("Could not extract a numerical answer", raw))
-            } else {
-                Result.success(RecognitionResult(raw = raw, answer = answer))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
         }
     }
 
-    override fun release() {
-        conversation?.close()
-        conversation = null
-        engine?.close()
-        engine = null
+    override suspend fun release() {
+        mutex.withLock {
+            conversation?.close()
+            conversation = null
+            engine?.close()
+            engine = null
+        }
     }
 }

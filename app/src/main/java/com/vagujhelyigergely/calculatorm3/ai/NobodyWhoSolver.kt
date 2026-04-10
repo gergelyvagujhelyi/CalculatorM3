@@ -1,6 +1,8 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /**
@@ -8,8 +10,9 @@ import kotlinx.coroutines.withContext
  */
 class NobodyWhoSolver : MathSolver {
 
-    private var modelHandle: Long = 0L
-    private var chatHandle: Long = 0L
+    private val mutex = Mutex()
+    @Volatile private var modelHandle: Long = 0L
+    @Volatile private var chatHandle: Long = 0L
 
     val isNativeLibraryAvailable: Boolean get() = NobodyWhoBridge.isAvailable
     override val isModelLoaded: Boolean get() = modelHandle != 0L && chatHandle != 0L
@@ -34,45 +37,49 @@ class NobodyWhoSolver : MathSolver {
     override suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
-    ): Result<RecognitionResult> = withContext(Dispatchers.IO) {
-        if (!isModelLoaded) {
-            return@withContext Result.failure(IllegalStateException("Model not loaded"))
-        }
-        var streamHandle = 0L
-        try {
-            streamHandle = NobodyWhoBridge.startAskWithImage(
-                chatHandle, SolverPrompts.USER_PROMPT, imagePath
-            )
-            val rawBuilder = StringBuilder()
-            while (true) {
-                val token = NobodyWhoBridge.nextToken(streamHandle) ?: break
-                rawBuilder.append(token)
-                onToken(rawBuilder.toString())
+    ): Result<RecognitionResult> = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (!isModelLoaded) {
+                return@withContext Result.failure(IllegalStateException("Model not loaded"))
             }
-            val raw = rawBuilder.toString()
-            val answer = SolverPrompts.extractAnswer(raw)
-            if (answer.isBlank()) {
-                Result.failure(RecognitionException("Could not extract a numerical answer", raw))
-            } else {
-                Result.success(RecognitionResult(raw = raw, answer = answer))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        } finally {
-            if (streamHandle != 0L) {
-                NobodyWhoBridge.freeTokenStream(streamHandle)
+            var streamHandle = 0L
+            try {
+                streamHandle = NobodyWhoBridge.startAskWithImage(
+                    chatHandle, SolverPrompts.USER_PROMPT, imagePath
+                )
+                val rawBuilder = StringBuilder()
+                while (true) {
+                    val token = NobodyWhoBridge.nextToken(streamHandle) ?: break
+                    rawBuilder.append(token)
+                    onToken(rawBuilder.toString())
+                }
+                val raw = rawBuilder.toString()
+                val answer = SolverPrompts.extractAnswer(raw)
+                if (answer.isBlank()) {
+                    Result.failure(RecognitionException("Could not extract a numerical answer", raw))
+                } else {
+                    Result.success(RecognitionResult(raw = raw, answer = answer))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            } finally {
+                if (streamHandle != 0L) {
+                    NobodyWhoBridge.freeTokenStream(streamHandle)
+                }
             }
         }
     }
 
-    override fun release() {
-        if (chatHandle != 0L) {
-            NobodyWhoBridge.freeChat(chatHandle)
-            chatHandle = 0L
-        }
-        if (modelHandle != 0L) {
-            NobodyWhoBridge.freeModel(modelHandle)
-            modelHandle = 0L
+    override suspend fun release() {
+        mutex.withLock {
+            if (chatHandle != 0L) {
+                NobodyWhoBridge.freeChat(chatHandle)
+                chatHandle = 0L
+            }
+            if (modelHandle != 0L) {
+                NobodyWhoBridge.freeModel(modelHandle)
+                modelHandle = 0L
+            }
         }
     }
 

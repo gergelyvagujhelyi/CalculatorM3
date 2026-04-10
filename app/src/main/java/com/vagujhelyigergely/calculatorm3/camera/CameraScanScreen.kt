@@ -129,6 +129,7 @@ fun CameraScanScreen(
                     is ScanUiState.Capturing -> CameraContent(
                         modelName = viewModel.selectedModelName,
                         onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
+                        onCaptureError = { msg -> viewModel.onCaptureError(msg) },
                         onSwitchModel = { viewModel.showModelSelection() },
                         onDismiss = onDismiss
                     )
@@ -430,6 +431,7 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
 private fun CameraContent(
     modelName: String,
     onPhotoCaptured: (String) -> Unit,
+    onCaptureError: (String) -> Unit,
     onSwitchModel: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -508,6 +510,7 @@ private fun CameraContent(
                         }
                         override fun onError(exception: ImageCaptureException) {
                             Log.e("CameraScan", "Capture failed", exception)
+                            onCaptureError(exception.message ?: "Photo capture failed")
                         }
                     }
                 )
