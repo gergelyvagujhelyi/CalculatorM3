@@ -34,7 +34,7 @@ object SolverPrompts {
      *  Checks the last non-empty line first (where the model is prompted to put the answer),
      *  then falls back to the last number in the full response. */
     fun extractAnswer(raw: String): String {
-        val numberPattern = Regex("-?\\d+\\.?\\d*")
+        val numberPattern = Regex("-?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?")
         // Try the last non-empty line first (system prompt tells model to put answer there)
         val lastLine = raw.trimEnd().lines().lastOrNull { it.isNotBlank() }?.trim() ?: ""
         val lastLineMatch = numberPattern.find(lastLine)

@@ -40,6 +40,7 @@ sealed interface ScanUiState {
     data class TokenRequired(val model: AiModel) : ScanUiState
     data class AuthError(val httpCode: Int, val model: AiModel) : ScanUiState
     data object FirstTimeWarning : ScanUiState
+    data object DeviceTooWeak : ScanUiState
     data class MobileDataWarning(val model: AiModel) : ScanUiState
 }
 
@@ -62,6 +63,10 @@ class ScanViewModel(
     }
 
     fun initialize() {
+        if (!modelManager.canRunAnyModel) {
+            uiState = ScanUiState.DeviceTooWeak
+            return
+        }
         val downloaded = modelManager.downloadedModels()
         if (downloaded.isEmpty()) {
             uiState = ScanUiState.FirstTimeWarning
@@ -253,6 +258,12 @@ class ScanViewModel(
     }
 
     val selectedModelName: String get() = modelManager.selectedModel.displayName
+    val deviceRamGb: Int get() = modelManager.deviceRamGb
+
+    override fun onCleared() {
+        super.onCleared()
+        releaseAll()
+    }
 
     fun releaseAll() {
         nobodyWhoSolver.release()

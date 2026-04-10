@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.savedstate.SavedStateRegistryOwner
 import com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
@@ -19,13 +20,15 @@ class MainActivity : ComponentActivity() {
 
     private val viewModel: CalculatorViewModel by lazy {
         val factory = CalculatorViewModelFactory(this, this)
-        androidx.lifecycle.ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
+        ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
     }
 
-    private val nobodyWhoSolver by lazy { NobodyWhoSolver() }
-    private val liteRTSolver by lazy { LiteRTSolver() }
     private val modelManager by lazy { ModelManager(applicationContext) }
-    private val scanViewModel by lazy { ScanViewModel(nobodyWhoSolver, liteRTSolver, modelManager) }
+
+    private val scanViewModel: ScanViewModel by lazy {
+        val factory = ScanViewModelFactory(modelManager)
+        ViewModelProvider(this, factory)[ScanViewModel::class.java]
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,15 +38,10 @@ class MainActivity : ComponentActivity() {
             CalculatorM3Theme {
                 CalculatorScreen(
                     viewModel = viewModel,
-                    scanViewModel = if (modelManager.canRunAnyModel) scanViewModel else null
+                    scanViewModel = scanViewModel
                 )
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scanViewModel.releaseAll()
     }
 }
 
@@ -55,5 +53,14 @@ class CalculatorViewModelFactory(
         val prefs = context.getSharedPreferences("calculator_history", Context.MODE_PRIVATE)
         @Suppress("UNCHECKED_CAST")
         return CalculatorViewModel(prefs, handle) as T
+    }
+}
+
+class ScanViewModelFactory(
+    private val modelManager: ModelManager
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return ScanViewModel(NobodyWhoSolver(), LiteRTSolver(), modelManager) as T
     }
 }
