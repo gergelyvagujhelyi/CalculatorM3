@@ -56,7 +56,10 @@ class LiteRTSolver : MathSolver {
                     Content.Text(SolverPrompts.USER_PROMPT)
                 )
             ).collect { message ->
-                rawBuilder.append(message.contents.toString())
+                val text = message.contents.contents
+                    .filterIsInstance<Content.Text>()
+                    .joinToString("") { it.text }
+                rawBuilder.append(text)
                 onToken(rawBuilder.toString())
             }
             val raw = rawBuilder.toString()

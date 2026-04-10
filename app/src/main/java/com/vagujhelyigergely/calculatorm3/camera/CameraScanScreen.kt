@@ -54,7 +54,7 @@ import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import kotlinx.coroutines.delay
 import java.io.File
-import java.util.concurrent.Executors
+
 
 @Composable
 fun CameraScanScreen(
@@ -440,7 +440,7 @@ private fun CameraContent(
             bindToLifecycle(lifecycleOwner)
         }
     }
-    val executor = remember { Executors.newSingleThreadExecutor() }
+    val executor = remember { ContextCompat.getMainExecutor(context) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Camera preview
