@@ -1,0 +1,12 @@
+[package]
+name = "nobodywho-android"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# The nobodywho crate lives under nobodywho/core in the git repo's workspace
+nobodywho = { git = "https://github.com/nobodywho-ooo/nobodywho" }
+jni = "0.21"

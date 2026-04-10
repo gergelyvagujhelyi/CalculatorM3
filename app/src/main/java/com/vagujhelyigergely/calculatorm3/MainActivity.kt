@@ -8,14 +8,26 @@ import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.savedstate.SavedStateRegistryOwner
+import com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver
+import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
+import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
 class MainActivity : ComponentActivity() {
 
     private val viewModel: CalculatorViewModel by lazy {
         val factory = CalculatorViewModelFactory(this, this)
-        androidx.lifecycle.ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
+        ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
+    }
+
+    private val modelManager by lazy { ModelManager(applicationContext) }
+
+    private val scanViewModel: ScanViewModel by lazy {
+        val factory = ScanViewModelFactory(modelManager)
+        ViewModelProvider(this, factory)[ScanViewModel::class.java]
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,7 +36,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CalculatorM3Theme {
-                CalculatorScreen(viewModel = viewModel)
+                CalculatorScreen(
+                    viewModel = viewModel,
+                    scanViewModel = scanViewModel
+                )
             }
         }
     }
@@ -38,5 +53,14 @@ class CalculatorViewModelFactory(
         val prefs = context.getSharedPreferences("calculator_history", Context.MODE_PRIVATE)
         @Suppress("UNCHECKED_CAST")
         return CalculatorViewModel(prefs, handle) as T
+    }
+}
+
+class ScanViewModelFactory(
+    private val modelManager: ModelManager
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        @Suppress("UNCHECKED_CAST")
+        return ScanViewModel(NobodyWhoSolver(), LiteRTSolver(), modelManager) as T
     }
 }
