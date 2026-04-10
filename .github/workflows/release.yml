@@ -41,7 +41,7 @@ jobs:
         with:
           ndk-version: r28b
 
-      - name: Build native library
+      - name: Build native library (arm64-v8a)
         env:
           ANDROID_NDK: ${{ steps.ndk.outputs.ndk-path }}
         run: |

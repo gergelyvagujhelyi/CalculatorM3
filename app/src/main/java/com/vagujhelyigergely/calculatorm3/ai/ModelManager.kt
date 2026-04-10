@@ -40,7 +40,7 @@ enum class AiModel(
     GEMMA3N_E2B(
         id = "gemma3n-e2b",
         displayName = "Gemma 3n E2B",
-        description = "Fast, vision + audio, edge optimized",
+        description = "Fast, edge optimized (experimental)",
         totalSizeDisplay = "~3.7 GB",
         modelUrl = "https://huggingface.co/google/gemma-3n-E2B-it-litert-lm/resolve/main/gemma-3n-E2B-it-int4.litertlm",
         modelSizeDisplay = "3.7 GB",
@@ -54,7 +54,7 @@ enum class AiModel(
     GEMMA3N_E4B(
         id = "gemma3n-e4b",
         displayName = "Gemma 3n E4B",
-        description = "Better quality, edge optimized",
+        description = "Better quality, edge optimized (experimental)",
         totalSizeDisplay = "~4.2 GB",
         modelUrl = "https://huggingface.co/google/gemma-3n-E4B-it-litert-lm/resolve/main/gemma-3n-E4B-it-int4.litertlm",
         modelSizeDisplay = "4.2 GB",
@@ -200,6 +200,9 @@ class ModelManager(private val context: Context) {
         val tmpFile = File(dir, "$destFilename.tmp")
 
         try {
+            // Resume support: if tmp file exists, request remaining bytes
+            val existingBytes = if (tmpFile.exists()) tmpFile.length() else 0L
+
             val connection = URL(url).openConnection() as HttpURLConnection
             connection.connectTimeout = 30_000
             connection.readTimeout = 30_000
@@ -209,10 +212,14 @@ class ModelManager(private val context: Context) {
                     ?: throw Exception("HuggingFace token required. Go to huggingface.co/settings/tokens to create one, then enter it in the app.")
                 connection.setRequestProperty("Authorization", "Bearer $token")
             }
+            if (existingBytes > 0) {
+                connection.setRequestProperty("Range", "bytes=$existingBytes-")
+            }
             connection.connect()
 
             val code = connection.responseCode
-            if (code != HttpURLConnection.HTTP_OK) {
+            val isResuming = code == HttpURLConnection.HTTP_PARTIAL && existingBytes > 0
+            if (code != HttpURLConnection.HTTP_OK && !isResuming) {
                 throw when (code) {
                     401, 403 -> DownloadAuthException(
                         "Authentication failed (HTTP $code)",
@@ -223,14 +230,20 @@ class ModelManager(private val context: Context) {
                 }
             }
 
-            val totalBytes = connection.contentLengthLong
-            var downloadedBytes = 0L
+            val contentLength = connection.contentLengthLong
+            val totalBytes = if (isResuming) existingBytes + contentLength else contentLength
+            var downloadedBytes = if (isResuming) existingBytes else 0L
             val buffer = ByteArray(131_072)
 
+            // If not resuming and tmp exists, start fresh
+            if (!isResuming && tmpFile.exists()) {
+                tmpFile.delete()
+            }
+
             connection.inputStream.use { input ->
-                FileOutputStream(tmpFile).use { output ->
+                FileOutputStream(tmpFile, isResuming).use { output ->
                     while (true) {
-                        ensureActive() // support coroutine cancellation
+                        ensureActive()
                         val bytesRead = input.read(buffer)
                         if (bytesRead == -1) break
                         output.write(buffer, 0, bytesRead)
@@ -241,14 +254,13 @@ class ModelManager(private val context: Context) {
             }
 
             if (!tmpFile.renameTo(destFile)) {
-                // renameTo can fail on cross-filesystem; fall back to copy
                 tmpFile.copyTo(destFile, overwrite = true)
                 tmpFile.delete()
             }
-        } finally {
-            if (tmpFile.exists() && !destFile.exists()) {
-                tmpFile.delete()
-            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            // User cancelled — delete partial tmp so it doesn't resume a cancelled download
+            tmpFile.delete()
+            throw e
         }
     }
 }

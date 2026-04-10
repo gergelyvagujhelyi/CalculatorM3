@@ -63,8 +63,8 @@ Point your camera at a handwritten math expression and let an on-device AI model
 | Gemma 4 E2B | ~4.1 GB | 6 GB | NobodyWho |
 | Gemma 4 E4B | ~6.0 GB | 8 GB | NobodyWho |
 | Qwen2.5-VL 7B | ~5.2 GB | 8 GB | NobodyWho |
-| Gemma 3n E2B | ~3.7 GB | 4 GB | LiteRT-LM |
-| Gemma 3n E4B | ~4.2 GB | 6 GB | LiteRT-LM |
+| Gemma 3n E2B | ~3.7 GB | 4 GB | LiteRT-LM (experimental) |
+| Gemma 3n E4B | ~4.2 GB | 6 GB | LiteRT-LM (experimental) |
 
 **Requirements:**
 - Android device with 4+ GB RAM
