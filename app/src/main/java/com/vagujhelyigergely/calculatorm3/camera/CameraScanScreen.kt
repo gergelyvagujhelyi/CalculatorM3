@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,6 +47,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.vagujhelyigergely.calculatorm3.R
+import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import kotlinx.coroutines.delay
 import java.io.File
 import java.util.concurrent.Executors
@@ -106,7 +108,9 @@ fun CameraScanScreen(
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Capturing -> CameraContent(
+                        modelName = viewModel.selectedModelName,
                         onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
+                        onSwitchModel = { viewModel.showModelSelection() },
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Processing -> ProcessingContent(
@@ -145,8 +149,11 @@ fun CameraScanScreen(
                         showProgress = true,
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.ModelMissing -> ModelMissingContent(
-                        onDownload = { viewModel.startDownload() },
+                    is ScanUiState.ModelSelection -> ModelSelectionContent(
+                        downloadedModels = state.downloadedModels,
+                        deviceRamGb = state.deviceRamGb,
+                        onSelectModel = { viewModel.selectModel(it) },
+                        onDownloadModel = { viewModel.startDownload(it) },
                         onDismiss = onDismiss
                     )
                 }
@@ -342,6 +349,10 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
                     text = stringResource(R.string.camera_generating),
                     style = MaterialTheme.typography.titleMedium
                 )
+                val scrollState = rememberScrollState()
+                LaunchedEffect(partialRaw) {
+                    scrollState.animateScrollTo(scrollState.maxValue)
+                }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -355,7 +366,7 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
                             .padding(12.dp)
-                            .verticalScroll(rememberScrollState())
+                            .verticalScroll(scrollState)
                     )
                 }
             }
@@ -367,7 +378,9 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
 
 @Composable
 private fun CameraContent(
+    modelName: String,
     onPhotoCaptured: (String) -> Unit,
+    onSwitchModel: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -391,14 +404,30 @@ private fun CameraContent(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Close button
-        CloseButton(
-            onDismiss = onDismiss,
+        // Top bar: close + model switch
+        Row(
             modifier = Modifier
                 .align(Alignment.TopStart)
+                .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(8.dp)
-        )
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CloseButton(onDismiss = onDismiss)
+            TextButton(onClick = onSwitchModel) {
+                Icon(
+                    imageVector = Icons.Default.SwapHoriz,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = modelName,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
 
         // Hint text
         Text(
@@ -622,7 +651,13 @@ private fun PermissionDeniedContent(onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ModelMissingContent(onDownload: () -> Unit, onDismiss: () -> Unit) {
+private fun ModelSelectionContent(
+    downloadedModels: List<AiModel>,
+    deviceRamGb: Int,
+    onSelectModel: (AiModel) -> Unit,
+    onDownloadModel: (AiModel) -> Unit,
+    onDismiss: () -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         CloseButton(
             onDismiss = onDismiss,
@@ -633,34 +668,98 @@ private fun ModelMissingContent(onDownload: () -> Unit, onDismiss: () -> Unit) {
         )
         Column(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(32.dp),
+                .fillMaxSize()
+                .statusBarsPadding()
+                .padding(horizontal = 24.dp)
+                .padding(top = 56.dp, bottom = 16.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.CloudDownload,
+                imageVector = Icons.Default.Psychology,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = stringResource(R.string.model_not_found),
+                text = stringResource(R.string.choose_model),
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = stringResource(R.string.model_download_description),
-                style = MaterialTheme.typography.bodyMedium,
+                text = stringResource(R.string.choose_model_description, deviceRamGb),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            Button(onClick = onDownload) {
-                Icon(
-                    imageVector = Icons.Default.CloudDownload,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.download_model))
+
+            AiModel.entries.forEach { model ->
+                val isDownloaded = model in downloadedModels
+                val tooLarge = model.minRamGb > deviceRamGb
+
+                Surface(
+                    onClick = {
+                        if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (tooLarge)
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 1.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = model.displayName,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = model.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${model.totalSizeDisplay} | ${model.minRamGb} GB+ RAM",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (tooLarge) {
+                                Text(
+                                    text = stringResource(R.string.model_too_large, model.minRamGb, deviceRamGb),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        if (isDownloaded) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = stringResource(R.string.downloaded),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.CloudDownload,
+                                contentDescription = stringResource(R.string.download_model),
+                                tint = if (tooLarge)
+                                    MaterialTheme.colorScheme.error
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
     }

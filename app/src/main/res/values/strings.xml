@@ -45,9 +45,11 @@
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
     <string name="camera_permission_needed">Camera permission is needed to scan handwritten expressions</string>
-    <string name="model_not_found">AI model required</string>
-    <string name="model_download_description">Expression scanning needs a vision AI model (Gemma 4 E2B, ~4.1 GB). The model runs entirely on your device — no data is sent to the cloud.</string>
-    <string name="download_model">Download model</string>
+    <string name="choose_model">Choose AI model</string>
+    <string name="choose_model_description">Your device has %1$d GB RAM. Larger models are more accurate but slower. All models run entirely on your device.</string>
+    <string name="model_too_large">Needs %1$d GB RAM — your device has %2$d GB</string>
+    <string name="download_model">Download</string>
+    <string name="downloaded">Downloaded</string>
     <string name="downloading_model">Downloading AI model</string>
     <string name="download_complete">Download complete</string>
     <string name="download_file_progress">File %1$d of %2$d</string>

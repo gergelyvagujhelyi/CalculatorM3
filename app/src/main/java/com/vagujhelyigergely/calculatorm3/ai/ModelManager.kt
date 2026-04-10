@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import android.app.ActivityManager
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -9,44 +10,144 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Manages AI model files on-device, including downloading from HuggingFace.
- *
- * Uses Gemma 4 E2B (edge-optimized, ~4.1 GB total):
- *   model.gguf   — Gemma 4 E2B IT Q4_K_M (~3.1 GB)
- *   mmproj.gguf  — Vision projection model F16 (~986 MB)
+ * Available AI models, ranked from fastest/smallest to best quality/largest.
  */
-class ModelManager(context: Context) {
+enum class AiModel(
+    val id: String,
+    val displayName: String,
+    val description: String,
+    val totalSizeDisplay: String,
+    val modelUrl: String,
+    val modelSizeDisplay: String,
+    val mmprojUrl: String,
+    val mmprojSizeDisplay: String,
+    val minRamGb: Int
+) {
+    INTERNVL_1B(
+        id = "internvl2-1b",
+        displayName = "InternVL2.5 1B",
+        description = "Fastest, basic quality",
+        totalSizeDisplay = "~1.0 GB",
+        modelUrl = "https://huggingface.co/ggml-org/InternVL2_5-1B-GGUF/resolve/main/InternVL2_5-1B-Q8_0.gguf",
+        modelSizeDisplay = "675 MB",
+        mmprojUrl = "https://huggingface.co/ggml-org/InternVL2_5-1B-GGUF/resolve/main/mmproj-InternVL2_5-1B-Q8_0.gguf",
+        mmprojSizeDisplay = "333 MB",
+        minRamGb = 3
+    ),
+    GEMMA3_4B(
+        id = "gemma3-4b",
+        displayName = "Gemma 3 4B",
+        description = "Good quality, well tested",
+        totalSizeDisplay = "~2.9 GB",
+        modelUrl = "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf",
+        modelSizeDisplay = "2.5 GB",
+        mmprojUrl = "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/mmproj-model-f16.gguf",
+        mmprojSizeDisplay = "411 MB",
+        minRamGb = 5
+    ),
+    GEMMA4_E2B(
+        id = "gemma4-e2b",
+        displayName = "Gemma 4 E2B",
+        description = "Balanced speed and quality",
+        totalSizeDisplay = "~4.1 GB",
+        modelUrl = "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf",
+        modelSizeDisplay = "3.1 GB",
+        mmprojUrl = "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/mmproj-F16.gguf",
+        mmprojSizeDisplay = "986 MB",
+        minRamGb = 6
+    ),
+    GEMMA4_E4B(
+        id = "gemma4-e4b",
+        displayName = "Gemma 4 E4B",
+        description = "Best quality, needs powerful device",
+        totalSizeDisplay = "~6.0 GB",
+        modelUrl = "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf",
+        modelSizeDisplay = "5.0 GB",
+        mmprojUrl = "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/mmproj-F16.gguf",
+        mmprojSizeDisplay = "990 MB",
+        minRamGb = 8
+    );
+}
+
+/**
+ * Manages AI model files on-device, including downloading and selection.
+ * Each model is stored in its own subdirectory under the models folder.
+ */
+class ModelManager(private val context: Context) {
 
     private val modelsDir: File = File(context.getExternalFilesDir(null), "models")
+    private val prefs = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
 
-    val modelPath: String get() = File(modelsDir, MODEL_FILENAME).absolutePath
-    val mmprojPath: String get() = File(modelsDir, MMPROJ_FILENAME).absolutePath
+    init {
+        // Migrate old-style model files (models/model.gguf) to subdirectory (models/gemma4-e2b/)
+        val oldModel = File(modelsDir, "model.gguf")
+        val oldMmproj = File(modelsDir, "mmproj.gguf")
+        if (oldModel.exists() && !areModelsAvailable(AiModel.GEMMA4_E2B)) {
+            val dest = modelDir(AiModel.GEMMA4_E2B)
+            dest.mkdirs()
+            oldModel.renameTo(File(dest, "model.gguf"))
+            if (oldMmproj.exists()) {
+                oldMmproj.renameTo(File(dest, "mmproj.gguf"))
+            }
+        }
+    }
 
-    val areModelsAvailable: Boolean
-        get() = File(modelsDir, MODEL_FILENAME).exists() &&
-                File(modelsDir, MMPROJ_FILENAME).exists()
+    var selectedModel: AiModel
+        get() {
+            val id = prefs.getString("selected_model", AiModel.GEMMA4_E2B.id)
+            return AiModel.entries.find { it.id == id } ?: AiModel.GEMMA4_E2B
+        }
+        set(value) {
+            prefs.edit().putString("selected_model", value.id).apply()
+        }
 
-    val isModelDownloaded: Boolean
-        get() = File(modelsDir, MODEL_FILENAME).exists()
+    fun modelPath(model: AiModel = selectedModel): String =
+        File(modelDir(model), "model.gguf").absolutePath
 
-    val isMmprojDownloaded: Boolean
-        get() = File(modelsDir, MMPROJ_FILENAME).exists()
+    fun mmprojPath(model: AiModel = selectedModel): String =
+        File(modelDir(model), "mmproj.gguf").absolutePath
 
-    val modelsDirectory: String get() = modelsDir.absolutePath
+    fun isModelDownloaded(model: AiModel = selectedModel): Boolean =
+        File(modelDir(model), "model.gguf").exists()
+
+    fun isMmprojDownloaded(model: AiModel = selectedModel): Boolean =
+        File(modelDir(model), "mmproj.gguf").exists()
+
+    fun areModelsAvailable(model: AiModel = selectedModel): Boolean =
+        isModelDownloaded(model) && isMmprojDownloaded(model)
+
+    /** List of all models that have been downloaded. */
+    fun downloadedModels(): List<AiModel> =
+        AiModel.entries.filter { areModelsAvailable(it) }
+
+    /** Total device RAM in GB. */
+    val deviceRamGb: Int
+        get() {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val memInfo = ActivityManager.MemoryInfo()
+            activityManager.getMemoryInfo(memInfo)
+            return (memInfo.totalMem / (1024L * 1024L * 1024L)).toInt()
+        }
+
+    /** Check if a model's RAM requirement exceeds the device's total RAM. */
+    fun isModelTooLarge(model: AiModel): Boolean = model.minRamGb > deviceRamGb
+
+    private fun modelDir(model: AiModel): File = File(modelsDir, model.id)
 
     /**
-     * Download a file from [url] to [destFilename] in the models directory.
+     * Download a file from [url] to [destFilename] in the model's directory.
      * Calls [onProgress] with (bytesDownloaded, totalBytes) periodically.
-     * totalBytes is -1 if the server doesn't report content length.
      */
     suspend fun downloadFile(
+        model: AiModel,
         url: String,
         destFilename: String,
         onProgress: (downloaded: Long, total: Long) -> Unit
     ) = withContext(Dispatchers.IO) {
-        modelsDir.mkdirs()
-        val destFile = File(modelsDir, destFilename)
-        val tmpFile = File(modelsDir, "$destFilename.tmp")
+        val dir = modelDir(model)
+        dir.mkdirs()
+        val destFile = File(dir, destFilename)
+        val tmpFile = File(dir, "$destFilename.tmp")
 
         try {
             val connection = URL(url).openConnection() as HttpURLConnection
@@ -61,7 +162,7 @@ class ModelManager(context: Context) {
 
             val totalBytes = connection.contentLengthLong
             var downloadedBytes = 0L
-            val buffer = ByteArray(131_072) // 128 KB buffer
+            val buffer = ByteArray(131_072)
 
             connection.inputStream.use { input ->
                 FileOutputStream(tmpFile).use { output ->
@@ -75,27 +176,11 @@ class ModelManager(context: Context) {
                 }
             }
 
-            // Rename tmp to final only on success
             tmpFile.renameTo(destFile)
         } finally {
-            // Clean up partial download on failure
-            if (tmpFile.exists() && !destFile.exists()) {
+            if (tmpFile.exists() && !File(dir, destFilename).exists()) {
                 tmpFile.delete()
             }
         }
-    }
-
-    companion object {
-        const val MODEL_FILENAME = "model.gguf"
-        const val MMPROJ_FILENAME = "mmproj.gguf"
-
-        const val MODEL_URL =
-            "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf"
-        const val MMPROJ_URL =
-            "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/mmproj-F16.gguf"
-
-        const val MODEL_SIZE_DISPLAY = "3.1 GB"
-        const val MMPROJ_SIZE_DISPLAY = "986 MB"
-        const val TOTAL_SIZE_DISPLAY = "~4.1 GB"
     }
 }

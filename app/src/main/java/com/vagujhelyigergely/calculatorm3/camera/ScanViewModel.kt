@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.MathRecognizer
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import kotlinx.coroutines.Dispatchers
@@ -21,13 +22,14 @@ sealed interface ScanUiState {
     ) : ScanUiState
     data class Success(val answer: String, val rawResponse: String, val elapsedMs: Long) : ScanUiState
     data class Error(val message: String) : ScanUiState
-    data object ModelMissing : ScanUiState
+    data class ModelSelection(val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
     data class Downloading(
+        val model: AiModel,
         val currentFile: String,
         val downloadedBytes: Long,
         val totalBytes: Long,
-        val fileIndex: Int,     // 0 = model, 1 = mmproj
-        val fileCount: Int      // always 2
+        val fileIndex: Int,
+        val fileCount: Int
     ) : ScanUiState
     data class DownloadComplete(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
 }
@@ -40,7 +42,9 @@ class ScanViewModel(
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
         private set
 
-    /** Check native library + model availability and load if needed. */
+    /** The model currently loaded in memory (may differ from selectedModel if not yet loaded). */
+    private var loadedModelId: String? = null
+
     fun initialize() {
         if (!recognizer.isNativeLibraryAvailable) {
             uiState = ScanUiState.Error(
@@ -49,22 +53,27 @@ class ScanViewModel(
             )
             return
         }
-        if (!modelManager.areModelsAvailable) {
-            uiState = ScanUiState.ModelMissing
+        val selected = modelManager.selectedModel
+        if (!modelManager.areModelsAvailable(selected)) {
+            uiState = ScanUiState.ModelSelection(modelManager.downloadedModels(), modelManager.deviceRamGb)
             return
         }
-        loadModel()
+        loadModel(selected)
     }
 
-    private fun loadModel() {
-        if (recognizer.isModelLoaded) {
+    private fun loadModel(model: AiModel) {
+        if (recognizer.isModelLoaded && loadedModelId == model.id) {
             uiState = ScanUiState.Capturing
             return
         }
         uiState = ScanUiState.ModelLoading()
         viewModelScope.launch {
             try {
-                recognizer.loadModel(modelManager.modelPath, modelManager.mmprojPath)
+                recognizer.loadModel(
+                    modelManager.modelPath(model),
+                    modelManager.mmprojPath(model)
+                )
+                loadedModelId = model.id
                 uiState = ScanUiState.Capturing
             } catch (e: Exception) {
                 uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
@@ -72,66 +81,71 @@ class ScanViewModel(
         }
     }
 
-    /** Download both model files, then load the model. */
-    fun startDownload() {
+    /** Select and use a model that's already downloaded. */
+    fun selectModel(model: AiModel) {
+        modelManager.selectedModel = model
+        if (modelManager.areModelsAvailable(model)) {
+            loadModel(model)
+        } else {
+            startDownload(model)
+        }
+    }
+
+    /** Download a model's files, then load it. */
+    fun startDownload(model: AiModel) {
+        modelManager.selectedModel = model
         viewModelScope.launch {
             try {
-                // Download main model if needed
-                if (!modelManager.isModelDownloaded) {
+                if (!modelManager.isModelDownloaded(model)) {
                     uiState = ScanUiState.Downloading(
-                        currentFile = "Gemma 4 E2B (${ModelManager.MODEL_SIZE_DISPLAY})",
-                        downloadedBytes = 0,
-                        totalBytes = -1,
-                        fileIndex = 0,
-                        fileCount = 2
+                        model = model,
+                        currentFile = "${model.displayName} (${model.modelSizeDisplay})",
+                        downloadedBytes = 0, totalBytes = -1,
+                        fileIndex = 0, fileCount = 2
                     )
                     modelManager.downloadFile(
-                        url = ModelManager.MODEL_URL,
-                        destFilename = ModelManager.MODEL_FILENAME
+                        model = model,
+                        url = model.modelUrl,
+                        destFilename = "model.gguf"
                     ) { downloaded, total ->
                         uiState = ScanUiState.Downloading(
-                            currentFile = "Gemma 4 E2B (${ModelManager.MODEL_SIZE_DISPLAY})",
-                            downloadedBytes = downloaded,
-                            totalBytes = total,
-                            fileIndex = 0,
-                            fileCount = 2
+                            model = model,
+                            currentFile = "${model.displayName} (${model.modelSizeDisplay})",
+                            downloadedBytes = downloaded, totalBytes = total,
+                            fileIndex = 0, fileCount = 2
                         )
                     }
                 }
 
-                // Download mmproj if needed
-                if (!modelManager.isMmprojDownloaded) {
+                if (!modelManager.isMmprojDownloaded(model)) {
                     uiState = ScanUiState.Downloading(
-                        currentFile = "Vision projector (${ModelManager.MMPROJ_SIZE_DISPLAY})",
-                        downloadedBytes = 0,
-                        totalBytes = -1,
-                        fileIndex = 1,
-                        fileCount = 2
+                        model = model,
+                        currentFile = "Vision projector (${model.mmprojSizeDisplay})",
+                        downloadedBytes = 0, totalBytes = -1,
+                        fileIndex = 1, fileCount = 2
                     )
                     modelManager.downloadFile(
-                        url = ModelManager.MMPROJ_URL,
-                        destFilename = ModelManager.MMPROJ_FILENAME
+                        model = model,
+                        url = model.mmprojUrl,
+                        destFilename = "mmproj.gguf"
                     ) { downloaded, total ->
                         uiState = ScanUiState.Downloading(
-                            currentFile = "Vision projector (${ModelManager.MMPROJ_SIZE_DISPLAY})",
-                            downloadedBytes = downloaded,
-                            totalBytes = total,
-                            fileIndex = 1,
-                            fileCount = 2
+                            model = model,
+                            currentFile = "Vision projector (${model.mmprojSizeDisplay})",
+                            downloadedBytes = downloaded, totalBytes = total,
+                            fileIndex = 1, fileCount = 2
                         )
                     }
                 }
 
-                // Show download complete briefly, then load model
                 uiState = ScanUiState.DownloadComplete()
-                loadModel()
+                loadModel(model)
             } catch (e: Exception) {
                 uiState = ScanUiState.Error("Download failed: ${e.message}")
             }
         }
     }
 
-    /** Called when the user captures a photo. */
     fun onPhotoCaptured(imagePath: String) {
         val startTime = System.currentTimeMillis()
         uiState = ScanUiState.Processing(startTimeMs = startTime)
@@ -152,10 +166,14 @@ class ScanViewModel(
         }
     }
 
-    /** Return to the camera preview for another capture. */
     fun retry() {
         uiState = ScanUiState.Capturing
     }
 
-    val modelsDirectory: String get() = modelManager.modelsDirectory
+    /** Go back to model selection screen. */
+    fun showModelSelection() {
+        uiState = ScanUiState.ModelSelection(modelManager.downloadedModels(), modelManager.deviceRamGb)
+    }
+
+    val selectedModelName: String get() = modelManager.selectedModel.displayName
 }
