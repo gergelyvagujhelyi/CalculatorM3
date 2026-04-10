@@ -455,7 +455,7 @@ fun DisplaySection(
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Text(
-                                text = "= ${entry.result}",
+                                text = "= ${formatResultNumber(entry.result)}",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurfaceVariant,
@@ -482,7 +482,7 @@ fun DisplaySection(
                 exit = fadeOut()
             ) {
                 Text(
-                    text = history,
+                    text = formatExpression(history),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.outline,
                     textAlign = TextAlign.End,
@@ -679,7 +679,7 @@ fun DisplaySection(
             exit = fadeOut(animationSpec = tween(150))
         ) {
             Text(
-                text = if (result.startsWith("Error")) result else "= $result",
+                text = if (result.startsWith("Error")) result else "= ${formatResultNumber(result)}",
                 style = MaterialTheme.typography.headlineSmall,
                 color = colorScheme.primary.copy(alpha = 0.65f),
                 fontWeight = FontWeight.Medium,
@@ -894,7 +894,7 @@ fun HistorySheet(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "= ${entry.result}",
+                                    text = "= ${formatResultNumber(entry.result)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = colorScheme.onSurface,
@@ -910,36 +910,148 @@ fun HistorySheet(
     }
 }
 
-private fun formatExpression(expr: String): String {
-    // Add spaces around binary operators (Unicode −, ×, ÷, and ASCII +).
-    // ASCII '-' (from +/− toggle or history load) is always a unary sign prefix,
-    // so it must NOT get spaces — otherwise cursor mapping breaks.
-    // Also skip the sign in E notation (e.g. E+30).
-    return expr.replace(Regex("(?<=.)(?<![Ee])[+×÷−]")) { " ${it.value} " }
-}
+private val BINARY_OPERATORS = setOf('+', '×', '÷', '−')
 
-private fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
-    var formattedPos = 0
-    for (i in 0 until rawCursor.coerceAtMost(raw.length)) {
-        if (raw[i] in listOf('+', '−', '×', '÷')) {
-            formattedPos += 3 // " X "
-        } else {
-            formattedPos += 1
+private fun needsSeparator(indexInIntPart: Int, intPartLength: Int): Boolean =
+    indexInIntPart > 0 && (intPartLength - indexInIntPart) % 3 == 0
+
+internal fun formatExpression(expr: String): String {
+    val sb = StringBuilder()
+    var i = 0
+    while (i < expr.length) {
+        val c = expr[i]
+        when {
+            c.isDigit() || (c == '.' && i + 1 < expr.length && expr[i + 1].isDigit()) -> {
+                // Integer part — collect digits and add thousand separators
+                val intStart = i
+                while (i < expr.length && expr[i].isDigit()) i++
+                val intPart = expr.substring(intStart, i)
+                for (j in intPart.indices) {
+                    if (needsSeparator(j, intPart.length)) sb.append(',')
+                    sb.append(intPart[j])
+                }
+                // Decimal part (no separators)
+                if (i < expr.length && expr[i] == '.') {
+                    sb.append('.')
+                    i++
+                    while (i < expr.length && expr[i].isDigit()) {
+                        sb.append(expr[i])
+                        i++
+                    }
+                }
+                // E notation suffix (pass through)
+                if (i < expr.length && (expr[i] == 'E' || expr[i] == 'e')) {
+                    sb.append(expr[i])
+                    i++
+                    if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) {
+                        sb.append(expr[i])
+                        i++
+                    }
+                    while (i < expr.length && expr[i].isDigit()) {
+                        sb.append(expr[i])
+                        i++
+                    }
+                }
+            }
+            // Binary operators: space around them (not at position 0).
+            // ASCII '-' (from +/− toggle) is unary, excluded from this set.
+            c in BINARY_OPERATORS && sb.isNotEmpty() -> {
+                sb.append(" $c ")
+                i++
+            }
+            else -> {
+                sb.append(c)
+                i++
+            }
         }
     }
-    return formattedPos
+    return sb.toString()
 }
 
-private fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
+internal fun formatResultNumber(value: String): String {
+    if (value.isEmpty() || value.startsWith("Error") || value.contains('E') || value.contains('e')) return value
+    val negative = value.startsWith("-")
+    val abs = if (negative) value.substring(1) else value
+    val dotIndex = abs.indexOf('.')
+    val intPart = if (dotIndex >= 0) abs.substring(0, dotIndex) else abs
+    if (intPart.length <= 3) return value
+    val rest = if (dotIndex >= 0) abs.substring(dotIndex) else ""
+    val formatted = buildString {
+        for (j in intPart.indices) {
+            if (needsSeparator(j, intPart.length)) append(',')
+            append(intPart[j])
+        }
+    }
+    return (if (negative) "-" else "") + formatted + rest
+}
+
+internal fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
     var fPos = 0
-    var rPos = 0
-    while (rPos < raw.length && fPos < formattedCursor) {
-        if (raw[rPos] in listOf('+', '−', '×', '÷')) {
-            fPos += 3
-        } else {
-            fPos += 1
+    var i = 0
+    val limit = rawCursor.coerceAtMost(raw.length)
+    while (i < limit) {
+        val c = raw[i]
+        when {
+            c.isDigit() || (c == '.' && i + 1 < raw.length && raw[i + 1].isDigit()) -> {
+                val intStart = i
+                var intEnd = i
+                while (intEnd < raw.length && raw[intEnd].isDigit()) intEnd++
+                val intLen = intEnd - intStart
+                val intLimit = limit.coerceAtMost(intEnd)
+                for (j in i until intLimit) {
+                    if (needsSeparator(j - intStart, intLen)) fPos++
+                    fPos++
+                }
+                i = intLimit
+                if (i == intEnd && i < limit && i < raw.length && raw[i] == '.') {
+                    fPos++; i++
+                    while (i < limit && i < raw.length && raw[i].isDigit()) { fPos++; i++ }
+                }
+                if (i < limit && i < raw.length && (raw[i] == 'E' || raw[i] == 'e')) {
+                    fPos++; i++
+                    if (i < limit && i < raw.length && (raw[i] == '+' || raw[i] == '-')) { fPos++; i++ }
+                    while (i < limit && i < raw.length && raw[i].isDigit()) { fPos++; i++ }
+                }
+            }
+            c in BINARY_OPERATORS && i > 0 -> { fPos += 3; i++ }
+            else -> { fPos++; i++ }
         }
-        rPos++
     }
-    return rPos
+    return fPos
+}
+
+internal fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
+    var fPos = 0
+    var i = 0
+    while (i < raw.length && fPos < formattedCursor) {
+        val c = raw[i]
+        when {
+            c.isDigit() || (c == '.' && i + 1 < raw.length && raw[i + 1].isDigit()) -> {
+                val intStart = i
+                var intEnd = i
+                while (intEnd < raw.length && raw[intEnd].isDigit()) intEnd++
+                val intLen = intEnd - intStart
+                while (i < intEnd && fPos < formattedCursor) {
+                    val posInInt = i - intStart
+                    if (needsSeparator(posInInt, intLen)) {
+                        fPos++
+                        if (fPos >= formattedCursor) break
+                    }
+                    fPos++; i++
+                }
+                if (i == intEnd && i < raw.length && raw[i] == '.' && fPos < formattedCursor) {
+                    fPos++; i++
+                    while (i < raw.length && raw[i].isDigit() && fPos < formattedCursor) { fPos++; i++ }
+                }
+                if (i < raw.length && (raw[i] == 'E' || raw[i] == 'e') && fPos < formattedCursor) {
+                    fPos++; i++
+                    if (i < raw.length && (raw[i] == '+' || raw[i] == '-') && fPos < formattedCursor) { fPos++; i++ }
+                    while (i < raw.length && raw[i].isDigit() && fPos < formattedCursor) { fPos++; i++ }
+                }
+            }
+            c in BINARY_OPERATORS && i > 0 -> { fPos += 3; i++ }
+            else -> { fPos++; i++ }
+        }
+    }
+    return i
 }
