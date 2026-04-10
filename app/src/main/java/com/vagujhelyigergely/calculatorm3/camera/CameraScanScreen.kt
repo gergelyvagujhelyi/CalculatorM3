@@ -11,6 +11,7 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import android.view.WindowManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
@@ -78,6 +80,21 @@ fun CameraScanScreen(
             viewModel.initialize()
         } else {
             permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    // Keep screen on during loading, downloading, and processing
+    val keepScreenOn = viewModel.uiState is ScanUiState.ModelLoading ||
+        viewModel.uiState is ScanUiState.Processing ||
+        viewModel.uiState is ScanUiState.Downloading ||
+        viewModel.uiState is ScanUiState.DownloadComplete
+    val activity = context as? android.app.Activity
+    DisposableEffect(keepScreenOn) {
+        if (keepScreenOn) {
+            activity?.window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        onDispose {
+            activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
     }
 
@@ -131,6 +148,7 @@ fun CameraScanScreen(
                     )
                     is ScanUiState.Error -> ErrorContent(
                         message = state.message,
+                        rawResponse = state.rawResponse,
                         onRetry = { viewModel.retry() },
                         onDismiss = onDismiss
                     )
@@ -150,6 +168,7 @@ fun CameraScanScreen(
                         onDismiss = onDismiss
                     )
                     is ScanUiState.ModelSelection -> ModelSelectionContent(
+                        selectedModel = state.selectedModel,
                         downloadedModels = state.downloadedModels,
                         deviceRamGb = state.deviceRamGb,
                         onSelectModel = { viewModel.selectModel(it) },
@@ -577,9 +596,12 @@ private fun SuccessContent(
 @Composable
 private fun ErrorContent(
     message: String,
+    rawResponse: String?,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    var showRaw by remember { mutableStateOf(false) }
+
     Box(modifier = Modifier.fillMaxSize()) {
         CloseButton(
             onDismiss = onDismiss,
@@ -613,6 +635,35 @@ private fun ErrorContent(
             )
             OutlinedButton(onClick = onRetry) {
                 Text(stringResource(R.string.retry))
+            }
+            if (rawResponse != null) {
+                TextButton(onClick = { showRaw = !showRaw }) {
+                    Text(
+                        text = stringResource(R.string.raw_model_output),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Icon(
+                        imageVector = if (showRaw) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                if (showRaw) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        tonalElevation = 1.dp
+                    ) {
+                        Text(
+                            text = rawResponse,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
             }
         }
     }
@@ -652,6 +703,7 @@ private fun PermissionDeniedContent(onDismiss: () -> Unit) {
 
 @Composable
 private fun ModelSelectionContent(
+    selectedModel: AiModel,
     downloadedModels: List<AiModel>,
     deviceRamGb: Int,
     onSelectModel: (AiModel) -> Unit,
@@ -695,13 +747,22 @@ private fun ModelSelectionContent(
 
             AiModel.entries.forEach { model ->
                 val isDownloaded = model in downloadedModels
+                val isSelected = model == selectedModel
                 val tooLarge = model.minRamGb > deviceRamGb
 
                 Surface(
                     onClick = {
                         if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (isSelected) Modifier.border(
+                                2.dp,
+                                MaterialTheme.colorScheme.primary,
+                                RoundedCornerShape(12.dp)
+                            ) else Modifier
+                        ),
                     shape = RoundedCornerShape(12.dp),
                     color = if (tooLarge)
                         MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)

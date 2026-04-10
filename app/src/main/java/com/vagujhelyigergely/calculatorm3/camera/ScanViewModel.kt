@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.MathRecognizer
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -21,8 +22,8 @@ sealed interface ScanUiState {
         val startTimeMs: Long = System.currentTimeMillis()
     ) : ScanUiState
     data class Success(val answer: String, val rawResponse: String, val elapsedMs: Long) : ScanUiState
-    data class Error(val message: String) : ScanUiState
-    data class ModelSelection(val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
+    data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
+    data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
     data class Downloading(
         val model: AiModel,
         val currentFile: String,
@@ -55,7 +56,7 @@ class ScanViewModel(
         }
         val selected = modelManager.selectedModel
         if (!modelManager.areModelsAvailable(selected)) {
-            uiState = ScanUiState.ModelSelection(modelManager.downloadedModels(), modelManager.deviceRamGb)
+            uiState = ScanUiState.ModelSelection(modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb)
             return
         }
         loadModel(selected)
@@ -161,7 +162,10 @@ class ScanViewModel(
             val elapsed = System.currentTimeMillis() - startTime
             uiState = result.fold(
                 onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
-                onFailure = { ScanUiState.Error(it.message ?: "Recognition failed") }
+                onFailure = {
+                    val raw = (it as? RecognitionException)?.rawResponse
+                    ScanUiState.Error(it.message ?: "Recognition failed", raw)
+                }
             )
         }
     }
@@ -172,7 +176,7 @@ class ScanViewModel(
 
     /** Go back to model selection screen. */
     fun showModelSelection() {
-        uiState = ScanUiState.ModelSelection(modelManager.downloadedModels(), modelManager.deviceRamGb)
+        uiState = ScanUiState.ModelSelection(modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb)
     }
 
     val selectedModelName: String get() = modelManager.selectedModel.displayName

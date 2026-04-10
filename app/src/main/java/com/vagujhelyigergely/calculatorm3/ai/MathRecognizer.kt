@@ -9,6 +9,8 @@ import kotlinx.coroutines.withContext
  */
 data class RecognitionResult(val raw: String, val answer: String)
 
+class RecognitionException(message: String, val rawResponse: String) : Exception(message)
+
 class MathRecognizer {
 
     private var modelHandle: Long = 0L
@@ -62,7 +64,7 @@ class MathRecognizer {
             val raw = rawBuilder.toString()
             val answer = extractAnswer(raw)
             if (answer.isBlank()) {
-                Result.failure(Exception("Could not extract a numerical answer"))
+                Result.failure(RecognitionException("Could not extract a numerical answer", raw))
             } else {
                 Result.success(RecognitionResult(raw = raw, answer = answer))
             }

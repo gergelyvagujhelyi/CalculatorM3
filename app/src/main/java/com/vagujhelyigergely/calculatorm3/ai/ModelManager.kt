@@ -23,28 +23,6 @@ enum class AiModel(
     val mmprojSizeDisplay: String,
     val minRamGb: Int
 ) {
-    INTERNVL_1B(
-        id = "internvl2-1b",
-        displayName = "InternVL2.5 1B",
-        description = "Fastest, basic quality",
-        totalSizeDisplay = "~1.0 GB",
-        modelUrl = "https://huggingface.co/ggml-org/InternVL2_5-1B-GGUF/resolve/main/InternVL2_5-1B-Q8_0.gguf",
-        modelSizeDisplay = "675 MB",
-        mmprojUrl = "https://huggingface.co/ggml-org/InternVL2_5-1B-GGUF/resolve/main/mmproj-InternVL2_5-1B-Q8_0.gguf",
-        mmprojSizeDisplay = "333 MB",
-        minRamGb = 3
-    ),
-    GEMMA3_4B(
-        id = "gemma3-4b",
-        displayName = "Gemma 3 4B",
-        description = "Good quality, well tested",
-        totalSizeDisplay = "~2.9 GB",
-        modelUrl = "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/gemma-3-4b-it-Q4_K_M.gguf",
-        modelSizeDisplay = "2.5 GB",
-        mmprojUrl = "https://huggingface.co/ggml-org/gemma-3-4b-it-GGUF/resolve/main/mmproj-model-f16.gguf",
-        mmprojSizeDisplay = "411 MB",
-        minRamGb = 5
-    ),
     GEMMA4_E2B(
         id = "gemma4-e2b",
         displayName = "Gemma 4 E2B",
@@ -65,6 +43,17 @@ enum class AiModel(
         modelSizeDisplay = "5.0 GB",
         mmprojUrl = "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/mmproj-F16.gguf",
         mmprojSizeDisplay = "990 MB",
+        minRamGb = 8
+    ),
+    QWEN25_VL_7B(
+        id = "qwen25-vl-7b",
+        displayName = "Qwen2.5-VL 7B",
+        description = "Strong OCR and math, very large",
+        totalSizeDisplay = "~5.2 GB",
+        modelUrl = "https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/Qwen2.5-VL-7B-Instruct-Q4_K_M.gguf",
+        modelSizeDisplay = "4.4 GB",
+        mmprojUrl = "https://huggingface.co/ggml-org/Qwen2.5-VL-7B-Instruct-GGUF/resolve/main/mmproj-Qwen2.5-VL-7B-Instruct-Q8_0.gguf",
+        mmprojSizeDisplay = "793 MB",
         minRamGb = 8
     );
 }
