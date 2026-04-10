@@ -12,6 +12,7 @@ import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -243,6 +244,10 @@ class ScanViewModel(
         }
     }
 
+    fun onCaptureError(message: String) {
+        uiState = ScanUiState.Error("Capture failed: $message")
+    }
+
     fun retry() {
         if (activeSolver?.isModelLoaded == true) {
             uiState = ScanUiState.Capturing
@@ -266,7 +271,13 @@ class ScanViewModel(
     }
 
     fun releaseAll() {
-        nobodyWhoSolver.release()
-        liteRTSolver.release()
+        // Launch on IO to avoid blocking the main thread — release() acquires
+        // the solver mutex which may be held by an in-flight inference whose
+        // onToken callback dispatches to Dispatchers.Main.  Blocking main here
+        // with runBlocking would deadlock.
+        CoroutineScope(Dispatchers.IO).launch {
+            nobodyWhoSolver.release()
+            liteRTSolver.release()
+        }
     }
 }

@@ -15,7 +15,7 @@ interface MathSolver {
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
     ): Result<RecognitionResult>
-    fun release()
+    suspend fun release()
 }
 
 /** Shared prompts used by all backends. */
