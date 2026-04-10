@@ -37,24 +37,60 @@
 - Scientific functions — square root, pi, power, factorial
 - Calculation history — persists across restarts
 - Expression cursor — tap to edit mid-expression
+- **AI Math Solver** — photograph handwritten math and get the answer (see below)
 - Dynamic color theming that matches your wallpaper (Android 12+)
 - Automatic light and dark mode
 - Adaptive layout — portrait, landscape, and foldable support
 - Haptic feedback and smooth animations
-- Completely offline — no internet permission required
+
+---
+
+## AI Math Solver
+
+Point your camera at a handwritten math expression and let an on-device AI model solve it for you. Everything runs locally — no data leaves your device.
+
+**How it works:**
+1. Tap the camera icon (top-left)
+2. Choose and download an AI model (one-time, requires 4-8 GB storage)
+3. Take a photo of a handwritten expression
+4. The AI solves it and shows the answer with live streaming output
+5. Tap "Use" to insert the answer into the calculator
+
+**Available models:**
+
+| Model | Download | Min RAM | Backend |
+|-------|----------|---------|---------|
+| Gemma 4 E2B | ~4.1 GB | 6 GB | NobodyWho |
+| Gemma 4 E4B | ~6.0 GB | 8 GB | NobodyWho |
+| Qwen2.5-VL 7B | ~5.2 GB | 8 GB | NobodyWho |
+| Gemma 3n E2B | ~3.7 GB | 4 GB | LiteRT-LM |
+| Gemma 3n E4B | ~4.2 GB | 6 GB | LiteRT-LM |
+
+**Requirements:**
+- Android device with 4+ GB RAM
+- Camera permission
+- Internet for model download (Wi-Fi recommended)
+- NobodyWho models require a pre-built native library (`libnobodywho_android.so`)
+- Gemma 3n models require a free [HuggingFace](https://huggingface.co) account
+
+**Powered by:**
+- [NobodyWho](https://github.com/nobodywho-ooo/nobodywho) — local LLM inference via llama.cpp
+- [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device inference for Gemma 3n
 
 ---
 
 ## Privacy
 
-Every calculation you make is your business — not Big Tech's. Calculator M3 is a beautifully designed calculator built with Material 3 Expressive that works entirely offline with zero data collection, zero analytics, and zero network permissions.
+Every calculation you make is your business — not Big Tech's. Calculator M3 is a beautifully designed calculator built with Material 3 Expressive with zero data collection and zero analytics.
 
-Unlike Google Calculator, this app doesn't phone home. No usage tracking, no telemetry, no ad frameworks buried in the code. It does one thing and does it well: math.
+Unlike Google Calculator, this app doesn't phone home. No usage tracking, no telemetry, no ad frameworks buried in the code.
 
 - No tracking
 - No analytics
 - No ads
 - No data harvesting
+- AI models run entirely on-device — no cloud processing
+- Internet is only used to download AI models (optional, one-time)
 
 ---
 
@@ -63,6 +99,9 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - **Kotlin** + **Jetpack Compose**
 - **Material 3** Expressive design system
 - **BigDecimal** high-precision arithmetic
+- **CameraX** for photo capture
+- **NobodyWho** (Rust/llama.cpp) for GGUF model inference
+- **LiteRT-LM** for Gemma 3n on-device inference
 
 ---
 
