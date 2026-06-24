@@ -13,6 +13,9 @@ interface MathSolver {
     /** Which compute backend the loaded model is running on ("GPU", "CPU", or "—"). */
     val activeBackend: String
 
+    /** TEMP debug: short reason the GPU backend failed to load, or null. */
+    val lastGpuError: String? get() = null
+
     suspend fun loadModel(modelPath: String)
     suspend fun solveFromImageStreaming(
         imagePath: String,

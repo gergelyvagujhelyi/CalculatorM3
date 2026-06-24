@@ -30,6 +30,10 @@ class LiteRTSolver : MathSolver {
     @Volatile private var currentModelPath: String? = null
     @Volatile private var gpuFailed: Boolean = false
 
+    /** TEMP debug: short reason the GPU backend failed to load (null if GPU is in use). */
+    @Volatile override var lastGpuError: String? = null
+        private set
+
     override val isModelLoaded: Boolean get() = engine != null
 
     override val activeBackend: String
@@ -49,8 +53,9 @@ class LiteRTSolver : MathSolver {
     private fun initEngine(modelPath: String, tryGpu: Boolean) {
         engine = if (tryGpu) {
             try {
-                buildEngine(modelPath, Backend.GPU())
+                buildEngine(modelPath, Backend.GPU()).also { lastGpuError = null }
             } catch (e: Exception) {
+                lastGpuError = (e.message ?: e.toString()).replace('\n', ' ').take(200)
                 Log.w(TAG, "GPU backend failed, falling back to CPU", e)
                 gpuFailed = true
                 buildEngine(modelPath, Backend.CPU())

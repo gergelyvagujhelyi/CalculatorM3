@@ -228,7 +228,7 @@ class ScanViewModel(
     fun onPhotoCaptured(imagePath: String) {
         if (!solver.isModelLoaded) return
         val startTime = System.currentTimeMillis()
-        val backend = solver.activeBackend
+        val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
         uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
         viewModelScope.launch {
             // Apply EXIF rotation + downscale: a full-res photo can blow up the
