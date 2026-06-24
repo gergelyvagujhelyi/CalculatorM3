@@ -1,1 +1,1 @@
-Clean, private calculator with zero data collection. Offline. No ads.
+Clean, private calculator — no tracking, no ads, optional on-device AI.
