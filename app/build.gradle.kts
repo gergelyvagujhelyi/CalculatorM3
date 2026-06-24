@@ -41,16 +41,8 @@ android {
             useSupportLibrary = true
         }
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-    }
-
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "x86_64")
-            isUniversalApk = true
+            // LiteRT-LM ships 64-bit ARM native libraries; this is the only ABI we support.
+            abiFilters += listOf("arm64-v8a")
         }
     }
 

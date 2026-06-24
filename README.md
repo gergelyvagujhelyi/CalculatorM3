@@ -58,24 +58,24 @@ Point your camera at a handwritten math expression and let an on-device AI model
 
 **Available models:**
 
-| Model | Download | Min RAM | Backend |
-|-------|----------|---------|---------|
-| Gemma 4 E2B | ~4.1 GB | 6 GB | NobodyWho |
-| Gemma 4 E4B | ~6.0 GB | 8 GB | NobodyWho |
-| Qwen2.5-VL 7B | ~5.2 GB | 8 GB | NobodyWho |
-| Gemma 3n E2B | ~3.7 GB | 4 GB | LiteRT-LM (experimental) |
-| Gemma 3n E4B | ~4.2 GB | 6 GB | LiteRT-LM (experimental) |
+All models are vision-capable and run on Google's [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) on-device engine.
+
+| Model | Download | Min RAM | Auth |
+|-------|----------|---------|------|
+| Qwen3.5 0.8B | ~2.3 GB | 4 GB | — |
+| Gemma 4 E2B | ~2.6 GB | 6 GB | HuggingFace |
+| Gemma 3n E2B | ~3.7 GB | 4 GB | HuggingFace |
+| Gemma 4 E4B | ~3.7 GB | 8 GB | HuggingFace |
+| Gemma 3n E4B | ~4.9 GB | 6 GB | HuggingFace |
 
 **Requirements:**
 - Android device with 4+ GB RAM
 - Camera permission
 - Internet for model download (Wi-Fi recommended)
-- NobodyWho models require a pre-built native library (`libnobodywho_android.so`)
-- Gemma 3n models require a free [HuggingFace](https://huggingface.co) account
+- Gemma models require a free [HuggingFace](https://huggingface.co) account (license acceptance)
 
 **Powered by:**
-- [NobodyWho](https://github.com/nobodywho-ooo/nobodywho) — local LLM inference via llama.cpp
-- [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device inference for Gemma 3n
+- [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device multimodal LLM inference
 
 ---
 
@@ -100,8 +100,7 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - **Material 3** Expressive design system
 - **BigDecimal** high-precision arithmetic
 - **CameraX** for photo capture
-- **NobodyWho** (Rust/llama.cpp) for GGUF model inference
-- **LiteRT-LM** for Gemma 3n on-device inference
+- **LiteRT-LM** for on-device multimodal model inference
 
 ---
 

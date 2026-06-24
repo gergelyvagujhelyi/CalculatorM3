@@ -23,7 +23,7 @@ class LiteRTSolver : MathSolver {
 
     override val isModelLoaded: Boolean get() = engine != null && conversation != null
 
-    override suspend fun loadModel(modelPath: String, mmprojPath: String?) =
+    override suspend fun loadModel(modelPath: String) =
         withContext(Dispatchers.IO) {
             release()
             val config = EngineConfig(

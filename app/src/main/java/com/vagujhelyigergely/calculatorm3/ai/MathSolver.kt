@@ -10,7 +10,7 @@ class RecognitionException(message: String, val rawResponse: String) : Exception
 interface MathSolver {
     val isModelLoaded: Boolean
 
-    suspend fun loadModel(modelPath: String, mmprojPath: String?)
+    suspend fun loadModel(modelPath: String)
     suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit

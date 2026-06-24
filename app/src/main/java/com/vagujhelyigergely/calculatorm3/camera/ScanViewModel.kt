@@ -6,11 +6,9 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
-import com.vagujhelyigergely.calculatorm3.ai.Backend
 import com.vagujhelyigergely.calculatorm3.ai.DownloadAuthException
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
-import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,22 +44,15 @@ sealed interface ScanUiState {
 }
 
 class ScanViewModel(
-    private val nobodyWhoSolver: NobodyWhoSolver,
-    private val liteRTSolver: MathSolver,
+    private val solver: MathSolver,
     private val modelManager: ModelManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
         private set
 
-    private var activeSolver: MathSolver? = null
     private var loadedModelId: String? = null
     private var downloadJob: Job? = null
-
-    private fun solverFor(model: AiModel): MathSolver = when (model.backend) {
-        Backend.NOBODYWHO -> nobodyWhoSolver
-        Backend.LITERT -> liteRTSolver
-    }
 
     fun initialize() {
         if (!modelManager.canRunAnyModel) {
@@ -73,16 +64,10 @@ class ScanViewModel(
             uiState = ScanUiState.FirstTimeWarning
             return
         }
-        if (modelManager.selectedModel.backend == Backend.NOBODYWHO && !nobodyWhoSolver.isNativeLibraryAvailable) {
-            uiState = ScanUiState.ModelSelection(
-                modelManager.selectedModel, downloaded, modelManager.deviceRamGb
-            )
-            return
-        }
         val selected = modelManager.selectedModel
         if (!modelManager.areModelsAvailable(selected)) {
             uiState = ScanUiState.ModelSelection(
-                modelManager.selectedModel, downloaded, modelManager.deviceRamGb
+                selected, downloaded, modelManager.deviceRamGb
             )
             return
         }
@@ -90,25 +75,18 @@ class ScanViewModel(
     }
 
     private fun loadModel(model: AiModel) {
-        val solver = solverFor(model)
         if (solver.isModelLoaded && loadedModelId == model.id) {
-            activeSolver = solver
             uiState = ScanUiState.Capturing
             return
         }
         uiState = ScanUiState.ModelLoading()
         viewModelScope.launch {
             try {
-                // Release the other solver if switching backends
-                if (activeSolver != null && activeSolver != solver) {
-                    activeSolver?.release()
-                }
-                val mmproj = if (model.needsMmproj) modelManager.mmprojPath(model) else null
-                solver.loadModel(modelManager.modelPath(model), mmproj)
-                activeSolver = solver
+                solver.loadModel(modelManager.modelPath(model))
                 loadedModelId = model.id
                 uiState = ScanUiState.Capturing
             } catch (e: Exception) {
+                loadedModelId = null
                 uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
             }
         }
@@ -157,48 +135,30 @@ class ScanViewModel(
 
     private fun forceDownload(model: AiModel) {
         modelManager.selectedModel = model
-        val fileCount = if (model.needsMmproj) 2 else 1
+        val files = model.files
         downloadJob = viewModelScope.launch {
             try {
-                if (!modelManager.isModelDownloaded(model)) {
-                    uiState = ScanUiState.Downloading(
-                        model = model,
-                        currentFile = "${model.displayName} (${model.modelSizeDisplay})",
-                        downloadedBytes = 0, totalBytes = -1,
-                        fileIndex = 0, fileCount = fileCount
-                    )
-                    modelManager.downloadFile(
-                        model = model,
-                        url = model.modelUrl,
-                        destFilename = "model.${model.modelFileExtension}"
-                    ) { downloaded, total ->
+                files.forEachIndexed { index, file ->
+                    if (!modelManager.isFileDownloaded(model, file)) {
+                        val label = "${model.displayName} (${file.sizeDisplay})"
                         uiState = ScanUiState.Downloading(
                             model = model,
-                            currentFile = "${model.displayName} (${model.modelSizeDisplay})",
-                            downloadedBytes = downloaded, totalBytes = total,
-                            fileIndex = 0, fileCount = fileCount
+                            currentFile = label,
+                            downloadedBytes = 0, totalBytes = -1,
+                            fileIndex = index, fileCount = files.size
                         )
-                    }
-                }
-
-                if (model.needsMmproj && !modelManager.isMmprojDownloaded(model)) {
-                    uiState = ScanUiState.Downloading(
-                        model = model,
-                        currentFile = "Vision projector (${model.mmprojSizeDisplay})",
-                        downloadedBytes = 0, totalBytes = -1,
-                        fileIndex = 1, fileCount = fileCount
-                    )
-                    modelManager.downloadFile(
-                        model = model,
-                        url = model.mmprojUrl,
-                        destFilename = "mmproj.gguf"
-                    ) { downloaded, total ->
-                        uiState = ScanUiState.Downloading(
+                        modelManager.downloadFile(
                             model = model,
-                            currentFile = "Vision projector (${model.mmprojSizeDisplay})",
-                            downloadedBytes = downloaded, totalBytes = total,
-                            fileIndex = 1, fileCount = fileCount
-                        )
+                            url = file.url,
+                            destFilename = file.filename
+                        ) { downloaded, total ->
+                            uiState = ScanUiState.Downloading(
+                                model = model,
+                                currentFile = label,
+                                downloadedBytes = downloaded, totalBytes = total,
+                                fileIndex = index, fileCount = files.size
+                            )
+                        }
                     }
                 }
 
@@ -216,7 +176,7 @@ class ScanViewModel(
     }
 
     fun onPhotoCaptured(imagePath: String) {
-        val solver = activeSolver ?: return
+        if (!solver.isModelLoaded) return
         val startTime = System.currentTimeMillis()
         uiState = ScanUiState.Processing(startTimeMs = startTime)
         viewModelScope.launch {
@@ -249,7 +209,7 @@ class ScanViewModel(
     }
 
     fun retry() {
-        if (activeSolver?.isModelLoaded == true) {
+        if (solver.isModelLoaded) {
             uiState = ScanUiState.Capturing
         } else {
             initialize()
@@ -276,8 +236,7 @@ class ScanViewModel(
         // onToken callback dispatches to Dispatchers.Main.  Blocking main here
         // with runBlocking would deadlock.
         CoroutineScope(Dispatchers.IO).launch {
-            nobodyWhoSolver.release()
-            liteRTSolver.release()
+            solver.release()
         }
     }
 }
