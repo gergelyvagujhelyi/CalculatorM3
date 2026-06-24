@@ -30,11 +30,10 @@ object SolverPrompts {
     const val USER_PROMPT =
         "Calculate the result of the mathematical expression in this image."
 
-    // Sampler / engine params for the LiteRT-LM conversation (match AI Edge Gallery defaults).
+    // Sampler params for the LiteRT-LM conversation (match AI Edge Gallery defaults).
     const val TOP_K = 64
     const val TOP_P = 0.95f
     const val TEMPERATURE = 1.0f
-    const val MAX_TOKENS = 1024
 
     /** Extract the numerical answer from the LLM response.
      *  Checks the last non-empty line first (where the model is prompted to put the answer),
