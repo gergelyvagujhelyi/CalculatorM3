@@ -51,9 +51,9 @@ Point your camera at a handwritten math expression and let an on-device AI model
 
 **How it works:**
 1. Tap the camera icon (top-left)
-2. Choose and download an AI model (one-time, requires 2-5 GB storage)
+2. Choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off)
 3. Take a photo with your camera, or choose an existing photo from your gallery
-4. The AI solves it and shows the answer with live streaming output
+4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
 5. Tap "Use" to insert the answer into the calculator
 
 **Available models:**
@@ -70,11 +70,11 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 **Requirements:**
 - Android device with 4+ GB RAM
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
-- Internet for model download (Wi-Fi recommended)
-- Gemma models require a free [HuggingFace](https://huggingface.co) account (license acceptance)
+- Internet for the one-time model download (Wi-Fi recommended)
+- Gemma 3n models require a free [HuggingFace](https://huggingface.co) account (license acceptance); Gemma 4 models need no account
 
 **Powered by:**
-- [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device multimodal LLM inference
+- [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device multimodal LLM inference, GPU-accelerated with automatic CPU fallback
 
 ---
 
@@ -99,7 +99,9 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - **Material 3** Expressive design system
 - **BigDecimal** high-precision arithmetic
 - **System camera + photo picker** for image capture (no in-app camera permission)
-- **LiteRT-LM** for on-device multimodal model inference
+- **LiteRT-LM** for on-device multimodal model inference (GPU-accelerated, CPU fallback)
+- **WorkManager** foreground service for resumable background model downloads
+- **Markwon + jlatexmath** for rendering the answer's math and markdown
 
 ---
 
