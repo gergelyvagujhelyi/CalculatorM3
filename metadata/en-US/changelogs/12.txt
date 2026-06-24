@@ -1,0 +1,8 @@
+New: AI Math Solver — photograph a handwritten math expression and solve it, fully on-device.
+
+- Runs offline on Google LiteRT-LM, GPU-accelerated where supported
+- Take a photo with your camera or choose one from your gallery
+- Pick from several Gemma vision models; downloads run in the background and resume if interrupted
+- Answers are shown with formatted math
+
+Your photos and calculations never leave your device — internet is only used to download a model you choose.
