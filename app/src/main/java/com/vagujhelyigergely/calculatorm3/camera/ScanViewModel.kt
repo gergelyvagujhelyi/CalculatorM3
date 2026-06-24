@@ -222,10 +222,11 @@ class ScanViewModel(
         val startTime = System.currentTimeMillis()
         uiState = ScanUiState.Processing(startTimeMs = startTime)
         viewModelScope.launch {
-            // Downscale first — a full-resolution camera photo can blow up the
-            // vision pipeline's memory and crash the process natively.
+            // Apply EXIF rotation + downscale: a full-res photo can blow up the
+            // vision pipeline's memory, and the camera stores it sideways with an
+            // EXIF orientation tag the model would otherwise ignore.
             val processPath = withContext(Dispatchers.IO) {
-                downscaleImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
+                prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
             }
             try {
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
@@ -256,34 +257,69 @@ class ScanViewModel(
         }
     }
 
-    /** Downscale an image so its longest edge is at most [maxEdge] px. Returns the new path, or null if no resize is needed. */
-    private fun downscaleImage(imagePath: String, maxEdge: Int): String? {
+    /**
+     * Normalize a captured/picked photo for the model: apply its EXIF orientation
+     * (so handwriting isn't sideways) and downscale so the longest edge is ≤ [maxEdge] px.
+     * Returns the path to a new JPEG, or null on failure (caller falls back to the original).
+     */
+    private fun prepareImage(imagePath: String, maxEdge: Int): String? {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(imagePath, opts)
         val w = opts.outWidth
         val h = opts.outHeight
-        if (w <= 0 || h <= 0 || (w <= maxEdge && h <= maxEdge)) return null
+        if (w <= 0 || h <= 0) return null
 
         // inSampleSize keeps the full-res bitmap from ever loading into memory.
-        val sampleSize = Integer.highestOneBit(maxOf(w, h) / maxEdge)
+        val sampleSize = if (maxOf(w, h) > maxEdge) Integer.highestOneBit(maxOf(w, h) / maxEdge) else 1
         val decodeOpts = BitmapFactory.Options().apply { inSampleSize = maxOf(1, sampleSize) }
-        val sampled = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
+        var bmp = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
         return try {
-            val scale = maxEdge.toFloat() / maxOf(sampled.width, sampled.height)
-            val newW = (sampled.width * scale).toInt()
-            val newH = (sampled.height * scale).toInt()
-            val scaled = Bitmap.createScaledBitmap(sampled, newW, newH, true)
-            if (scaled !== sampled) sampled.recycle()
-            try {
-                val outFile = java.io.File(java.io.File(imagePath).parent, "small_${System.nanoTime()}.jpg")
-                outFile.outputStream().use { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }
-                outFile.absolutePath
-            } finally {
-                scaled.recycle()
+            bmp = applyExifOrientation(imagePath, bmp)
+            // Scale down further if still larger than maxEdge after sampling.
+            val longest = maxOf(bmp.width, bmp.height)
+            if (longest > maxEdge) {
+                val scale = maxEdge.toFloat() / longest
+                val scaled = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt(), (bmp.height * scale).toInt(), true)
+                if (scaled !== bmp) bmp.recycle()
+                bmp = scaled
             }
+            val outFile = java.io.File(java.io.File(imagePath).parent, "scan_prepared_${System.nanoTime()}.jpg")
+            outFile.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            outFile.absolutePath
         } catch (e: Exception) {
-            sampled.recycle()
             null
+        } finally {
+            bmp.recycle()
+        }
+    }
+
+    /** Rotate/flip [bitmap] to upright per the source file's EXIF orientation tag. */
+    private fun applyExifOrientation(imagePath: String, bitmap: Bitmap): Bitmap {
+        val orientation = try {
+            android.media.ExifInterface(imagePath).getAttributeInt(
+                android.media.ExifInterface.TAG_ORIENTATION,
+                android.media.ExifInterface.ORIENTATION_NORMAL
+            )
+        } catch (e: Exception) {
+            return bitmap
+        }
+        val matrix = android.graphics.Matrix()
+        when (orientation) {
+            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            android.media.ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+            android.media.ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
+            else -> return bitmap
+        }
+        return try {
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated !== bitmap) bitmap.recycle()
+            rotated
+        } catch (e: Exception) {
+            bitmap
         }
     }
 

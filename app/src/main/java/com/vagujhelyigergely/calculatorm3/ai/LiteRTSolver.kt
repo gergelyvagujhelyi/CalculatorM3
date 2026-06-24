@@ -28,7 +28,7 @@ class LiteRTSolver : MathSolver {
     @Volatile private var engine: Engine? = null
     @Volatile private var conversation: Conversation? = null
     @Volatile private var currentModelPath: String? = null
-    @Volatile private var gpuVisionFailed: Boolean = false
+    @Volatile private var gpuFailed: Boolean = false
 
     override val isModelLoaded: Boolean get() = engine != null
 
@@ -36,29 +36,30 @@ class LiteRTSolver : MathSolver {
         withContext(Dispatchers.IO) {
             closeEngine()
             currentModelPath = modelPath
-            initEngine(modelPath, tryGpuVision = !gpuVisionFailed)
+            initEngine(modelPath, tryGpu = !gpuFailed)
         }
 
-    private fun initEngine(modelPath: String, tryGpuVision: Boolean) {
-        engine = if (tryGpuVision) {
+    private fun initEngine(modelPath: String, tryGpu: Boolean) {
+        engine = if (tryGpu) {
             try {
-                buildEngine(modelPath, visionBackend = Backend.GPU())
+                buildEngine(modelPath, Backend.GPU())
             } catch (e: Exception) {
-                Log.w(TAG, "GPU vision backend failed, falling back to CPU vision", e)
-                gpuVisionFailed = true
-                buildEngine(modelPath, visionBackend = Backend.CPU())
+                Log.w(TAG, "GPU backend failed, falling back to CPU", e)
+                gpuFailed = true
+                buildEngine(modelPath, Backend.CPU())
             }
         } else {
-            buildEngine(modelPath, visionBackend = Backend.CPU())
+            buildEngine(modelPath, Backend.CPU())
         }
     }
 
-    private fun buildEngine(modelPath: String, visionBackend: Backend): Engine =
+    /** Run the LLM and vision encoder on [backend] (GPU where supported, else CPU). */
+    private fun buildEngine(modelPath: String, backend: Backend): Engine =
         Engine(
             EngineConfig(
                 modelPath = modelPath,
-                backend = Backend.CPU(),
-                visionBackend = visionBackend,
+                backend = backend,
+                visionBackend = backend,
             )
         ).also { it.initialize() }
 
@@ -113,17 +114,18 @@ class LiteRTSolver : MathSolver {
                 runInference(imagePath, onToken)
             } catch (e: Throwable) {
                 Log.e(TAG, "LiteRT inference failed", e)
-                // If GPU vision was active, reload CPU-only and retry once.
+                // If GPU was active, reload on CPU and retry once — some devices
+                // initialize the GPU backend fine but fault during inference.
                 val path = currentModelPath
-                if (!gpuVisionFailed && path != null) {
-                    gpuVisionFailed = true
-                    Log.w(TAG, "Reloading with CPU vision and retrying once")
+                if (!gpuFailed && path != null) {
+                    gpuFailed = true
+                    Log.w(TAG, "Reloading on CPU and retrying once")
                     try {
                         closeEngine()
-                        initEngine(path, tryGpuVision = false)
+                        initEngine(path, tryGpu = false)
                         return@withContext runInference(imagePath, onToken)
                     } catch (retry: Throwable) {
-                        Log.e(TAG, "CPU vision retry also failed", retry)
+                        Log.e(TAG, "CPU retry also failed", retry)
                         return@withContext Result.failure(retry.asException())
                     }
                 }
