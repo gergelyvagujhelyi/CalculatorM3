@@ -37,7 +37,6 @@ google-services.json
 
 # Native Rust build artifacts
 native/target/
-native/Cargo.lock
 
 # Pre-built native libraries (cross-compiled per device)
 app/src/main/jniLibs/
