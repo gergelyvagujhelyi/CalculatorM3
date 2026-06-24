@@ -10,6 +10,9 @@ class RecognitionException(message: String, val rawResponse: String) : Exception
 interface MathSolver {
     val isModelLoaded: Boolean
 
+    /** Which compute backend the loaded model is running on ("GPU", "CPU", or "—"). */
+    val activeBackend: String
+
     suspend fun loadModel(modelPath: String)
     suspend fun solveFromImageStreaming(
         imagePath: String,

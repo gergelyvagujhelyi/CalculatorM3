@@ -26,9 +26,17 @@ sealed interface ScanUiState {
     data object Capturing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
-        val startTimeMs: Long = System.currentTimeMillis()
+        val startTimeMs: Long = System.currentTimeMillis(),
+        val tokenCount: Int = 0,
+        val backend: String = ""
     ) : ScanUiState
-    data class Success(val answer: String, val rawResponse: String, val elapsedMs: Long) : ScanUiState
+    data class Success(
+        val answer: String,
+        val rawResponse: String,
+        val elapsedMs: Long,
+        val tokenCount: Int = 0,
+        val backend: String = ""
+    ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
     data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
     data class Downloading(
@@ -220,7 +228,8 @@ class ScanViewModel(
     fun onPhotoCaptured(imagePath: String) {
         if (!solver.isModelLoaded) return
         val startTime = System.currentTimeMillis()
-        uiState = ScanUiState.Processing(startTimeMs = startTime)
+        val backend = solver.activeBackend
+        uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
         viewModelScope.launch {
             // Apply EXIF rotation + downscale: a full-res photo can blow up the
             // vision pipeline's memory, and the camera stores it sideways with an
@@ -229,17 +238,21 @@ class ScanViewModel(
                 prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
             }
             try {
+                var tokenCount = 0
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                    tokenCount++
                     withContext(Dispatchers.Main) {
                         uiState = ScanUiState.Processing(
                             partialRaw = partialRaw,
-                            startTimeMs = startTime
+                            startTimeMs = startTime,
+                            tokenCount = tokenCount,
+                            backend = backend
                         )
                     }
                 }
                 val elapsed = System.currentTimeMillis() - startTime
                 uiState = result.fold(
-                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
+                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
                         ScanUiState.Error(it.message ?: "Recognition failed", raw)

@@ -127,12 +127,16 @@ fun CameraScanScreen(
                     is ScanUiState.Processing -> ProcessingContent(
                         partialRaw = state.partialRaw,
                         startTimeMs = state.startTimeMs,
+                        tokenCount = state.tokenCount,
+                        backend = state.backend,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Success -> SuccessContent(
                         answer = state.answer,
                         rawResponse = state.rawResponse,
                         elapsedMs = state.elapsedMs,
+                        tokenCount = state.tokenCount,
+                        backend = state.backend,
                         onUse = {
                             onExpressionRecognized(state.answer)
                             onDismiss()
@@ -329,7 +333,13 @@ private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: () -> Unit) {
+private fun ProcessingContent(
+    partialRaw: String,
+    startTimeMs: Long,
+    tokenCount: Int,
+    backend: String,
+    onDismiss: () -> Unit
+) {
     val isGenerating = partialRaw.isNotEmpty()
 
     // Pulsing icon
@@ -413,9 +423,28 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
                 }
             }
 
-            ElapsedTimeText(startTimeMs = startTimeMs)
+            PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend)
         }
     }
+}
+
+/** TEMP debug HUD: live tokens/sec and which backend (GPU/CPU) the model runs on. */
+@Composable
+private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String) {
+    var elapsedMs by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(startTimeMs) {
+        while (true) {
+            elapsedMs = System.currentTimeMillis() - startTimeMs
+            delay(250)
+        }
+    }
+    val secs = elapsedMs / 1000.0
+    val tps = if (secs > 0.2) tokenCount / secs else 0.0
+    Text(
+        text = "%s · %.1f tok/s · %ds".format(backend.ifEmpty { "?" }, tps, elapsedMs / 1000),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary
+    )
 }
 
 @Composable
@@ -572,9 +601,16 @@ private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = M
         factory = { ctx -> TextView(ctx).apply { textSize = 16f } },
         update = { tv ->
             tv.setTextColor(argb)
-            markwon.setMarkdown(tv, text)
+            markwon.setMarkdown(tv, normalizeLatex(text))
         }
     )
+}
+
+/** Normalize \(..\) and \[..\] delimiters to $..$ / $$..$$ so Markwon's latex ext renders them. */
+private fun normalizeLatex(s: String): String {
+    var r = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL).replace(s) { "$" + it.groupValues[1] + "$" }
+    r = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL).replace(r) { "$$" + it.groupValues[1] + "$$" }
+    return r
 }
 
 @Composable
@@ -582,6 +618,8 @@ private fun SuccessContent(
     answer: String,
     rawResponse: String,
     elapsedMs: Long,
+    tokenCount: Int,
+    backend: String,
     onUse: () -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
@@ -600,8 +638,10 @@ private fun SuccessContent(
                 .align(Alignment.Center)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
+                .statusBarsPadding()
+                .navigationBarsPadding()
                 .padding(horizontal = 24.dp)
-                .padding(top = 72.dp, bottom = 32.dp),
+                .padding(top = 56.dp, bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -634,6 +674,16 @@ private fun SuccessContent(
                 text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            // TEMP debug: average tokens/sec and which backend it ran on.
+            Text(
+                text = "%s · %.1f tok/s avg · %d tokens".format(
+                    backend.ifEmpty { "?" },
+                    if (elapsedMs > 0) tokenCount / (elapsedMs / 1000.0) else 0.0,
+                    tokenCount
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = onRetry) {

@@ -32,6 +32,13 @@ class LiteRTSolver : MathSolver {
 
     override val isModelLoaded: Boolean get() = engine != null
 
+    override val activeBackend: String
+        get() = when {
+            engine == null -> "—"
+            gpuFailed -> "CPU"
+            else -> "GPU"
+        }
+
     override suspend fun loadModel(modelPath: String) =
         withContext(Dispatchers.IO) {
             closeEngine()
