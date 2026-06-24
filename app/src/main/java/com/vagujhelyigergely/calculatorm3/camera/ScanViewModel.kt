@@ -1,5 +1,7 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -220,8 +222,13 @@ class ScanViewModel(
         val startTime = System.currentTimeMillis()
         uiState = ScanUiState.Processing(startTimeMs = startTime)
         viewModelScope.launch {
+            // Downscale first — a full-resolution camera photo can blow up the
+            // vision pipeline's memory and crash the process natively.
+            val processPath = withContext(Dispatchers.IO) {
+                downscaleImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
+            }
             try {
-                val result = solver.solveFromImageStreaming(imagePath) { partialRaw ->
+                val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
                     withContext(Dispatchers.Main) {
                         uiState = ScanUiState.Processing(
                             partialRaw = partialRaw,
@@ -237,10 +244,46 @@ class ScanViewModel(
                         ScanUiState.Error(it.message ?: "Recognition failed", raw)
                     }
                 )
+            } catch (e: Throwable) {
+                uiState = ScanUiState.Error("Inference failed: ${e.message}")
             } finally {
-                // Clean up captured photo
-                java.io.File(imagePath).delete()
+                // Clean up captured photos
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                if (processPath != imagePath) {
+                    try { java.io.File(processPath).delete() } catch (_: Exception) {}
+                }
             }
+        }
+    }
+
+    /** Downscale an image so its longest edge is at most [maxEdge] px. Returns the new path, or null if no resize is needed. */
+    private fun downscaleImage(imagePath: String, maxEdge: Int): String? {
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imagePath, opts)
+        val w = opts.outWidth
+        val h = opts.outHeight
+        if (w <= 0 || h <= 0 || (w <= maxEdge && h <= maxEdge)) return null
+
+        // inSampleSize keeps the full-res bitmap from ever loading into memory.
+        val sampleSize = Integer.highestOneBit(maxOf(w, h) / maxEdge)
+        val decodeOpts = BitmapFactory.Options().apply { inSampleSize = maxOf(1, sampleSize) }
+        val sampled = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
+        return try {
+            val scale = maxEdge.toFloat() / maxOf(sampled.width, sampled.height)
+            val newW = (sampled.width * scale).toInt()
+            val newH = (sampled.height * scale).toInt()
+            val scaled = Bitmap.createScaledBitmap(sampled, newW, newH, true)
+            if (scaled !== sampled) sampled.recycle()
+            try {
+                val outFile = java.io.File(java.io.File(imagePath).parent, "small_${System.nanoTime()}.jpg")
+                outFile.outputStream().use { scaled.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+                outFile.absolutePath
+            } finally {
+                scaled.recycle()
+            }
+        } catch (e: Exception) {
+            sampled.recycle()
+            null
         }
     }
 
@@ -278,5 +321,10 @@ class ScanViewModel(
         CoroutineScope(Dispatchers.IO).launch {
             solver.release()
         }
+    }
+
+    companion object {
+        /** Longest edge (px) the captured photo is downscaled to before inference. */
+        private const val MAX_IMAGE_EDGE = 1024
     }
 }
