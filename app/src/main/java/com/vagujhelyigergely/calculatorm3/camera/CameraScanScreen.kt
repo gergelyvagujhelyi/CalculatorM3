@@ -1,16 +1,11 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.view.LifecycleCameraController
-import androidx.camera.view.PreviewView
+import androidx.core.content.FileProvider
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +23,7 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -40,16 +36,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import android.view.WindowManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import kotlinx.coroutines.delay
@@ -63,26 +56,9 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
-        )
-    }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-        if (granted) viewModel.initialize()
-    }
-
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            viewModel.initialize()
-        } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+    LaunchedEffect(Unit) {
+        viewModel.initialize()
     }
 
     // Keep screen on during loading, downloading, and processing
@@ -111,9 +87,7 @@ fun CameraScanScreen(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            if (!hasPermission) {
-                PermissionDeniedContent(onDismiss = onDismiss)
-            } else {
+            run {
                 when (val state = viewModel.uiState) {
                     is ScanUiState.Idle -> StatusContent(
                         icon = Icons.Default.Psychology,
@@ -436,26 +410,33 @@ private fun CameraContent(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraController = remember {
-        LifecycleCameraController(context).apply {
-            bindToLifecycle(lifecycleOwner)
+    // File the system camera writes the captured photo into.
+    var pendingPhoto by remember { mutableStateOf<File?>(null) }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        val file = pendingPhoto
+        pendingPhoto = null
+        if (success && file != null) {
+            onPhotoCaptured(file.absolutePath)
+        } else {
+            // Cancelled or failed — discard the empty file and stay on this screen.
+            file?.delete()
         }
     }
-    val executor = remember { ContextCompat.getMainExecutor(context) }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            val path = copyUriToCache(context, uri)
+            if (path != null) onPhotoCaptured(path)
+            else onCaptureError("Could not open the selected image")
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Camera preview
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    controller = cameraController
-                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-
         // Top bar: close + model switch
         Row(
             modifier = Modifier
@@ -481,56 +462,80 @@ private fun CameraContent(
             }
         }
 
-        // Hint text
-        Text(
-            text = stringResource(R.string.camera_hint),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
+        // Centered prompt + capture/pick actions
+        Column(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 16.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
-        // Capture button
-        IconButton(
-            onClick = {
-                val photoFile = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-                val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-                cameraController.takePicture(
-                    outputOptions,
-                    executor,
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            onPhotoCaptured(photoFile.absolutePath)
-                        }
-                        override fun onError(exception: ImageCaptureException) {
-                            Log.e("CameraScan", "Capture failed", exception)
-                            onCaptureError(exception.message ?: "Photo capture failed")
-                        }
-                    }
-                )
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 32.dp)
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = stringResource(R.string.capture),
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(32.dp)
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(64.dp)
             )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.scan_hint),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = {
+                    val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+                    pendingPhoto = file
+                    takePhotoLauncher.launch(fileProviderUri(context, file))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhotoCamera,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(R.string.take_photo))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    pickImageLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhotoLibrary,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(R.string.choose_from_gallery))
+            }
         }
     }
+}
+
+/** Content Uri the system camera can write the captured photo to, via the app's FileProvider. */
+private fun fileProviderUri(context: android.content.Context, file: File): Uri =
+    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+/** Copy a picked gallery image into the app cache and return its path (the solver needs a file path). */
+private fun copyUriToCache(context: android.content.Context, uri: Uri): String? = try {
+    val input = context.contentResolver.openInputStream(uri)
+    if (input == null) {
+        null
+    } else {
+        val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+        input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
+        file.absolutePath
+    }
+} catch (e: Exception) {
+    null
 }
 
 @Composable
@@ -699,38 +704,6 @@ private fun ErrorContent(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PermissionDeniedContent(onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.PhotoCamera,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(R.string.camera_permission_needed),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
         }
     }
 }

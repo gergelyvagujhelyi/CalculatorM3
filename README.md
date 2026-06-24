@@ -51,8 +51,8 @@ Point your camera at a handwritten math expression and let an on-device AI model
 
 **How it works:**
 1. Tap the camera icon (top-left)
-2. Choose and download an AI model (one-time, requires 4-8 GB storage)
-3. Take a photo of a handwritten expression
+2. Choose and download an AI model (one-time, requires 2-5 GB storage)
+3. Take a photo with your camera, or choose an existing photo from your gallery
 4. The AI solves it and shows the answer with live streaming output
 5. Tap "Use" to insert the answer into the calculator
 
@@ -70,7 +70,7 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 
 **Requirements:**
 - Android device with 4+ GB RAM
-- Camera permission
+- A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
 - Internet for model download (Wi-Fi recommended)
 - Gemma models require a free [HuggingFace](https://huggingface.co) account (license acceptance)
 
@@ -99,7 +99,7 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - **Kotlin** + **Jetpack Compose**
 - **Material 3** Expressive design system
 - **BigDecimal** high-precision arithmetic
-- **CameraX** for photo capture
+- **System camera + photo picker** for image capture (no in-app camera permission)
 - **LiteRT-LM** for on-device multimodal model inference
 
 ---
