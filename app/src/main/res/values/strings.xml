@@ -44,6 +44,7 @@
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>
+    <string name="use_answer">Use %1$s</string>
     <string name="retry">Retry</string>
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>

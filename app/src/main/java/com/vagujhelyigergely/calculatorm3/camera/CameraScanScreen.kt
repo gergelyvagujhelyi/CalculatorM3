@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.vagujhelyigergely.calculatorm3.R
@@ -555,8 +556,6 @@ private fun SuccessContent(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var showRaw by remember { mutableStateOf(false) }
-
     Box(modifier = Modifier.fillMaxSize()) {
         CloseButton(
             onDismiss = onDismiss,
@@ -564,11 +563,15 @@ private fun SuccessContent(
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
                 .padding(8.dp)
+                .zIndex(1f)
         )
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(32.dp),
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 72.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -582,13 +585,19 @@ private fun SuccessContent(
                 text = stringResource(R.string.answer_found),
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(
-                text = answer,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary
-            )
+            // The model's full answer, shown in its entirety.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 1.dp
+            ) {
+                Text(
+                    text = rawResponse.trim(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
             Text(
                 text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
                 style = MaterialTheme.typography.bodySmall,
@@ -599,41 +608,11 @@ private fun SuccessContent(
                     Text(stringResource(R.string.retry))
                 }
                 Button(onClick = onUse) {
-                    Text(stringResource(R.string.use_expression))
-                }
-            }
-
-            // Raw LLM output dropdown
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                TextButton(onClick = { showRaw = !showRaw }) {
                     Text(
-                        text = stringResource(R.string.raw_model_output),
-                        style = MaterialTheme.typography.bodySmall
+                        text = if (answer.isNotBlank())
+                            stringResource(R.string.use_answer, answer)
+                        else stringResource(R.string.use_expression)
                     )
-                    Icon(
-                        imageVector = if (showRaw) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                if (showRaw) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        tonalElevation = 1.dp
-                    ) {
-                        Text(
-                            text = rawResponse,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
                 }
             }
         }
