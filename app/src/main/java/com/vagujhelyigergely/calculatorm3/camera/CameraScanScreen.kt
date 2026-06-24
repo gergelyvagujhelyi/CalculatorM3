@@ -1043,7 +1043,8 @@ private fun TokenInputContent(
 ) {
     var token by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // imePadding keeps the token field above the on-screen keyboard.
+    Box(modifier = Modifier.fillMaxSize().imePadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
