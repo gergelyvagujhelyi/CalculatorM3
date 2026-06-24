@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,9 +42,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.latex.JLatexMathPlugin
+import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.vagujhelyigergely.calculatorm3.R
@@ -547,6 +555,28 @@ private fun copyUriToCache(context: android.content.Context, uri: Uri): String? 
     null
 }
 
+/** Renders [text] as markdown with LaTeX math (`$…$` inline and `$$…$$` block) via Markwon + jlatexmath. */
+@Composable
+private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val argb = color.toArgb()
+    val textSizePx = with(LocalDensity.current) { 16.sp.toPx() }
+    val markwon = remember(textSizePx) {
+        Markwon.builder(context)
+            .usePlugin(MarkwonInlineParserPlugin.create())
+            .usePlugin(JLatexMathPlugin.create(textSizePx) { it.inlinesEnabled(true) })
+            .build()
+    }
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx -> TextView(ctx).apply { textSize = 16f } },
+        update = { tv ->
+            tv.setTextColor(argb)
+            markwon.setMarkdown(tv, text)
+        }
+    )
+}
+
 @Composable
 private fun SuccessContent(
     answer: String,
@@ -585,17 +615,19 @@ private fun SuccessContent(
                 text = stringResource(R.string.answer_found),
                 style = MaterialTheme.typography.titleMedium
             )
-            // The model's full answer, shown in its entirety.
+            // The model's full answer, rendered with markdown + LaTeX math.
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 tonalElevation = 1.dp
             ) {
-                Text(
+                MarkdownLatexText(
                     text = rawResponse.trim(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(16.dp)
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
                 )
             }
             Text(

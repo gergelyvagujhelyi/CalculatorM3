@@ -60,6 +60,7 @@ class LiteRTSolver : MathSolver {
                 modelPath = modelPath,
                 backend = backend,
                 visionBackend = backend,
+                maxNumTokens = SolverPrompts.MAX_TOKENS,
             )
         ).also { it.initialize() }
 

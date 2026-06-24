@@ -94,6 +94,10 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Markdown + LaTeX rendering of the model's answer (ext-latex pulls in jlatexmath).
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:ext-latex:4.6.2")
+    implementation("io.noties.markwon:inline-parser:4.6.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
