@@ -22,3 +22,10 @@
 # nativeCreateConversation aborts with NoSuchMethodError -> SIGABRT.
 -keep class com.google.ai.edge.litertlm.** { *; }
 -keepclassmembers class com.google.ai.edge.litertlm.** { *; }
+
+# Markwon + jlatexmath render the answer's math; jlatexmath resolves glyphs/fonts
+# reflectively, so R8 stripping silently falls back to raw "$...$" text.
+-keep class io.noties.markwon.** { *; }
+-keep class org.scilab.forge.jlatexmath.** { *; }
+-keep class ru.noties.** { *; }
+-dontwarn org.scilab.forge.jlatexmath.**
