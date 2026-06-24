@@ -5,14 +5,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
-import com.vagujhelyigergely.calculatorm3.ai.DownloadAuthException
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
+import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -52,26 +54,37 @@ class ScanViewModel(
         private set
 
     private var loadedModelId: String? = null
-    private var downloadJob: Job? = null
+    private var downloadObserver: Job? = null
 
     fun initialize() {
         if (!modelManager.canRunAnyModel) {
             uiState = ScanUiState.DeviceTooWeak
             return
         }
-        val downloaded = modelManager.downloadedModels()
-        if (downloaded.isEmpty()) {
-            uiState = ScanUiState.FirstTimeWarning
-            return
+        viewModelScope.launch {
+            // Re-attach to a download already running in the background (e.g. started
+            // before the app was backgrounded) instead of showing the idle UI.
+            val current = modelManager.downloadWorkInfoFlow().first()
+            if (current != null &&
+                (current.state == WorkInfo.State.RUNNING || current.state == WorkInfo.State.ENQUEUED)
+            ) {
+                observeDownload()
+                return@launch
+            }
+            val downloaded = modelManager.downloadedModels()
+            if (downloaded.isEmpty()) {
+                uiState = ScanUiState.FirstTimeWarning
+                return@launch
+            }
+            val selected = modelManager.selectedModel
+            if (!modelManager.areModelsAvailable(selected)) {
+                uiState = ScanUiState.ModelSelection(
+                    selected, downloaded, modelManager.deviceRamGb
+                )
+                return@launch
+            }
+            loadModel(selected)
         }
-        val selected = modelManager.selectedModel
-        if (!modelManager.areModelsAvailable(selected)) {
-            uiState = ScanUiState.ModelSelection(
-                selected, downloaded, modelManager.deviceRamGb
-            )
-            return
-        }
-        loadModel(selected)
     }
 
     private fun loadModel(model: AiModel) {
@@ -128,49 +141,76 @@ class ScanViewModel(
     }
 
     fun cancelDownload() {
-        downloadJob?.cancel()
-        downloadJob = null
+        modelManager.cancelDownload()
+        downloadObserver?.cancel()
+        downloadObserver = null
         showModelSelection()
     }
 
     private fun forceDownload(model: AiModel) {
         modelManager.selectedModel = model
-        val files = model.files
-        downloadJob = viewModelScope.launch {
-            try {
-                files.forEachIndexed { index, file ->
-                    if (!modelManager.isFileDownloaded(model, file)) {
-                        val label = "${model.displayName} (${file.sizeDisplay})"
+        modelManager.enqueueDownload(model)
+        observeDownload()
+    }
+
+    /**
+     * Observe the foreground-service download and map its [WorkInfo] to UI state.
+     * The download runs in WorkManager, so it keeps going while this screen is
+     * gone; here we just reflect its progress whenever the screen is present.
+     */
+    private fun observeDownload() {
+        if (downloadObserver?.isActive == true) return
+        downloadObserver = viewModelScope.launch {
+            modelManager.downloadWorkInfoFlow().collect { info ->
+                when (info?.state) {
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                        val m = modelManager.selectedModel
                         uiState = ScanUiState.Downloading(
-                            model = model,
-                            currentFile = label,
+                            model = m,
+                            currentFile = "${m.displayName} — waiting for network",
                             downloadedBytes = 0, totalBytes = -1,
-                            fileIndex = index, fileCount = files.size
+                            fileIndex = 0, fileCount = m.files.size
                         )
-                        modelManager.downloadFile(
-                            model = model,
-                            url = file.url,
-                            destFilename = file.filename
-                        ) { downloaded, total ->
-                            uiState = ScanUiState.Downloading(
-                                model = model,
-                                currentFile = label,
-                                downloadedBytes = downloaded, totalBytes = total,
-                                fileIndex = index, fileCount = files.size
+                    }
+                    WorkInfo.State.RUNNING -> {
+                        val p = info.progress
+                        val m = AiModel.entries.find {
+                            it.id == p.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                        } ?: modelManager.selectedModel
+                        uiState = ScanUiState.Downloading(
+                            model = m,
+                            currentFile = "${m.displayName} (${m.totalSizeDisplay})",
+                            downloadedBytes = p.getLong(ModelDownloadWorker.KEY_DOWNLOADED, 0L),
+                            totalBytes = p.getLong(ModelDownloadWorker.KEY_TOTAL, -1L),
+                            fileIndex = p.getInt(ModelDownloadWorker.KEY_FILE_INDEX, 0),
+                            fileCount = p.getInt(ModelDownloadWorker.KEY_FILE_COUNT, m.files.size)
+                        )
+                    }
+                    WorkInfo.State.SUCCEEDED -> {
+                        val m = AiModel.entries.find {
+                            it.id == info.outputData.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                        } ?: modelManager.selectedModel
+                        uiState = ScanUiState.DownloadComplete()
+                        loadModel(m)
+                    }
+                    WorkInfo.State.FAILED -> {
+                        val out = info.outputData
+                        if (out.getString(ModelDownloadWorker.KEY_ERROR) == ModelDownloadWorker.ERROR_AUTH) {
+                            val m = AiModel.entries.find {
+                                it.id == out.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                            } ?: modelManager.selectedModel
+                            uiState = ScanUiState.AuthError(
+                                httpCode = out.getInt(ModelDownloadWorker.KEY_HTTP_CODE, 401),
+                                model = m
+                            )
+                        } else {
+                            uiState = ScanUiState.Error(
+                                "Download failed: ${out.getString(ModelDownloadWorker.KEY_MESSAGE) ?: ""}"
                             )
                         }
                     }
+                    WorkInfo.State.CANCELLED, null -> { /* nothing to show */ }
                 }
-
-                uiState = ScanUiState.DownloadComplete()
-                loadModel(model)
-            } catch (e: DownloadAuthException) {
-                uiState = ScanUiState.AuthError(
-                    httpCode = e.httpCode,
-                    model = e.model
-                )
-            } catch (e: Exception) {
-                uiState = ScanUiState.Error("Download failed: ${e.message}")
             }
         }
     }

@@ -4,8 +4,17 @@ import android.app.ActivityManager
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import androidx.work.Constraints
+import androidx.work.ExistingWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -46,28 +55,10 @@ enum class AiModel(
     val requiresAuth: Boolean = false,
     val licenseUrl: String = ""
 ) {
-    QWEN35_08B(
-        id = "qwen35-0.8b",
-        displayName = "Qwen3.5 0.8B",
-        description = "Smallest and fastest, no account needed",
-        totalSizeDisplay = "~2.3 GB",
-        minRamGb = 4,
-        primaryFilename = "qwen35_mm_q8_ekv2048.litertlm",
-        files = run {
-            val base = "https://huggingface.co/GabrieleConte/Qwen3.5-0.8B-LiteRT/resolve/main"
-            listOf(
-                ModelFile("$base/qwen35_mm_q8_ekv2048.litertlm", "qwen35_mm_q8_ekv2048.litertlm", "1.2 GB"),
-                ModelFile("$base/qwen35_mm_q8_ekv2048.tflite", "qwen35_mm_q8_ekv2048.tflite", "794 MB"),
-                ModelFile("$base/qwen35_embedder_q8.tflite", "qwen35_embedder_q8.tflite", "257 MB"),
-                ModelFile("$base/qwen35_vision_encoder_q8.tflite", "qwen35_vision_encoder_q8.tflite", "92 MB"),
-                ModelFile("$base/qwen35_vision_adapter_q8.tflite", "qwen35_vision_adapter_q8.tflite", "13 MB"),
-            )
-        }
-    ),
     GEMMA4_E2B(
         id = "gemma4-e2b",
         displayName = "Gemma 4 E2B",
-        description = "Balanced speed and quality",
+        description = "Balanced speed and quality, no account needed",
         totalSizeDisplay = "~2.6 GB",
         minRamGb = 6,
         primaryFilename = "gemma-4-E2B-it.litertlm",
@@ -77,8 +68,7 @@ enum class AiModel(
                 "gemma-4-E2B-it.litertlm",
                 "2.6 GB"
             )
-        ),
-        advanced = true
+        )
     ),
     GEMMA3N_E2B(
         id = "gemma3n-e2b",
@@ -145,8 +135,8 @@ class ModelManager(private val context: Context) {
 
     var selectedModel: AiModel
         get() {
-            val id = prefs.getString("selected_model", AiModel.GEMMA3N_E2B.id)
-            return AiModel.entries.find { it.id == id } ?: AiModel.GEMMA3N_E2B
+            val id = prefs.getString("selected_model", AiModel.GEMMA4_E2B.id)
+            return AiModel.entries.find { it.id == id } ?: AiModel.GEMMA4_E2B
         }
         set(value) {
             prefs.edit().putString("selected_model", value.id).apply()
@@ -268,9 +258,35 @@ class ModelManager(private val context: Context) {
                 tmpFile.delete()
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
-            // User cancelled — delete partial tmp so it doesn't resume a cancelled download
-            tmpFile.delete()
+            // Keep the partial .tmp so an interrupted download resumes via HTTP Range
+            // on the next run (process death, WorkManager retry, network drop).
             throw e
         }
     }
+
+    // --- Background download via WorkManager (foreground service) ---
+
+    private val workManager get() = WorkManager.getInstance(context)
+
+    /** Enqueue a foreground download of [model]; replaces any in-flight download. */
+    fun enqueueDownload(model: AiModel) {
+        val request = OneTimeWorkRequestBuilder<ModelDownloadWorker>()
+            .setInputData(workDataOf(ModelDownloadWorker.KEY_MODEL_ID to model.id))
+            .setConstraints(
+                Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
+            )
+            .build()
+        workManager.enqueueUniqueWork(
+            ModelDownloadWorker.WORK_NAME, ExistingWorkPolicy.REPLACE, request
+        )
+    }
+
+    fun cancelDownload() {
+        workManager.cancelUniqueWork(ModelDownloadWorker.WORK_NAME)
+    }
+
+    /** Latest state of the current/last download, or null if none has been enqueued. */
+    fun downloadWorkInfoFlow(): Flow<WorkInfo?> =
+        workManager.getWorkInfosForUniqueWorkFlow(ModelDownloadWorker.WORK_NAME)
+            .map { it.firstOrNull() }
 }

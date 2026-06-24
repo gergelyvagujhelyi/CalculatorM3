@@ -62,10 +62,9 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 
 | Model | Download | Min RAM | Auth |
 |-------|----------|---------|------|
-| Qwen3.5 0.8B | ~2.3 GB | 4 GB | — |
-| Gemma 4 E2B | ~2.6 GB | 6 GB | HuggingFace |
+| Gemma 4 E2B | ~2.6 GB | 6 GB | — |
 | Gemma 3n E2B | ~3.7 GB | 4 GB | HuggingFace |
-| Gemma 4 E4B | ~3.7 GB | 8 GB | HuggingFace |
+| Gemma 4 E4B | ~3.7 GB | 8 GB | — |
 | Gemma 3n E4B | ~4.9 GB | 6 GB | HuggingFace |
 
 **Requirements:**

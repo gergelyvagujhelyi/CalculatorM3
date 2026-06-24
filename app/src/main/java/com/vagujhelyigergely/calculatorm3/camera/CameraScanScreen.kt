@@ -1,7 +1,9 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,9 +58,15 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* best-effort: the download runs regardless of notification visibility */ }
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     // Keep screen on during loading, downloading, and processing
