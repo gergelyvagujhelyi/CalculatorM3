@@ -69,11 +69,11 @@ fun CameraScanScreen(
         }
     }
 
-    // Keep screen on during loading, downloading, and processing
+    // Keep screen on while the user is actively waiting in-app (model load / inference).
+    // Downloads run in a WorkManager foreground service with their own notification,
+    // so they survive the screen turning off and don't need this.
     val keepScreenOn = viewModel.uiState is ScanUiState.ModelLoading ||
-        viewModel.uiState is ScanUiState.Processing ||
-        viewModel.uiState is ScanUiState.Downloading ||
-        viewModel.uiState is ScanUiState.DownloadComplete
+        viewModel.uiState is ScanUiState.Processing
     val activity = context as? android.app.Activity
     DisposableEffect(keepScreenOn) {
         if (keepScreenOn) {
