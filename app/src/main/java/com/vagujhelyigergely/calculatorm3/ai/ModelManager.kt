@@ -41,6 +41,8 @@ enum class AiModel(
     val minRamGb: Int,
     val primaryFilename: String,
     val files: List<ModelFile>,
+    /** Grouped under "Advanced models" in the picker (larger / higher-end). Independent of [requiresAuth]. */
+    val advanced: Boolean = false,
     val requiresAuth: Boolean = false,
     val licenseUrl: String = ""
 ) {
@@ -76,8 +78,7 @@ enum class AiModel(
                 "2.6 GB"
             )
         ),
-        requiresAuth = true,
-        licenseUrl = "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm"
+        advanced = true
     ),
     GEMMA3N_E2B(
         id = "gemma3n-e2b",
@@ -93,6 +94,7 @@ enum class AiModel(
                 "3.7 GB"
             )
         ),
+        advanced = true,
         requiresAuth = true,
         licenseUrl = "https://huggingface.co/google/gemma-3n-E2B-it-litert-lm"
     ),
@@ -110,8 +112,7 @@ enum class AiModel(
                 "3.7 GB"
             )
         ),
-        requiresAuth = true,
-        licenseUrl = "https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm"
+        advanced = true
     ),
     GEMMA3N_E4B(
         id = "gemma3n-e4b",
@@ -127,6 +128,7 @@ enum class AiModel(
                 "4.9 GB"
             )
         ),
+        advanced = true,
         requiresAuth = true,
         licenseUrl = "https://huggingface.co/google/gemma-3n-E4B-it-litert-lm"
     );

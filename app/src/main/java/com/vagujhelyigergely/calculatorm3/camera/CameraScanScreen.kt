@@ -752,8 +752,8 @@ private fun ModelSelectionContent(
                 textAlign = TextAlign.Center
             )
 
-            val freeModels = AiModel.entries.filter { !it.requiresAuth }
-            val advancedModels = AiModel.entries.filter { it.requiresAuth }
+            val freeModels = AiModel.entries.filter { !it.advanced }
+            val advancedModels = AiModel.entries.filter { it.advanced }
 
             freeModels.forEach { model ->
                 ModelCard(model, model in downloadedModels, model == selectedModel,
