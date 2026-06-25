@@ -1,20 +1,22 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkInfo
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
-import com.vagujhelyigergely.calculatorm3.ai.Backend
-import com.vagujhelyigergely.calculatorm3.ai.DownloadAuthException
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
+import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
-import com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -24,9 +26,17 @@ sealed interface ScanUiState {
     data object Capturing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
-        val startTimeMs: Long = System.currentTimeMillis()
+        val startTimeMs: Long = System.currentTimeMillis(),
+        val tokenCount: Int = 0,
+        val backend: String = ""
     ) : ScanUiState
-    data class Success(val answer: String, val rawResponse: String, val elapsedMs: Long) : ScanUiState
+    data class Success(
+        val answer: String,
+        val rawResponse: String,
+        val elapsedMs: Long,
+        val tokenCount: Int = 0,
+        val backend: String = ""
+    ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
     data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
     data class Downloading(
@@ -46,78 +56,74 @@ sealed interface ScanUiState {
 }
 
 class ScanViewModel(
-    private val nobodyWhoSolver: NobodyWhoSolver,
-    private val liteRTSolver: MathSolver,
+    private val solver: MathSolver,
     private val modelManager: ModelManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
         private set
 
-    private var activeSolver: MathSolver? = null
     private var loadedModelId: String? = null
-    private var downloadJob: Job? = null
-
-    private fun solverFor(model: AiModel): MathSolver = when (model.backend) {
-        Backend.NOBODYWHO -> nobodyWhoSolver
-        Backend.LITERT -> liteRTSolver
-    }
+    private var downloadObserver: Job? = null
 
     fun initialize() {
         if (!modelManager.canRunAnyModel) {
             uiState = ScanUiState.DeviceTooWeak
             return
         }
-        val downloaded = modelManager.downloadedModels()
-        if (downloaded.isEmpty()) {
-            uiState = ScanUiState.FirstTimeWarning
-            return
+        viewModelScope.launch {
+            // Re-attach to a download already running in the background (e.g. started
+            // before the app was backgrounded) instead of showing the idle UI.
+            val current = modelManager.downloadWorkInfoFlow().first()
+            if (current != null &&
+                (current.state == WorkInfo.State.RUNNING || current.state == WorkInfo.State.ENQUEUED)
+            ) {
+                observeDownload()
+                return@launch
+            }
+            val downloaded = modelManager.downloadedModels()
+            if (downloaded.isEmpty()) {
+                uiState = ScanUiState.FirstTimeWarning
+                return@launch
+            }
+            val selected = modelManager.selectedModel
+            if (!modelManager.areModelsAvailable(selected)) {
+                uiState = ScanUiState.ModelSelection(
+                    selected, downloaded, modelManager.deviceRamGb
+                )
+                return@launch
+            }
+            // Don't load the model yet — show the capture chooser. The model is
+            // loaded lazily in onPhotoCaptured, once a photo exists.
+            uiState = ScanUiState.Capturing
         }
-        if (modelManager.selectedModel.backend == Backend.NOBODYWHO && !nobodyWhoSolver.isNativeLibraryAvailable) {
-            uiState = ScanUiState.ModelSelection(
-                modelManager.selectedModel, downloaded, modelManager.deviceRamGb
-            )
-            return
-        }
-        val selected = modelManager.selectedModel
-        if (!modelManager.areModelsAvailable(selected)) {
-            uiState = ScanUiState.ModelSelection(
-                modelManager.selectedModel, downloaded, modelManager.deviceRamGb
-            )
-            return
-        }
-        loadModel(selected)
     }
 
-    private fun loadModel(model: AiModel) {
-        val solver = solverFor(model)
-        if (solver.isModelLoaded && loadedModelId == model.id) {
-            activeSolver = solver
-            uiState = ScanUiState.Capturing
-            return
-        }
+    /**
+     * Load the selected model into memory if needed. Called lazily, only once a
+     * photo exists — so the (potentially multi-GB) model is NOT resident while the
+     * system camera app launches, which otherwise OOM-killed us with large models.
+     * Returns true if the model is ready, false (and sets an Error state) on failure.
+     */
+    private suspend fun ensureModelLoaded(model: AiModel): Boolean {
+        if (solver.isModelLoaded && loadedModelId == model.id) return true
         uiState = ScanUiState.ModelLoading()
-        viewModelScope.launch {
-            try {
-                // Release the other solver if switching backends
-                if (activeSolver != null && activeSolver != solver) {
-                    activeSolver?.release()
-                }
-                val mmproj = if (model.needsMmproj) modelManager.mmprojPath(model) else null
-                solver.loadModel(modelManager.modelPath(model), mmproj)
-                activeSolver = solver
-                loadedModelId = model.id
-                uiState = ScanUiState.Capturing
-            } catch (e: Exception) {
-                uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
-            }
+        return try {
+            solver.loadModel(modelManager.modelPath(model))
+            loadedModelId = model.id
+            true
+        } catch (e: Exception) {
+            loadedModelId = null
+            uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
+            false
         }
     }
 
     fun selectModel(model: AiModel) {
         modelManager.selectedModel = model
         if (modelManager.areModelsAvailable(model)) {
-            loadModel(model)
+            // Loaded lazily on first photo, not here.
+            uiState = ScanUiState.Capturing
         } else {
             startDownload(model)
         }
@@ -150,97 +156,198 @@ class ScanViewModel(
     }
 
     fun cancelDownload() {
-        downloadJob?.cancel()
-        downloadJob = null
+        modelManager.cancelDownload()
+        downloadObserver?.cancel()
+        downloadObserver = null
         showModelSelection()
     }
 
     private fun forceDownload(model: AiModel) {
         modelManager.selectedModel = model
-        val fileCount = if (model.needsMmproj) 2 else 1
-        downloadJob = viewModelScope.launch {
-            try {
-                if (!modelManager.isModelDownloaded(model)) {
-                    uiState = ScanUiState.Downloading(
-                        model = model,
-                        currentFile = "${model.displayName} (${model.modelSizeDisplay})",
-                        downloadedBytes = 0, totalBytes = -1,
-                        fileIndex = 0, fileCount = fileCount
-                    )
-                    modelManager.downloadFile(
-                        model = model,
-                        url = model.modelUrl,
-                        destFilename = "model.${model.modelFileExtension}"
-                    ) { downloaded, total ->
+        modelManager.enqueueDownload(model)
+        observeDownload()
+    }
+
+    /**
+     * Observe the foreground-service download and map its [WorkInfo] to UI state.
+     * The download runs in WorkManager, so it keeps going while this screen is
+     * gone; here we just reflect its progress whenever the screen is present.
+     */
+    private fun observeDownload() {
+        if (downloadObserver?.isActive == true) return
+        downloadObserver = viewModelScope.launch {
+            modelManager.downloadWorkInfoFlow().collect { info ->
+                when (info?.state) {
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> {
+                        val m = modelManager.selectedModel
                         uiState = ScanUiState.Downloading(
-                            model = model,
-                            currentFile = "${model.displayName} (${model.modelSizeDisplay})",
-                            downloadedBytes = downloaded, totalBytes = total,
-                            fileIndex = 0, fileCount = fileCount
+                            model = m,
+                            currentFile = "${m.displayName} — waiting for network",
+                            downloadedBytes = 0, totalBytes = -1,
+                            fileIndex = 0, fileCount = m.files.size
                         )
                     }
-                }
-
-                if (model.needsMmproj && !modelManager.isMmprojDownloaded(model)) {
-                    uiState = ScanUiState.Downloading(
-                        model = model,
-                        currentFile = "Vision projector (${model.mmprojSizeDisplay})",
-                        downloadedBytes = 0, totalBytes = -1,
-                        fileIndex = 1, fileCount = fileCount
-                    )
-                    modelManager.downloadFile(
-                        model = model,
-                        url = model.mmprojUrl,
-                        destFilename = "mmproj.gguf"
-                    ) { downloaded, total ->
+                    WorkInfo.State.RUNNING -> {
+                        val p = info.progress
+                        val m = AiModel.entries.find {
+                            it.id == p.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                        } ?: modelManager.selectedModel
                         uiState = ScanUiState.Downloading(
-                            model = model,
-                            currentFile = "Vision projector (${model.mmprojSizeDisplay})",
-                            downloadedBytes = downloaded, totalBytes = total,
-                            fileIndex = 1, fileCount = fileCount
+                            model = m,
+                            currentFile = "${m.displayName} (${m.totalSizeDisplay})",
+                            downloadedBytes = p.getLong(ModelDownloadWorker.KEY_DOWNLOADED, 0L),
+                            totalBytes = p.getLong(ModelDownloadWorker.KEY_TOTAL, -1L),
+                            fileIndex = p.getInt(ModelDownloadWorker.KEY_FILE_INDEX, 0),
+                            fileCount = p.getInt(ModelDownloadWorker.KEY_FILE_COUNT, m.files.size)
                         )
                     }
+                    WorkInfo.State.SUCCEEDED -> {
+                        val m = AiModel.entries.find {
+                            it.id == info.outputData.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                        } ?: modelManager.selectedModel
+                        modelManager.selectedModel = m
+                        // Model loads lazily on first photo, not right after download.
+                        uiState = ScanUiState.Capturing
+                    }
+                    WorkInfo.State.FAILED -> {
+                        val out = info.outputData
+                        if (out.getString(ModelDownloadWorker.KEY_ERROR) == ModelDownloadWorker.ERROR_AUTH) {
+                            val m = AiModel.entries.find {
+                                it.id == out.getString(ModelDownloadWorker.KEY_MODEL_ID)
+                            } ?: modelManager.selectedModel
+                            uiState = ScanUiState.AuthError(
+                                httpCode = out.getInt(ModelDownloadWorker.KEY_HTTP_CODE, 401),
+                                model = m
+                            )
+                        } else {
+                            uiState = ScanUiState.Error(
+                                "Download failed: ${out.getString(ModelDownloadWorker.KEY_MESSAGE) ?: ""}"
+                            )
+                        }
+                    }
+                    WorkInfo.State.CANCELLED, null -> { /* nothing to show */ }
                 }
-
-                uiState = ScanUiState.DownloadComplete()
-                loadModel(model)
-            } catch (e: DownloadAuthException) {
-                uiState = ScanUiState.AuthError(
-                    httpCode = e.httpCode,
-                    model = e.model
-                )
-            } catch (e: Exception) {
-                uiState = ScanUiState.Error("Download failed: ${e.message}")
             }
         }
     }
 
     fun onPhotoCaptured(imagePath: String) {
-        val solver = activeSolver ?: return
-        val startTime = System.currentTimeMillis()
-        uiState = ScanUiState.Processing(startTimeMs = startTime)
+        val model = modelManager.selectedModel
         viewModelScope.launch {
+            // Load the model now that a photo exists (it wasn't resident while the
+            // camera app was open). Shows "Loading AI model…" then proceeds.
+            if (!ensureModelLoaded(model)) {
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                return@launch
+            }
+            val startTime = System.currentTimeMillis()
+            val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
+            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
+            // Apply EXIF rotation + downscale: a full-res photo can blow up the
+            // vision pipeline's memory, and the camera stores it sideways with an
+            // EXIF orientation tag the model would otherwise ignore.
+            val processPath = withContext(Dispatchers.IO) {
+                prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
+            }
             try {
-                val result = solver.solveFromImageStreaming(imagePath) { partialRaw ->
+                var tokenCount = 0
+                val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                    tokenCount++
                     withContext(Dispatchers.Main) {
                         uiState = ScanUiState.Processing(
                             partialRaw = partialRaw,
-                            startTimeMs = startTime
+                            startTimeMs = startTime,
+                            tokenCount = tokenCount,
+                            backend = backend
                         )
                     }
                 }
                 val elapsed = System.currentTimeMillis() - startTime
                 uiState = result.fold(
-                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed) },
+                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
                         ScanUiState.Error(it.message ?: "Recognition failed", raw)
                     }
                 )
+            } catch (e: Throwable) {
+                // Let cancellation (e.g. user closed the screen) propagate instead
+                // of showing it as an inference error.
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                uiState = ScanUiState.Error("Inference failed: ${e.message}")
             } finally {
-                // Clean up captured photo
-                java.io.File(imagePath).delete()
+                // Clean up captured photos
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                if (processPath != imagePath) {
+                    try { java.io.File(processPath).delete() } catch (_: Exception) {}
+                }
             }
+        }
+    }
+
+    /**
+     * Normalize a captured/picked photo for the model: apply its EXIF orientation
+     * (so handwriting isn't sideways) and downscale so the longest edge is ≤ [maxEdge] px.
+     * Returns the path to a new JPEG, or null on failure (caller falls back to the original).
+     */
+    private fun prepareImage(imagePath: String, maxEdge: Int): String? {
+        val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(imagePath, opts)
+        val w = opts.outWidth
+        val h = opts.outHeight
+        if (w <= 0 || h <= 0) return null
+
+        // inSampleSize keeps the full-res bitmap from ever loading into memory.
+        val sampleSize = if (maxOf(w, h) > maxEdge) Integer.highestOneBit(maxOf(w, h) / maxEdge) else 1
+        val decodeOpts = BitmapFactory.Options().apply { inSampleSize = maxOf(1, sampleSize) }
+        var bmp = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
+        return try {
+            bmp = applyExifOrientation(imagePath, bmp)
+            // Scale down further if still larger than maxEdge after sampling.
+            val longest = maxOf(bmp.width, bmp.height)
+            if (longest > maxEdge) {
+                val scale = maxEdge.toFloat() / longest
+                val scaled = Bitmap.createScaledBitmap(bmp, (bmp.width * scale).toInt(), (bmp.height * scale).toInt(), true)
+                if (scaled !== bmp) bmp.recycle()
+                bmp = scaled
+            }
+            val outFile = java.io.File(java.io.File(imagePath).parent, "scan_prepared_${System.nanoTime()}.jpg")
+            outFile.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            outFile.absolutePath
+        } catch (e: Exception) {
+            null
+        } finally {
+            bmp.recycle()
+        }
+    }
+
+    /** Rotate/flip [bitmap] to upright per the source file's EXIF orientation tag. */
+    private fun applyExifOrientation(imagePath: String, bitmap: Bitmap): Bitmap {
+        val orientation = try {
+            android.media.ExifInterface(imagePath).getAttributeInt(
+                android.media.ExifInterface.TAG_ORIENTATION,
+                android.media.ExifInterface.ORIENTATION_NORMAL
+            )
+        } catch (e: Exception) {
+            return bitmap
+        }
+        val matrix = android.graphics.Matrix()
+        when (orientation) {
+            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            android.media.ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+            android.media.ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
+            else -> return bitmap
+        }
+        return try {
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated !== bitmap) bitmap.recycle()
+            rotated
+        } catch (e: Exception) {
+            bitmap
         }
     }
 
@@ -249,7 +356,9 @@ class ScanViewModel(
     }
 
     fun retry() {
-        if (activeSolver?.isModelLoaded == true) {
+        // Back to the capture chooser if the model is available (loaded lazily on
+        // the next photo); otherwise re-run the first-time / download flow.
+        if (modelManager.areModelsAvailable()) {
             uiState = ScanUiState.Capturing
         } else {
             initialize()
@@ -271,13 +380,19 @@ class ScanViewModel(
     }
 
     fun releaseAll() {
+        // Invalidate the cache marker so the next scan reloads if the engine is gone.
+        loadedModelId = null
         // Launch on IO to avoid blocking the main thread — release() acquires
         // the solver mutex which may be held by an in-flight inference whose
         // onToken callback dispatches to Dispatchers.Main.  Blocking main here
         // with runBlocking would deadlock.
         CoroutineScope(Dispatchers.IO).launch {
-            nobodyWhoSolver.release()
-            liteRTSolver.release()
+            solver.release()
         }
+    }
+
+    companion object {
+        /** Longest edge (px) the captured photo is downscaled to before inference. */
+        private const val MAX_IMAGE_EDGE = 1024
     }
 }

@@ -30,32 +30,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android
-
-      - name: Set up Android NDK
-        uses: nttld/setup-ndk@v1
-        id: ndk
-        with:
-          ndk-version: r28b
-
-      - name: Build native library (arm64-v8a)
-        env:
-          ANDROID_NDK: ${{ steps.ndk.outputs.ndk-path }}
-        run: |
-          TOOLCHAIN="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64"
-          export CC_aarch64_linux_android="${TOOLCHAIN}/bin/aarch64-linux-android31-clang"
-          export CXX_aarch64_linux_android="${CC_aarch64_linux_android}++"
-          export AR_aarch64_linux_android="${TOOLCHAIN}/bin/llvm-ar"
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="${CC_aarch64_linux_android}"
-          export CARGO_TARGET_AARCH64_LINUX_ANDROID_AR="${TOOLCHAIN}/bin/llvm-ar"
-          cd native
-          cargo build --target aarch64-linux-android --release
-          mkdir -p ../app/src/main/jniLibs/arm64-v8a
-          cp target/aarch64-linux-android/release/libnobodywho_android.so ../app/src/main/jniLibs/arm64-v8a/
-
       - name: Decode keystore
         if: ${{ env.KEYSTORE_BASE64 != '' }}
         env:

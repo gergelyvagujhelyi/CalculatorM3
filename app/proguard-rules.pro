@@ -11,12 +11,21 @@
 -keep class com.vagujhelyigergely.calculatorm3.CalcButton { *; }
 -keep class com.vagujhelyigergely.calculatorm3.ButtonType { *; }
 
-# Keep JNI bridge class (native method names resolved by exact string matching)
--keep class com.vagujhelyigergely.calculatorm3.ai.NobodyWhoBridge { *; }
-
 # Keep AI/camera ViewModels and data classes
--keep class com.vagujhelyigergely.calculatorm3.ai.NobodyWhoSolver { *; }
 -keep class com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanViewModel { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanUiState { *; }
 -keep class com.vagujhelyigergely.calculatorm3.camera.ScanUiState$* { *; }
+
+# LiteRT-LM's native code reads these classes/members via JNI (e.g.
+# SamplerConfig.getTopK()). R8 must not rename or strip them, or
+# nativeCreateConversation aborts with NoSuchMethodError -> SIGABRT.
+-keep class com.google.ai.edge.litertlm.** { *; }
+-keepclassmembers class com.google.ai.edge.litertlm.** { *; }
+
+# Markwon + jlatexmath render the answer's math; jlatexmath resolves glyphs/fonts
+# reflectively, so R8 stripping silently falls back to raw "$...$" text.
+-keep class io.noties.markwon.** { *; }
+-keep class org.scilab.forge.jlatexmath.** { *; }
+-keep class ru.noties.** { *; }
+-dontwarn org.scilab.forge.jlatexmath.**

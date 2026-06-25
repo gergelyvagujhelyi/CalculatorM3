@@ -32,6 +32,9 @@
     <string name="scan_expression">Scan expression</string>
     <string name="capture">Capture</string>
     <string name="camera_hint">Point at a handwritten math expression</string>
+    <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>
+    <string name="take_photo">Take photo</string>
+    <string name="choose_from_gallery">Choose from gallery</string>
     <string name="camera_processing_image">Processing image\u2026</string>
     <string name="processing_image_hint">The vision model is analyzing your photo. This can take 1\u20132 minutes.</string>
     <string name="camera_generating">Solving\u2026</string>
@@ -41,6 +44,7 @@
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>
+    <string name="use_answer">Use %1$s</string>
     <string name="retry">Retry</string>
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
@@ -56,7 +60,7 @@
     <string name="download_warning">This is a large download. Use Wi-Fi if possible.</string>
     <string name="raw_model_output">Raw model output</string>
     <string name="advanced_models">Advanced models</string>
-    <string name="advanced_models_description">These models require a free HuggingFace account and license acceptance before download.</string>
+    <string name="advanced_models_description">Larger, higher-quality models. Those marked \"requires login\" need a free HuggingFace account and license acceptance before download.</string>
     <string name="requires_login">requires login</string>
     <string name="mobile_data_title">No Wi-Fi connection</string>
     <string name="mobile_data_description">You are about to download %1$s using mobile data. This may incur charges from your carrier.</string>

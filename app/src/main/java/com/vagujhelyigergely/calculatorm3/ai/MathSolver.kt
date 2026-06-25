@@ -10,7 +10,13 @@ class RecognitionException(message: String, val rawResponse: String) : Exception
 interface MathSolver {
     val isModelLoaded: Boolean
 
-    suspend fun loadModel(modelPath: String, mmprojPath: String?)
+    /** Which compute backend the loaded model is running on ("GPU", "CPU", or "—"). */
+    val activeBackend: String
+
+    /** TEMP debug: short reason the GPU backend failed to load, or null. */
+    val lastGpuError: String? get() = null
+
+    suspend fun loadModel(modelPath: String)
     suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
@@ -29,6 +35,11 @@ object SolverPrompts {
 
     const val USER_PROMPT =
         "Calculate the result of the mathematical expression in this image."
+
+    // Sampler params for the LiteRT-LM conversation (match AI Edge Gallery defaults).
+    const val TOP_K = 64
+    const val TOP_P = 0.95f
+    const val TEMPERATURE = 1.0f
 
     /** Extract the numerical answer from the LLM response.
      *  Checks the last non-empty line first (where the model is prompted to put the answer),

@@ -2,15 +2,13 @@ package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
+import android.os.Build
+import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.view.LifecycleCameraController
-import androidx.camera.view.PreviewView
+import androidx.core.content.FileProvider
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,11 +26,13 @@ import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,19 +40,27 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import android.view.WindowManager
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
+import io.noties.markwon.Markwon
+import io.noties.markwon.ext.latex.JLatexMathPlugin
+import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.content.ContextCompat
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 
@@ -63,33 +71,22 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
-        )
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
+    val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        hasPermission = granted
-        if (granted) viewModel.initialize()
-    }
+    ) { /* best-effort: the download runs regardless of notification visibility */ }
 
-    LaunchedEffect(hasPermission) {
-        if (hasPermission) {
-            viewModel.initialize()
-        } else {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
+    LaunchedEffect(Unit) {
+        viewModel.initialize()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 
-    // Keep screen on during loading, downloading, and processing
+    // Keep screen on while the user is actively waiting in-app (model load / inference).
+    // Downloads run in a WorkManager foreground service with their own notification,
+    // so they survive the screen turning off and don't need this.
     val keepScreenOn = viewModel.uiState is ScanUiState.ModelLoading ||
-        viewModel.uiState is ScanUiState.Processing ||
-        viewModel.uiState is ScanUiState.Downloading ||
-        viewModel.uiState is ScanUiState.DownloadComplete
+        viewModel.uiState is ScanUiState.Processing
     val activity = context as? android.app.Activity
     DisposableEffect(keepScreenOn) {
         if (keepScreenOn) {
@@ -111,9 +108,7 @@ fun CameraScanScreen(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            if (!hasPermission) {
-                PermissionDeniedContent(onDismiss = onDismiss)
-            } else {
+            run {
                 when (val state = viewModel.uiState) {
                     is ScanUiState.Idle -> StatusContent(
                         icon = Icons.Default.Psychology,
@@ -136,12 +131,16 @@ fun CameraScanScreen(
                     is ScanUiState.Processing -> ProcessingContent(
                         partialRaw = state.partialRaw,
                         startTimeMs = state.startTimeMs,
+                        tokenCount = state.tokenCount,
+                        backend = state.backend,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Success -> SuccessContent(
                         answer = state.answer,
                         rawResponse = state.rawResponse,
                         elapsedMs = state.elapsedMs,
+                        tokenCount = state.tokenCount,
+                        backend = state.backend,
                         onUse = {
                             onExpressionRecognized(state.answer)
                             onDismiss()
@@ -253,7 +252,7 @@ private fun StatusContent(
     showProgress: Boolean,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -296,7 +295,7 @@ private fun StatusContent(
 
 @Composable
 private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -338,7 +337,13 @@ private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
 }
 
 @Composable
-private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: () -> Unit) {
+private fun ProcessingContent(
+    partialRaw: String,
+    startTimeMs: Long,
+    tokenCount: Int,
+    backend: String,
+    onDismiss: () -> Unit
+) {
     val isGenerating = partialRaw.isNotEmpty()
 
     // Pulsing icon
@@ -353,7 +358,7 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
         label = "pulse_scale"
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -422,9 +427,28 @@ private fun ProcessingContent(partialRaw: String, startTimeMs: Long, onDismiss: 
                 }
             }
 
-            ElapsedTimeText(startTimeMs = startTimeMs)
+            PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend)
         }
     }
+}
+
+/** TEMP debug HUD: live tokens/sec and which backend (GPU/CPU) the model runs on. */
+@Composable
+private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String) {
+    var elapsedMs by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(startTimeMs) {
+        while (true) {
+            elapsedMs = System.currentTimeMillis() - startTimeMs
+            delay(250)
+        }
+    }
+    val secs = elapsedMs / 1000.0
+    val tps = if (secs > 0.2) tokenCount / secs else 0.0
+    Text(
+        text = "%s · %.1f tok/s · %ds".format(backend.ifEmpty { "?" }, tps, elapsedMs / 1000),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary
+    )
 }
 
 @Composable
@@ -436,26 +460,38 @@ private fun CameraContent(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraController = remember {
-        LifecycleCameraController(context).apply {
-            bindToLifecycle(lifecycleOwner)
+    val scope = rememberCoroutineScope()
+    // Path of the file the system camera writes into. Saveable so it survives the
+    // activity being recreated while the camera is foreground (memory pressure) —
+    // otherwise the returned photo would be dropped and the scan lost.
+    var pendingPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
+
+    val takePhotoLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { success ->
+        val file = pendingPhotoPath?.let { File(it) }
+        pendingPhotoPath = null
+        if (success && file != null) {
+            onPhotoCaptured(file.absolutePath)
+        } else {
+            // Cancelled or failed — discard the empty file and stay on this screen.
+            file?.delete()
         }
     }
-    val executor = remember { ContextCompat.getMainExecutor(context) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Camera preview
-        AndroidView(
-            factory = { ctx ->
-                PreviewView(ctx).apply {
-                    controller = cameraController
-                    implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val path = copyUriToCache(context, uri)
+                if (path != null) onPhotoCaptured(path)
+                else onCaptureError("Could not open the selected image")
+            }
+        }
+    }
 
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         // Top bar: close + model switch
         Row(
             modifier = Modifier
@@ -481,56 +517,122 @@ private fun CameraContent(
             }
         }
 
-        // Hint text
-        Text(
-            text = stringResource(R.string.camera_hint),
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            textAlign = TextAlign.Center,
+        // Centered prompt + capture/pick actions
+        Column(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 16.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-
-        // Capture button
-        IconButton(
-            onClick = {
-                val photoFile = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-                val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-                cameraController.takePicture(
-                    outputOptions,
-                    executor,
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            onPhotoCaptured(photoFile.absolutePath)
-                        }
-                        override fun onError(exception: ImageCaptureException) {
-                            Log.e("CameraScan", "Capture failed", exception)
-                            onCaptureError(exception.message ?: "Photo capture failed")
-                        }
-                    }
-                )
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 32.dp)
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = Icons.Default.CameraAlt,
-                contentDescription = stringResource(R.string.capture),
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(32.dp)
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(64.dp)
             )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.scan_hint),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(
+                onClick = {
+                    val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+                    pendingPhotoPath = file.absolutePath
+                    takePhotoLauncher.launch(fileProviderUri(context, file))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhotoCamera,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(R.string.take_photo))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    pickImageLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhotoLibrary,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = stringResource(R.string.choose_from_gallery))
+            }
         }
     }
+}
+
+/** Content Uri the system camera can write the captured photo to, via the app's FileProvider. */
+private fun fileProviderUri(context: android.content.Context, file: File): Uri =
+    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+
+/** Copy a picked gallery image into the app cache and return its path (the solver needs a file path). */
+private suspend fun copyUriToCache(context: android.content.Context, uri: Uri): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val input = context.contentResolver.openInputStream(uri)
+            if (input == null) {
+                null
+            } else {
+                val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+                input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
+                file.absolutePath
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+/** Renders [text] as markdown with LaTeX math (`$…$` inline and `$$…$$` block) via Markwon + jlatexmath. */
+@Composable
+private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val argb = color.toArgb()
+    val textSizePx = with(LocalDensity.current) { 16.sp.toPx() }
+    val markwon = remember(textSizePx) {
+        Markwon.builder(context)
+            .usePlugin(MarkwonInlineParserPlugin.create())
+            .usePlugin(JLatexMathPlugin.create(textSizePx) { it.inlinesEnabled(true) })
+            .build()
+    }
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx -> TextView(ctx).apply { textSize = 16f } },
+        update = { tv ->
+            tv.setTextColor(argb)
+            markwon.setMarkdown(tv, normalizeLatex(text))
+        }
+    )
+}
+
+/** Normalize \(..\) and \[..\] delimiters to $..$ / $$..$$ so Markwon's latex ext renders them. */
+// Markwon's jlatexmath only treats $$..$$ as math (single $..$ stays plain text),
+// but with inlinesEnabled a $$..$$ span renders inline. So normalize every math
+// delimiter the model might emit — \(..\), \[..\] and single $..$ — to $$..$$.
+private const val DD = "$$"
+private val parenMathRegex = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL)
+private val bracketMathRegex = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL)
+// A single $..$ pair not adjacent to another $ (so it skips existing $$..$$ spans).
+private val singleDollarRegex = Regex("(?<![$])[$](?![$])(.+?)(?<![$])[$](?![$])", RegexOption.DOT_MATCHES_ALL)
+
+private fun normalizeLatex(s: String): String {
+    var r = parenMathRegex.replace(s) { DD + it.groupValues[1] + DD }
+    r = bracketMathRegex.replace(r) { DD + it.groupValues[1] + DD }
+    r = singleDollarRegex.replace(r) { DD + it.groupValues[1] + DD }
+    return r
 }
 
 @Composable
@@ -538,24 +640,28 @@ private fun SuccessContent(
     answer: String,
     rawResponse: String,
     elapsedMs: Long,
+    tokenCount: Int,
+    backend: String,
     onUse: () -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var showRaw by remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .statusBarsPadding()
                 .padding(8.dp)
+                .zIndex(1f)
         )
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(32.dp),
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 72.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -569,58 +675,46 @@ private fun SuccessContent(
                 text = stringResource(R.string.answer_found),
                 style = MaterialTheme.typography.titleMedium
             )
-            Text(
-                text = answer,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.primary
-            )
+            // The model's full answer, rendered with markdown + LaTeX math.
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 1.dp
+            ) {
+                MarkdownLatexText(
+                    text = rawResponse.trim(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+            }
             Text(
                 text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            // TEMP debug: average tokens/sec and which backend it ran on.
+            Text(
+                text = "%s · %.1f tok/s avg · %d tokens".format(
+                    backend.ifEmpty { "?" },
+                    if (elapsedMs > 0) tokenCount / (elapsedMs / 1000.0) else 0.0,
+                    tokenCount
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = onRetry) {
                     Text(stringResource(R.string.retry))
                 }
                 Button(onClick = onUse) {
-                    Text(stringResource(R.string.use_expression))
-                }
-            }
-
-            // Raw LLM output dropdown
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                TextButton(onClick = { showRaw = !showRaw }) {
                     Text(
-                        text = stringResource(R.string.raw_model_output),
-                        style = MaterialTheme.typography.bodySmall
+                        text = if (answer.isNotBlank())
+                            stringResource(R.string.use_answer, answer)
+                        else stringResource(R.string.use_expression)
                     )
-                    Icon(
-                        imageVector = if (showRaw) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                if (showRaw) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        tonalElevation = 1.dp
-                    ) {
-                        Text(
-                            text = rawResponse,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
                 }
             }
         }
@@ -636,7 +730,7 @@ private fun ErrorContent(
 ) {
     var showRaw by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -704,38 +798,6 @@ private fun ErrorContent(
 }
 
 @Composable
-private fun PermissionDeniedContent(onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.PhotoCamera,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(R.string.camera_permission_needed),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-@Composable
 private fun ModelSelectionContent(
     selectedModel: AiModel,
     downloadedModels: List<AiModel>,
@@ -744,7 +806,7 @@ private fun ModelSelectionContent(
     onDownloadModel: (AiModel) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -779,8 +841,8 @@ private fun ModelSelectionContent(
                 textAlign = TextAlign.Center
             )
 
-            val freeModels = AiModel.entries.filter { !it.requiresAuth }
-            val advancedModels = AiModel.entries.filter { it.requiresAuth }
+            val freeModels = AiModel.entries.filter { !it.advanced }
+            val advancedModels = AiModel.entries.filter { it.advanced }
 
             freeModels.forEach { model ->
                 ModelCard(model, model in downloadedModels, model == selectedModel,
@@ -917,7 +979,7 @@ private fun MobileDataWarningContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -965,7 +1027,7 @@ private fun FirstTimeWarningContent(
     onContinue: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1013,7 +1075,7 @@ private fun AuthErrorContent(
 ) {
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1083,7 +1145,8 @@ private fun TokenInputContent(
 ) {
     var token by remember { mutableStateOf("") }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    // imePadding keeps the token field above the on-screen keyboard.
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1141,7 +1204,7 @@ private fun DownloadingContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier

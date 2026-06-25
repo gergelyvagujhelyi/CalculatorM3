@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>Privacy Policy</h1>
-    <p class="date">Last updated: March 22, 2026</p>
+    <p class="date">Last updated: June 25, 2026</p>
 
     <h2>Calculator M3</h2>
     <p>Calculator M3 is a free, open-source calculator app built by Gergely Vagujhelyi.</p>
@@ -21,14 +21,22 @@
     <h2>Data Collection</h2>
     <p>This app does <strong>not</strong> collect, store, transmit, or share any personal data. All calculations and history are stored locally on your device and are never sent to any server.</p>
 
+    <h2>AI Math Solver (optional)</h2>
+    <p>The app includes an optional AI Math Solver. You can photograph a handwritten math expression — using your device's system camera, or by picking an existing photo — and a locally-stored AI model reads and solves it <strong>entirely on your device</strong>. Your photos are never uploaded, and the captured photo is deleted after it is analyzed. If you do not use this feature, it has no effect.</p>
+
     <h2>Internet Access</h2>
-    <p>This app does not require or use internet access. It works entirely offline.</p>
+    <p>The calculator works entirely offline and makes no network connections. The only feature that uses the internet is the optional AI Math Solver: when you choose to download an AI model, the app downloads it from a public model host (such as Hugging Face). No personal data is sent during the download, and the model then runs entirely on your device. If you never download an AI model, the app uses no internet at all.</p>
 
     <h2>Third-Party Services</h2>
-    <p>This app does not use any third-party services, analytics, advertising, or tracking tools.</p>
+    <p>This app does not use any third-party services, analytics, advertising, or tracking tools. AI models are downloaded from public hosts solely to run on your device; no usage data is shared with them.</p>
 
     <h2>Permissions</h2>
-    <p>This app does not request any special permissions.</p>
+    <p>The calculator itself requests no special permissions. The optional AI Math Solver uses:</p>
+    <ul>
+        <li><strong>Internet and network state</strong> — to download an AI model you choose (one-time).</li>
+        <li><strong>Foreground service and notifications</strong> — to show download progress and keep a large model download running reliably.</li>
+    </ul>
+    <p>Photos are captured through your device's system camera app, so the app needs no camera permission of its own.</p>
 
     <h2>Changes to This Policy</h2>
     <p>If this policy changes, updates will be posted on this page with a revised date.</p>

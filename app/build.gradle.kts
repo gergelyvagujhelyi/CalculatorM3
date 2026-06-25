@@ -32,8 +32,8 @@ android {
         applicationId = "com.vagujhelyigergely.calculatorm3"
         minSdk = 26
         targetSdk = 35
-        versionCode = 11
-        versionName = "1.5.0"
+        versionCode = 12
+        versionName = "1.5.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -41,16 +41,8 @@ android {
             useSupportLibrary = true
         }
         ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-    }
-
-    splits {
-        abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "x86_64")
-            isUniversalApk = true
+            // LiteRT-LM ships 64-bit ARM native libraries; this is the only ABI we support.
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -100,11 +92,12 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.1")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.10.0")
-    implementation("androidx.camera:camera-core:1.4.1")
-    implementation("androidx.camera:camera-camera2:1.4.1")
-    implementation("androidx.camera:camera-lifecycle:1.4.1")
-    implementation("androidx.camera:camera-view:1.4.1")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Markdown + LaTeX rendering of the model's answer (ext-latex pulls in jlatexmath).
+    implementation("io.noties.markwon:core:4.6.2")
+    implementation("io.noties.markwon:ext-latex:4.6.2")
+    implementation("io.noties.markwon:inline-parser:4.6.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")

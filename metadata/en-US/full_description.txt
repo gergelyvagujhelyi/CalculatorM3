@@ -1,13 +1,13 @@
-Every calculation you make is your business — not Big Tech's. Calculator M3 is a beautifully designed calculator built with Material 3 that works entirely offline with zero data collection, zero analytics, and zero network permissions.
+Every calculation you make is your business — not Big Tech's. Calculator M3 is a beautifully designed calculator built with Material 3 that works entirely offline for everyday math, with zero data collection, zero analytics, and zero tracking.
 
-Unlike other calculators, this app doesn't phone home. No usage tracking, no telemetry, no ad frameworks buried in the code. It does one thing and does it well: math.
+Unlike other calculators, this app doesn't phone home. No usage tracking, no telemetry, no ad frameworks buried in the code. It does math — and an optional, fully on-device AI math solver — and nothing else.
 
 ✓ Full expression evaluation
 ✓ Live result preview
 ✓ Scientific functions
 ✓ Calculation history
 ✓ Material 3 dynamic theming
-✓ Completely offline
+✓ Works offline (with an optional on-device AI math solver)
 
 🔢 FULL EXPRESSION EVALUATION
 
@@ -36,6 +36,17 @@ Type complete mathematical expressions with proper operator precedence (PEMDAS) 
 - Tap entries to reload them
 - Clear history when needed
 
+📷 AI MATH SOLVER (OPTIONAL)
+
+Photograph a handwritten math expression and let an on-device AI model read and solve it — entirely on your device, with nothing sent to any server.
+
+- Take a photo with your system camera, or pick one from your gallery
+- Choose from several open vision models (Gemma 4, Gemma 3n)
+- Models run fully on-device, GPU-accelerated where supported
+- The solution is shown with cleanly formatted math — fractions, roots, and exponents
+- Internet is used only once, to download the model you choose
+- No photo, calculation, or usage data ever leaves your device
+
 🎨 MATERIAL 3 DESIGN
 
 - Material You dynamic colors (Android 12+)
@@ -48,10 +59,11 @@ Type complete mathematical expressions with proper operator precedence (PEMDAS) 
 🛡️ PRIVACY & OPEN SOURCE
 
 - 100% open source (GPL v3)
-- Zero permissions — no internet access
 - No tracking, analytics, or ads
 - No data collection of any kind
-- Your calculations stay on your device, period
+- The calculator itself needs no network at all
+- Internet is used only if you opt in to download an AI model — never to send your data
+- Your calculations and photos stay on your device, period
 
 📱 WORKS ON ALL DEVICES
 
