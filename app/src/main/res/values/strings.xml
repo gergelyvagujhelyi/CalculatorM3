@@ -80,4 +80,7 @@
     <string name="hf_token_title">HuggingFace login required</string>
     <string name="hf_token_description">%1$s requires a free HuggingFace account.\n\n1. Sign up or log in at huggingface.co\n2. Go to the model page and click \"Agree and access repository\"\n3. Go to huggingface.co/settings/tokens and create a token\n4. Paste the token below</string>
     <string name="hf_token_label">Token (hf_...)</string>
+    <string name="experimental_feature_title">Experimental Feature</string>
+    <string name="experimental_feature_warning">The AI Camera feature is experimental and might have bugs or unexpected behavior.</string>
+    <string name="accept">Accept</string>
 </resources>
