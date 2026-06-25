@@ -154,13 +154,6 @@ fun CameraScanScreen(
                         onRetry = { viewModel.retry() },
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.DeviceTooWeak -> StatusContent(
-                        icon = Icons.Default.ErrorOutline,
-                        title = stringResource(R.string.device_too_weak_title),
-                        subtitle = stringResource(R.string.device_too_weak_description, viewModel.deviceRamGb),
-                        showProgress = false,
-                        onDismiss = onDismiss
-                    )
                     is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
                         onContinue = { viewModel.showModelSelection() },
                         onDismiss = onDismiss
@@ -891,7 +884,11 @@ private fun ModelCard(
 ) {
     Surface(
         onClick = {
-            if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
+            when {
+                isDownloaded -> onSelectModel(model)
+                tooLarge -> Unit  // can't run on this device — the card shows why
+                else -> onDownloadModel(model)
+            }
         },
         modifier = Modifier
             .fillMaxWidth()

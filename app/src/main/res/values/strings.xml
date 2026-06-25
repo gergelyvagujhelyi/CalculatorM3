@@ -66,8 +66,6 @@
     <string name="mobile_data_description">You are about to download %1$s using mobile data. This may incur charges from your carrier.</string>
     <string name="download_anyway">Download anyway</string>
     <string name="cancel">Cancel</string>
-    <string name="device_too_weak_title">Not enough memory</string>
-    <string name="device_too_weak_description">This feature requires at least 4 GB of RAM. Your device has %1$d GB. The AI model cannot run on this device.</string>
     <string name="ai_feature_low_ram">You need more RAM to use this AI feature.</string>
     <string name="ai_feature_title">AI Math Solver</string>
     <string name="ai_feature_description">This feature uses a large AI model running entirely on your device to solve handwritten math from photos.\n\nPlease note:\n\n\u2022 A model download of 4\u20136 GB is required\n\u2022 We recommend using Wi-Fi for the download\n\u2022 Running the AI model uses significant battery\n\u2022 No data is sent to the cloud</string>

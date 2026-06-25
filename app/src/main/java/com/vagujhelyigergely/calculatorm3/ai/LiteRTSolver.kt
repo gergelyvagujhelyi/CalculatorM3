@@ -66,6 +66,11 @@ class LiteRTSolver : MathSolver {
                 modelPath = modelPath,
                 backend = backend,
                 visionBackend = visionBackend,
+                // We send exactly one image per turn (see runInference), so cap image
+                // buffers at 1 rather than the engine default. maxNumTokens (the KV-cache
+                // cap) is left at default: on-device measurement showed the model weights,
+                // not the KV cache, dominate memory — so capping it wouldn't move the needle.
+                maxNumImages = 1,
             )
         )
         try {

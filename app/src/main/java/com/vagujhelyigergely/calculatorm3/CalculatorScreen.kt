@@ -49,12 +49,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-val android.content.Context.dataStore by preferencesDataStore(name = "settings")
-val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
-private const val MIN_RAM_REQUIRED_GB = 4
+private val android.content.Context.dataStore by preferencesDataStore(name = "settings")
+private val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
 
 data class CalcButton(
     val label: String,
@@ -126,24 +125,39 @@ fun CalculatorScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val hasSeenAiWarningState = remember(context) {
-        context.dataStore.data.map { it[HAS_SEEN_AI_WARNING] ?: false }
-    }.collectAsState(initial = false)
     var showAiWarningDialog by remember { mutableStateOf(false) }
 
-    val handleShowCamera = remember(scanViewModel, context) {
+    val handleShowCamera: () -> Unit = remember(scanViewModel, context, scope) {
         {
-            val deviceRamGb = scanViewModel?.deviceRamGb ?: Int.MAX_VALUE
-            if (deviceRamGb < MIN_RAM_REQUIRED_GB) {
-                android.widget.Toast.makeText(
-                    context,
-                    context.getString(R.string.ai_feature_low_ram),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-            } else if (hasSeenAiWarningState.value) {
-                showCamera = true
-            } else {
-                showAiWarningDialog = true
+            when {
+                // The button isn't shown when scanViewModel is null, but guard anyway.
+                scanViewModel == null -> Unit
+                !scanViewModel.canRunAnyModel -> {
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.ai_feature_low_ram),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                else -> {
+                    // Read the persisted flag at click time rather than from a collected
+                    // State, so a fast tap right after launch can't see a stale "not seen"
+                    // value before DataStore's first async read. Guard the disk read —
+                    // DataStore throws IOException on failure — and default to showing the
+                    // warning so a failed read can't crash the click handler.
+                    scope.launch {
+                        val hasSeenWarning = try {
+                            context.dataStore.data.first()[HAS_SEEN_AI_WARNING] ?: false
+                        } catch (e: java.io.IOException) {
+                            false
+                        }
+                        if (hasSeenWarning) {
+                            showCamera = true
+                        } else {
+                            showAiWarningDialog = true
+                        }
+                    }
+                }
             }
         }
     }
@@ -157,8 +171,13 @@ fun CalculatorScreen(
                 TextButton(
                     onClick = {
                         scope.launch {
-                            context.dataStore.edit { preferences ->
-                                preferences[HAS_SEEN_AI_WARNING] = true
+                            // Best-effort persist; a failed write just means the warning
+                            // shows again next time rather than crashing the app.
+                            try {
+                                context.dataStore.edit { preferences ->
+                                    preferences[HAS_SEEN_AI_WARNING] = true
+                                }
+                            } catch (e: java.io.IOException) {
                             }
                         }
                         showAiWarningDialog = false
