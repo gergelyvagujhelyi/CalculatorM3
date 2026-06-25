@@ -154,13 +154,6 @@ fun CameraScanScreen(
                         onRetry = { viewModel.retry() },
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.DeviceTooWeak -> StatusContent(
-                        icon = Icons.Default.ErrorOutline,
-                        title = stringResource(R.string.device_too_weak_title),
-                        subtitle = stringResource(R.string.device_too_weak_description, viewModel.deviceRamGb),
-                        showProgress = false,
-                        onDismiss = onDismiss
-                    )
                     is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
                         onContinue = { viewModel.showModelSelection() },
                         onDismiss = onDismiss

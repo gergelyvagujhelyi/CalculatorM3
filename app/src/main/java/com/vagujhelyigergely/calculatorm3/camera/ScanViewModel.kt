@@ -51,7 +51,6 @@ sealed interface ScanUiState {
     data class TokenRequired(val model: AiModel) : ScanUiState
     data class AuthError(val httpCode: Int, val model: AiModel) : ScanUiState
     data object FirstTimeWarning : ScanUiState
-    data object DeviceTooWeak : ScanUiState
     data class MobileDataWarning(val model: AiModel) : ScanUiState
 }
 
@@ -67,10 +66,6 @@ class ScanViewModel(
     private var downloadObserver: Job? = null
 
     fun initialize() {
-        if (!modelManager.canRunAnyModel) {
-            uiState = ScanUiState.DeviceTooWeak
-            return
-        }
         viewModelScope.launch {
             // Re-attach to a download already running in the background (e.g. started
             // before the app was backgrounded) instead of showing the idle UI.
@@ -372,7 +367,9 @@ class ScanViewModel(
     }
 
     val selectedModelName: String get() = modelManager.selectedModel.displayName
-    val deviceRamGb: Int get() = modelManager.deviceRamGb
+
+    /** True if the device has enough RAM to run at least one AI model. */
+    val canRunAnyModel: Boolean get() = modelManager.canRunAnyModel
 
     override fun onCleared() {
         super.onCleared()
