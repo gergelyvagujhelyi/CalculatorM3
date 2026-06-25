@@ -54,6 +54,8 @@ import kotlinx.coroutines.launch
 
 val android.content.Context.dataStore by preferencesDataStore(name = "settings")
 val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
+private const val MIN_RAM_REQUIRED_GB = 4
+
 data class CalcButton(
     val label: String,
     val type: ButtonType,
@@ -129,9 +131,16 @@ fun CalculatorScreen(
     }.collectAsState(initial = false)
     var showAiWarningDialog by remember { mutableStateOf(false) }
 
-    val handleShowCamera = remember {
+    val handleShowCamera = remember(scanViewModel, context) {
         {
-            if (hasSeenAiWarningState.value) {
+            val deviceRamGb = scanViewModel?.deviceRamGb ?: Int.MAX_VALUE
+            if (deviceRamGb < MIN_RAM_REQUIRED_GB) {
+                android.widget.Toast.makeText(
+                    context,
+                    "You need more RAM to use this AI feature.",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            } else if (hasSeenAiWarningState.value) {
                 showCamera = true
             } else {
                 showAiWarningDialog = true
