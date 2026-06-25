@@ -11,6 +11,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import kotlin.math.ceil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
@@ -47,6 +48,12 @@ enum class AiModel(
     val displayName: String,
     val description: String,
     val totalSizeDisplay: String,
+    /**
+     * Minimum *total* device RAM (marketed GB) to run this model — well above the raw
+     * weight size. Sized for our multimodal (vision) use: the on-device weight footprint
+     * plus headroom for the vision encoder, image-token KV cache, runtime, and the ~2 GB
+     * the OS and other apps hold that can't be reclaimed. E2B-class → 6 GB, E4B-class → 8 GB.
+     */
     val minRamGb: Int,
     val primaryFilename: String,
     val files: List<ModelFile>,
@@ -75,7 +82,7 @@ enum class AiModel(
         displayName = "Gemma 3n E2B",
         description = "Fast, edge optimized",
         totalSizeDisplay = "~3.7 GB",
-        minRamGb = 4,
+        minRamGb = 6,
         primaryFilename = "gemma-3n-E2B-it-int4.litertlm",
         files = listOf(
             ModelFile(
@@ -109,7 +116,7 @@ enum class AiModel(
         displayName = "Gemma 3n E4B",
         description = "Better quality, edge optimized",
         totalSizeDisplay = "~4.9 GB",
-        minRamGb = 6,
+        minRamGb = 8,
         primaryFilename = "gemma-3n-E4B-it-int4.litertlm",
         files = listOf(
             ModelFile(
@@ -160,12 +167,18 @@ class ModelManager(private val context: Context) {
     fun downloadedModels(): List<AiModel> =
         AiModel.entries.filter { areModelsAvailable(it) }
 
+    /**
+     * Marketed device RAM in GB. [ActivityManager.MemoryInfo.totalMem] reports the RAM
+     * the kernel sees, which is ~0.3–0.9 GB below the marketed size (GPU/modem/kernel
+     * carveouts). Round up so a "6 GB"/"8 GB" device reporting e.g. 5.6/7.4 GiB maps back
+     * to 6/8 instead of being undercounted and wrongly rejected by [canRunAnyModel].
+     */
     val deviceRamGb: Int
         get() {
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
             val memInfo = ActivityManager.MemoryInfo()
             activityManager.getMemoryInfo(memInfo)
-            return (memInfo.totalMem / (1024L * 1024L * 1024L)).toInt()
+            return ceil(memInfo.totalMem / (1024.0 * 1024.0 * 1024.0)).toInt()
         }
 
     fun isModelTooLarge(model: AiModel): Boolean = model.minRamGb > deviceRamGb
