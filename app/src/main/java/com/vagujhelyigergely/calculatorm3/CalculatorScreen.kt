@@ -181,11 +181,18 @@ private fun PortraitLayout(
         ) {
             if (onShowCamera != null) {
                 IconButton(onClick = onShowCamera) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = stringResource(R.string.scan_expression),
-                        tint = colorScheme.onSurfaceVariant
-                    )
+                    androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .androidx.compose.foundation.layout.size(width = 13.dp, height = 10.dp)
+                                .androidx.compose.foundation.background(androidx.compose.ui.graphics.Color.White)
+                        )
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera),
+                            contentDescription = stringResource(R.string.scan_expression),
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
             IconButton(onClick = onShowHistory) {
@@ -267,11 +274,18 @@ private fun LandscapeLayout(
             ) {
                 if (onShowCamera != null) {
                     IconButton(onClick = onShowCamera) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = stringResource(R.string.scan_expression),
-                            tint = colorScheme.onSurfaceVariant
-                        )
+                        androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .androidx.compose.foundation.layout.size(width = 13.dp, height = 10.dp)
+                                    .androidx.compose.foundation.background(androidx.compose.ui.graphics.Color.White)
+                            )
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera),
+                                contentDescription = stringResource(R.string.scan_expression),
+                                tint = colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 IconButton(onClick = onShowHistory) {
