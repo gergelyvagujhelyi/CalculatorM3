@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import android.content.Context
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
@@ -22,56 +23,66 @@ import kotlinx.coroutines.withContext
  * initializes. We try GPU vision first and fall back to CPU vision — both at
  * load time and once more on the first inference failure.
  */
-class LiteRTSolver : MathSolver {
+class LiteRTSolver(private val context: Context) : MathSolver {
 
     private val mutex = Mutex()
     @Volatile private var engine: Engine? = null
     @Volatile private var conversation: Conversation? = null
     @Volatile private var currentModelPath: String? = null
-    @Volatile private var gpuFailed: Boolean = false
+    @Volatile private var backendLabel: String = "—"
 
-    /** TEMP debug: short reason the GPU backend failed to load (null if GPU is in use). */
+    /** TEMP debug: short reason the GPU/NPU backend failed to load (null on success). */
     @Volatile override var lastGpuError: String? = null
         private set
 
     override val isModelLoaded: Boolean get() = engine != null
-
-    override val activeBackend: String
-        get() = when {
-            engine == null -> "—"
-            gpuFailed -> "CPU"
-            else -> "GPU"
-        }
+    override val activeBackend: String get() = backendLabel
 
     override suspend fun loadModel(modelPath: String) =
         withContext(Dispatchers.IO) {
             closeEngine()
             currentModelPath = modelPath
-            initEngine(modelPath, tryGpu = !gpuFailed)
+            // TEMP: NPU-compiled bundles carry the vendor (e.g. "qualcomm") in the filename.
+            initEngine(modelPath, tryNpu = modelPath.contains("qualcomm", ignoreCase = true))
         }
 
-    private fun initEngine(modelPath: String, tryGpu: Boolean) {
-        engine = if (tryGpu) {
+    /** Backend ladder: NPU (if requested) → GPU → CPU. */
+    private fun initEngine(modelPath: String, tryNpu: Boolean) {
+        if (tryNpu) {
             try {
-                buildEngine(modelPath, Backend.GPU()).also { lastGpuError = null }
+                engine = buildEngine(
+                    modelPath,
+                    backend = Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir),
+                    visionBackend = Backend.GPU()
+                )
+                backendLabel = "NPU"
+                lastGpuError = null
+                return
             } catch (e: Exception) {
-                lastGpuError = (e.message ?: e.toString()).replace('\n', ' ').take(200)
-                Log.w(TAG, "GPU backend failed, falling back to CPU", e)
-                gpuFailed = true
-                buildEngine(modelPath, Backend.CPU())
+                lastGpuError = "NPU: " + (e.message ?: e.toString()).replace('\n', ' ').take(160)
+                Log.w(TAG, "NPU backend failed, trying GPU", e)
             }
-        } else {
-            buildEngine(modelPath, Backend.CPU())
         }
+        try {
+            engine = buildEngine(modelPath, Backend.GPU(), Backend.GPU())
+            backendLabel = "GPU"
+            if (!tryNpu) lastGpuError = null
+            return
+        } catch (e: Exception) {
+            lastGpuError = (lastGpuError?.plus(" | ") ?: "") + "GPU: " +
+                (e.message ?: e.toString()).replace('\n', ' ').take(160)
+            Log.w(TAG, "GPU backend failed, falling back to CPU", e)
+        }
+        engine = buildEngine(modelPath, Backend.CPU(), Backend.CPU())
+        backendLabel = "CPU"
     }
 
-    /** Run the LLM and vision encoder on [backend] (GPU where supported, else CPU). */
-    private fun buildEngine(modelPath: String, backend: Backend): Engine =
+    private fun buildEngine(modelPath: String, backend: Backend, visionBackend: Backend): Engine =
         Engine(
             EngineConfig(
                 modelPath = modelPath,
                 backend = backend,
-                visionBackend = backend,
+                visionBackend = visionBackend,
             )
         ).also { it.initialize() }
 
@@ -129,12 +140,12 @@ class LiteRTSolver : MathSolver {
                 // If GPU was active, reload on CPU and retry once — some devices
                 // initialize the GPU backend fine but fault during inference.
                 val path = currentModelPath
-                if (!gpuFailed && path != null) {
-                    gpuFailed = true
+                if (backendLabel != "CPU" && path != null) {
                     Log.w(TAG, "Reloading on CPU and retrying once")
                     try {
                         closeEngine()
-                        initEngine(path, tryGpu = false)
+                        engine = buildEngine(path, Backend.CPU(), Backend.CPU())
+                        backendLabel = "CPU"
                         return@withContext runInference(imagePath, onToken)
                     } catch (retry: Throwable) {
                         Log.e(TAG, "CPU retry also failed", retry)

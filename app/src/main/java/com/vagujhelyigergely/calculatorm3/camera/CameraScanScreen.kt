@@ -638,53 +638,67 @@ private fun SuccessContent(
                 .fillMaxSize()
                 .statusBarsPadding()
                 .navigationBarsPadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp)
-                .padding(top = 48.dp, bottom = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.answer_found),
-                style = MaterialTheme.typography.titleMedium
-            )
-            // The model's full answer, rendered with markdown + LaTeX math.
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 1.dp
+            // Scrollable answer area — takes the remaining height above the buttons.
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 48.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                MarkdownLatexText(
-                    text = rawResponse.trim(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.answer_found),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                // The model's full answer, rendered with markdown + LaTeX math.
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    tonalElevation = 1.dp
+                ) {
+                    MarkdownLatexText(
+                        text = rawResponse.trim(),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // TEMP debug: average tokens/sec and which backend it ran on.
+                Text(
+                    text = "%s · %.1f tok/s avg · %d tokens".format(
+                        backend.ifEmpty { "?" },
+                        if (elapsedMs > 0) tokenCount / (elapsedMs / 1000.0) else 0.0,
+                        tokenCount
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
-            Text(
-                text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            // TEMP debug: average tokens/sec and which backend it ran on.
-            Text(
-                text = "%s · %.1f tok/s avg · %d tokens".format(
-                    backend.ifEmpty { "?" },
-                    if (elapsedMs > 0) tokenCount / (elapsedMs / 1000.0) else 0.0,
-                    tokenCount
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            // Buttons pinned at the bottom, always visible above the nav bar.
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 8.dp, bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+            ) {
                 OutlinedButton(onClick = onRetry) {
                     Text(stringResource(R.string.retry))
                 }

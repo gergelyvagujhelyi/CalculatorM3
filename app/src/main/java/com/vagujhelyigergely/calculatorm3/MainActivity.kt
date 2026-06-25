@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
     private val modelManager by lazy { ModelManager(applicationContext) }
 
     private val scanViewModel: ScanViewModel by lazy {
-        val factory = ScanViewModelFactory(modelManager)
+        val factory = ScanViewModelFactory(applicationContext, modelManager)
         ViewModelProvider(this, factory)[ScanViewModel::class.java]
     }
 
@@ -56,10 +56,11 @@ class CalculatorViewModelFactory(
 }
 
 class ScanViewModelFactory(
+    private val context: Context,
     private val modelManager: ModelManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ScanViewModel(LiteRTSolver(), modelManager) as T
+        return ScanViewModel(LiteRTSolver(context), modelManager) as T
     }
 }
