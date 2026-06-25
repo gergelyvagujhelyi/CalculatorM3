@@ -124,14 +124,18 @@ fun CalculatorScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val hasSeenAiWarning by context.dataStore.data.map { it[HAS_SEEN_AI_WARNING] ?: false }.collectAsState(initial = false)
+    val hasSeenAiWarningState = remember(context) {
+        context.dataStore.data.map { it[HAS_SEEN_AI_WARNING] ?: false }
+    }.collectAsState(initial = false)
     var showAiWarningDialog by remember { mutableStateOf(false) }
 
-    val handleShowCamera = {
-        if (hasSeenAiWarning) {
-            showCamera = true
-        } else {
-            showAiWarningDialog = true
+    val handleShowCamera = remember {
+        {
+            if (hasSeenAiWarningState.value) {
+                showCamera = true
+            } else {
+                showAiWarningDialog = true
+            }
         }
     }
 
