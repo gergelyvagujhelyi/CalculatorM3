@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -74,6 +75,11 @@ fun CameraScanScreen(
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* best-effort: the download runs regardless of notification visibility */ }
+    // Launches the AppAuth Custom Tab for HuggingFace sign-in; the returned Intent carries
+    // the authorization code, which the ViewModel exchanges for a token.
+    val signInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result -> viewModel.onSignInResult(result.data) }
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
@@ -133,6 +139,7 @@ fun CameraScanScreen(
                         startTimeMs = state.startTimeMs,
                         tokenCount = state.tokenCount,
                         backend = state.backend,
+                        firstTokenMs = state.firstTokenMs,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Success -> SuccessContent(
@@ -141,6 +148,8 @@ fun CameraScanScreen(
                         elapsedMs = state.elapsedMs,
                         tokenCount = state.tokenCount,
                         backend = state.backend,
+                        ttftMs = state.ttftMs,
+                        decodeTokensPerSec = state.decodeTokensPerSec,
                         onUse = {
                             onExpressionRecognized(state.answer)
                             onDismiss()
@@ -168,11 +177,19 @@ fun CameraScanScreen(
                         httpCode = state.httpCode,
                         model = state.model,
                         onRetry = { viewModel.startDownload(state.model) },
+                        onReauth = { viewModel.showSignIn(state.model) },
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.TokenRequired -> TokenInputContent(
+                    is ScanUiState.SignInRequired -> SignInContent(
                         model = state.model,
-                        onSubmit = { token -> viewModel.setHfTokenAndDownload(token, state.model) },
+                        onSignIn = { signInLauncher.launch(viewModel.signInIntentFor(state.model)) },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.Authenticating -> StatusContent(
+                        icon = Icons.AutoMirrored.Filled.Login,
+                        title = stringResource(R.string.signing_in),
+                        subtitle = null,
+                        showProgress = true,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Downloading -> DownloadingContent(
@@ -335,6 +352,7 @@ private fun ProcessingContent(
     startTimeMs: Long,
     tokenCount: Int,
     backend: String,
+    firstTokenMs: Long?,
     onDismiss: () -> Unit
 ) {
     val isGenerating = partialRaw.isNotEmpty()
@@ -420,25 +438,33 @@ private fun ProcessingContent(
                 }
             }
 
-            PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend)
+            PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend, firstTokenMs = firstTokenMs)
         }
     }
 }
 
-/** TEMP debug HUD: live tokens/sec and which backend (GPU/CPU) the model runs on. */
+/** TEMP debug HUD: live decode tok/s (excludes image prefill), TTFT, and the active backend. */
 @Composable
-private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String) {
-    var elapsedMs by remember { mutableLongStateOf(0L) }
+private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTokenMs: Long?) {
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(startTimeMs) {
         while (true) {
-            elapsedMs = System.currentTimeMillis() - startTimeMs
+            nowMs = System.currentTimeMillis()
             delay(250)
         }
     }
-    val secs = elapsedMs / 1000.0
-    val tps = if (secs > 0.2) tokenCount / secs else 0.0
+    val label = backend.ifEmpty { "?" }
+    val text = if (firstTokenMs == null) {
+        // Still prefilling the image — no tokens generated yet.
+        "%s · prefill %.1fs".format(label, (nowMs - startTimeMs).coerceAtLeast(0L) / 1000.0)
+    } else {
+        val ttftSecs = (firstTokenMs - startTimeMs).coerceAtLeast(0L) / 1000.0
+        val decodeSecs = (nowMs - firstTokenMs).coerceAtLeast(0L) / 1000.0
+        val decodeTps = if (tokenCount > 1 && decodeSecs > 0.05) (tokenCount - 1) / decodeSecs else 0.0
+        "%s · %.1f tok/s · ttft %.1fs".format(label, decodeTps, ttftSecs)
+    }
     Text(
-        text = "%s · %.1f tok/s · %ds".format(backend.ifEmpty { "?" }, tps, elapsedMs / 1000),
+        text = text,
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.primary
     )
@@ -635,6 +661,8 @@ private fun SuccessContent(
     elapsedMs: Long,
     tokenCount: Int,
     backend: String,
+    ttftMs: Long,
+    decodeTokensPerSec: Double,
     onUse: () -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
@@ -688,11 +716,12 @@ private fun SuccessContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            // TEMP debug: average tokens/sec and which backend it ran on.
+            // TEMP debug: decode speed (excludes image prefill), TTFT, and the backend.
             Text(
-                text = "%s · %.1f tok/s avg · %d tokens".format(
+                text = "%s · %.1f tok/s decode · ttft %s · %d tokens".format(
                     backend.ifEmpty { "?" },
-                    if (elapsedMs > 0) tokenCount / (elapsedMs / 1000.0) else 0.0,
+                    decodeTokensPerSec,
+                    formatElapsed(ttftMs),
                     tokenCount
                 ),
                 style = MaterialTheme.typography.bodySmall,
@@ -834,42 +863,42 @@ private fun ModelSelectionContent(
                 textAlign = TextAlign.Center
             )
 
-            val freeModels = AiModel.entries.filter { !it.advanced }
-            val advancedModels = AiModel.entries.filter { it.advanced }
+            // Two top-level groups: the Gemma 4 models (no account needed) and the gated
+            // models that need a HuggingFace login. Today these coincide exactly with the
+            // requiresAuth split.
+            val gemma4Models = AiModel.entries.filter { !it.requiresAuth }
+            val loginModels = AiModel.entries.filter { it.requiresAuth }
 
-            freeModels.forEach { model ->
-                ModelCard(model, model in downloadedModels, model == selectedModel,
-                    model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
+            if (gemma4Models.isNotEmpty()) {
+                ModelGroupHeader(stringResource(R.string.models_group_gemma4))
+                gemma4Models.forEach { model ->
+                    ModelCard(model, model in downloadedModels, model == selectedModel,
+                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
+                }
             }
 
-            if (advancedModels.isNotEmpty()) {
-                var showAdvanced by remember { mutableStateOf(false) }
-                TextButton(onClick = { showAdvanced = !showAdvanced }) {
-                    Text(
-                        text = stringResource(R.string.advanced_models),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Icon(
-                        imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                if (showAdvanced) {
-                    Text(
-                        text = stringResource(R.string.advanced_models_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-                    advancedModels.forEach { model ->
-                        ModelCard(model, model in downloadedModels, model == selectedModel,
-                            model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
-                    }
+            if (loginModels.isNotEmpty()) {
+                ModelGroupHeader(stringResource(R.string.models_group_login))
+                loginModels.forEach { model ->
+                    ModelCard(model, model in downloadedModels, model == selectedModel,
+                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ModelGroupHeader(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+    )
 }
 
 @Composable
@@ -913,21 +942,11 @@ private fun ModelCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = model.displayName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (model.requiresAuth) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.requires_login),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                Text(
+                    text = model.displayName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
                 Text(
                     text = model.description,
                     style = MaterialTheme.typography.bodySmall,
@@ -1068,6 +1087,7 @@ private fun AuthErrorContent(
     httpCode: Int,
     model: AiModel,
     onRetry: () -> Unit,
+    onReauth: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -1119,11 +1139,8 @@ private fun AuthErrorContent(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
-                Button(onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://huggingface.co/settings/tokens")))
-                }) {
-                    Text(stringResource(R.string.create_token))
+                Button(onClick = onReauth) {
+                    Text(stringResource(R.string.sign_in_again))
                 }
             }
 
@@ -1135,15 +1152,12 @@ private fun AuthErrorContent(
 }
 
 @Composable
-private fun TokenInputContent(
+private fun SignInContent(
     model: AiModel,
-    onSubmit: (String) -> Unit,
+    onSignIn: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var token by remember { mutableStateOf("") }
-
-    // imePadding keeps the token field above the on-screen keyboard.
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1159,7 +1173,7 @@ private fun TokenInputContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Storage,
+                imageVector = Icons.AutoMirrored.Filled.Login,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -1170,22 +1184,12 @@ private fun TokenInputContent(
             )
             Text(
                 text = stringResource(R.string.hf_token_description, model.displayName),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            OutlinedTextField(
-                value = token,
-                onValueChange = { token = it },
-                label = { Text(stringResource(R.string.hf_token_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = { onSubmit(token.trim()) },
-                enabled = token.trim().startsWith("hf_")
-            ) {
-                Text(stringResource(R.string.download_model))
+            Button(onClick = onSignIn) {
+                Text(stringResource(R.string.sign_in_huggingface))
             }
         }
     }

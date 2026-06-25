@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.savedstate.SavedStateRegistryOwner
 import com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
@@ -25,7 +26,7 @@ class MainActivity : ComponentActivity() {
     private val modelManager by lazy { ModelManager(applicationContext) }
 
     private val scanViewModel: ScanViewModel by lazy {
-        val factory = ScanViewModelFactory(modelManager)
+        val factory = ScanViewModelFactory(modelManager, applicationContext)
         ViewModelProvider(this, factory)[ScanViewModel::class.java]
     }
 
@@ -56,10 +57,11 @@ class CalculatorViewModelFactory(
 }
 
 class ScanViewModelFactory(
-    private val modelManager: ModelManager
+    private val modelManager: ModelManager,
+    private val appContext: Context
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ScanViewModel(LiteRTSolver(), modelManager) as T
+        return ScanViewModel(LiteRTSolver(), modelManager, HuggingFaceAuthManager(appContext)) as T
     }
 }

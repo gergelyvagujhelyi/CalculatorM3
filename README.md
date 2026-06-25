@@ -51,7 +51,7 @@ Point your camera at a handwritten math expression and let an on-device AI model
 
 **How it works:**
 1. Tap the camera icon (top-left)
-2. Choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off)
+2. Choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off). Gated models (Gemma 3n) first prompt a one-tap **Sign in with Hugging Face**
 3. Take a photo with your camera, or choose an existing photo from your gallery
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
 5. Tap "Use" to insert the answer into the calculator
@@ -63,15 +63,15 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 | Model | Download | Min RAM | Auth |
 |-------|----------|---------|------|
 | Gemma 4 E2B | ~2.6 GB | 6 GB | — |
-| Gemma 3n E2B | ~3.7 GB | 4 GB | HuggingFace |
+| Gemma 3n E2B | ~3.7 GB | 4 GB | HuggingFace sign-in |
 | Gemma 4 E4B | ~3.7 GB | 8 GB | — |
-| Gemma 3n E4B | ~4.9 GB | 6 GB | HuggingFace |
+| Gemma 3n E4B | ~4.9 GB | 6 GB | HuggingFace sign-in |
 
 **Requirements:**
 - Android device with 4+ GB RAM
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
 - Internet for the one-time model download (Wi-Fi recommended)
-- Gemma 3n models require a free [HuggingFace](https://huggingface.co) account (license acceptance); Gemma 4 models need no account
+- Gemma 3n models require a free [HuggingFace](https://huggingface.co) account — you sign in once, in-app, and accept the model license; Gemma 4 models need no account ([setup](docs/huggingface-oauth-setup.md))
 
 **Powered by:**
 - [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device multimodal LLM inference, GPU-accelerated with automatic CPU fallback

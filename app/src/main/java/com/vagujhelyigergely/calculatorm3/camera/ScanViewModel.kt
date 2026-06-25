@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
@@ -13,6 +14,7 @@ import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
+import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,14 +30,20 @@ sealed interface ScanUiState {
         val partialRaw: String = "",
         val startTimeMs: Long = System.currentTimeMillis(),
         val tokenCount: Int = 0,
-        val backend: String = ""
+        val backend: String = "",
+        /** Wall-clock of the first generated token; null while still prefilling the image. */
+        val firstTokenMs: Long? = null
     ) : ScanUiState
     data class Success(
         val answer: String,
         val rawResponse: String,
         val elapsedMs: Long,
         val tokenCount: Int = 0,
-        val backend: String = ""
+        val backend: String = "",
+        /** Time-to-first-token (image prefill), kept separate from the decode rate. */
+        val ttftMs: Long = 0L,
+        /** Steady-state decode speed, excluding prefill. */
+        val decodeTokensPerSec: Double = 0.0
     ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
     data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
@@ -48,7 +56,10 @@ sealed interface ScanUiState {
         val fileCount: Int
     ) : ScanUiState
     data class DownloadComplete(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
-    data class TokenRequired(val model: AiModel) : ScanUiState
+    /** A gated model needs HuggingFace sign-in before it can be downloaded. */
+    data class SignInRequired(val model: AiModel) : ScanUiState
+    /** Briefly shown while the OAuth code is exchanged for a token. */
+    data object Authenticating : ScanUiState
     data class AuthError(val httpCode: Int, val model: AiModel) : ScanUiState
     data object FirstTimeWarning : ScanUiState
     data class MobileDataWarning(val model: AiModel) : ScanUiState
@@ -56,7 +67,8 @@ sealed interface ScanUiState {
 
 class ScanViewModel(
     private val solver: MathSolver,
-    private val modelManager: ModelManager
+    private val modelManager: ModelManager,
+    private val authManager: HuggingFaceAuthManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
@@ -124,13 +136,46 @@ class ScanViewModel(
         }
     }
 
-    /** Set HF token and retry download. */
-    fun setHfTokenAndDownload(token: String, model: AiModel) {
-        modelManager.hfToken = token
-        startDownload(model)
+    val hasHfToken: Boolean get() = !modelManager.hfToken.isNullOrBlank()
+
+    /**
+     * Build the AppAuth intent to launch for [model]. The Composable launches this via an
+     * ActivityResultLauncher and routes the result back through [onSignInResult]. The target
+     * model is persisted in [ModelManager.selectedModel] (set here and in [startDownload]),
+     * so the flow survives process death while the user is in the browser.
+     */
+    fun signInIntentFor(model: AiModel): Intent {
+        modelManager.selectedModel = model
+        return authManager.authRequestIntent()
     }
 
-    val hasHfToken: Boolean get() = !modelManager.hfToken.isNullOrBlank()
+    /** Drop any stale token and return to the sign-in prompt (e.g. after a 401). */
+    fun showSignIn(model: AiModel) {
+        modelManager.hfToken = null
+        uiState = ScanUiState.SignInRequired(model)
+    }
+
+    /** Handle the OAuth Custom Tab result: exchange the code for a token, then resume download. */
+    fun onSignInResult(data: Intent?) {
+        val model = modelManager.selectedModel
+        // A null result, or an explicit user cancellation (AppAuth returns a non-null intent
+        // carrying USER_CANCELED_AUTH_FLOW), means the user dismissed the browser — return to
+        // the picker quietly rather than showing an error.
+        if (data == null || authManager.isUserCanceled(data)) {
+            showModelSelection()
+            return
+        }
+        uiState = ScanUiState.Authenticating
+        viewModelScope.launch {
+            try {
+                modelManager.hfToken = authManager.exchangeCodeForToken(data)
+                startDownload(model)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                uiState = ScanUiState.Error("Sign-in failed: ${e.message ?: "please try again"}")
+            }
+        }
+    }
 
     /** Force download even on mobile data. */
     fun confirmMobileDataDownload(model: AiModel) {
@@ -143,7 +188,7 @@ class ScanViewModel(
         if (modelManager.isModelTooLarge(model)) return
         modelManager.selectedModel = model
         if (model.requiresAuth && !hasHfToken) {
-            uiState = ScanUiState.TokenRequired(model)
+            uiState = ScanUiState.SignInRequired(model)
             return
         }
         if (!modelManager.isOnWifi && !modelManager.areModelsAvailable(model)) {
@@ -249,20 +294,43 @@ class ScanViewModel(
             }
             try {
                 var tokenCount = 0
+                var firstTokenMs = 0L
+                var lastTokenMs = 0L
+                var lastUiUpdateMs = 0L
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                    // Time decode at the source (inference dispatcher), independent of the UI:
+                    // the first token marks end-of-prefill (TTFT); the rest is the decode window.
+                    val now = System.currentTimeMillis()
+                    if (tokenCount == 0) firstTokenMs = now
                     tokenCount++
-                    withContext(Dispatchers.Main) {
-                        uiState = ScanUiState.Processing(
-                            partialRaw = partialRaw,
-                            startTimeMs = startTime,
-                            tokenCount = tokenCount,
-                            backend = backend
-                        )
+                    lastTokenMs = now
+                    // Coalesce UI updates so per-token recomposition can't throttle the loop.
+                    if (now - lastUiUpdateMs >= UI_UPDATE_THROTTLE_MS) {
+                        lastUiUpdateMs = now
+                        // Dispatch the UI update without suspending the inference loop on the
+                        // Main thread; snapshot the mutable counters first to avoid a race.
+                        val uiTokenCount = tokenCount
+                        val uiFirstTokenMs = firstTokenMs.takeIf { it > 0L }
+                        viewModelScope.launch {
+                            uiState = ScanUiState.Processing(
+                                partialRaw = partialRaw,
+                                startTimeMs = startTime,
+                                tokenCount = uiTokenCount,
+                                backend = backend,
+                                firstTokenMs = uiFirstTokenMs
+                            )
+                        }
                     }
                 }
                 val elapsed = System.currentTimeMillis() - startTime
+                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - startTime else elapsed
+                val decodeMs = (lastTokenMs - firstTokenMs).coerceAtLeast(0L)
+                val decodeTps = if (tokenCount > 1 && decodeMs > 0L)
+                    (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
                 uiState = result.fold(
-                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
+                    onSuccess = {
+                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend, ttftMs, decodeTps)
+                    },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
                         ScanUiState.Error(it.message ?: "Recognition failed", raw)
@@ -376,6 +444,7 @@ class ScanViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        authManager.dispose()
         releaseAll()
     }
 
@@ -394,5 +463,8 @@ class ScanViewModel(
     companion object {
         /** Longest edge (px) the captured photo is downscaled to before inference. */
         private const val MAX_IMAGE_EDGE = 1024
+
+        /** Min gap between streaming UI updates so per-token recomposition can't throttle decode. */
+        private const val UI_UPDATE_THROTTLE_MS = 50L
     }
 }
