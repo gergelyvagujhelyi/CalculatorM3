@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -106,7 +107,10 @@ fun CalculatorScreen(
     )
 
     var showHistory by remember { mutableStateOf(false) }
-    var showCamera by remember { mutableStateOf(false) }
+    // Saveable so the scan dialog survives the activity being recreated while the
+    // system camera is foreground (memory pressure) — otherwise it would close and
+    // drop the user back on the calculator mid-scan.
+    var showCamera by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (showHistory) {

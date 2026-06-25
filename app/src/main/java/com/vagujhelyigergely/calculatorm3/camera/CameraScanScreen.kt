@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -460,14 +461,16 @@ private fun CameraContent(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    // File the system camera writes the captured photo into.
-    var pendingPhoto by remember { mutableStateOf<File?>(null) }
+    // Path of the file the system camera writes into. Saveable so it survives the
+    // activity being recreated while the camera is foreground (memory pressure) —
+    // otherwise the returned photo would be dropped and the scan lost.
+    var pendingPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
 
     val takePhotoLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
     ) { success ->
-        val file = pendingPhoto
-        pendingPhoto = null
+        val file = pendingPhotoPath?.let { File(it) }
+        pendingPhotoPath = null
         if (success && file != null) {
             onPhotoCaptured(file.absolutePath)
         } else {
@@ -538,7 +541,7 @@ private fun CameraContent(
             Button(
                 onClick = {
                     val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-                    pendingPhoto = file
+                    pendingPhotoPath = file.absolutePath
                     takePhotoLauncher.launch(fileProviderUri(context, file))
                 },
                 modifier = Modifier.fillMaxWidth()
@@ -616,12 +619,19 @@ private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = M
 }
 
 /** Normalize \(..\) and \[..\] delimiters to $..$ / $$..$$ so Markwon's latex ext renders them. */
-private val inlineLatexRegex = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL)
-private val blockLatexRegex = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL)
+// Markwon's jlatexmath only treats $$..$$ as math (single $..$ stays plain text),
+// but with inlinesEnabled a $$..$$ span renders inline. So normalize every math
+// delimiter the model might emit — \(..\), \[..\] and single $..$ — to $$..$$.
+private const val DD = "$$"
+private val parenMathRegex = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL)
+private val bracketMathRegex = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL)
+// A single $..$ pair not adjacent to another $ (so it skips existing $$..$$ spans).
+private val singleDollarRegex = Regex("(?<![$])[$](?![$])(.+?)(?<![$])[$](?![$])", RegexOption.DOT_MATCHES_ALL)
 
 private fun normalizeLatex(s: String): String {
-    var r = inlineLatexRegex.replace(s) { "$" + it.groupValues[1] + "$" }
-    r = blockLatexRegex.replace(r) { "$$" + it.groupValues[1] + "$$" }
+    var r = parenMathRegex.replace(s) { DD + it.groupValues[1] + DD }
+    r = bracketMathRegex.replace(r) { DD + it.groupValues[1] + DD }
+    r = singleDollarRegex.replace(r) { DD + it.groupValues[1] + DD }
     return r
 }
 
