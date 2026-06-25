@@ -138,16 +138,14 @@ class ScanViewModel(
 
     val hasHfToken: Boolean get() = !modelManager.hfToken.isNullOrBlank()
 
-    /** Model awaiting an OAuth token, captured when the sign-in intent is created. */
-    private var pendingAuthModel: AiModel? = null
-
     /**
-     * Build the AppAuth intent to launch for [model] and remember it as pending. The
-     * Composable launches this via an ActivityResultLauncher and routes the result back
-     * through [onSignInResult].
+     * Build the AppAuth intent to launch for [model]. The Composable launches this via an
+     * ActivityResultLauncher and routes the result back through [onSignInResult]. The target
+     * model is persisted in [ModelManager.selectedModel] (set here and in [startDownload]),
+     * so the flow survives process death while the user is in the browser.
      */
     fun signInIntentFor(model: AiModel): Intent {
-        pendingAuthModel = model
+        modelManager.selectedModel = model
         return authManager.authRequestIntent()
     }
 
@@ -159,11 +157,11 @@ class ScanViewModel(
 
     /** Handle the OAuth Custom Tab result: exchange the code for a token, then resume download. */
     fun onSignInResult(data: Intent?) {
-        val model = pendingAuthModel ?: return
-        pendingAuthModel = null
-        // A null result means the user dismissed the browser (back button) — return to the
-        // picker quietly rather than showing an error.
-        if (data == null) {
+        val model = modelManager.selectedModel
+        // A null result, or an explicit user cancellation (AppAuth returns a non-null intent
+        // carrying USER_CANCELED_AUTH_FLOW), means the user dismissed the browser — return to
+        // the picker quietly rather than showing an error.
+        if (data == null || authManager.isUserCanceled(data)) {
             showModelSelection()
             return
         }

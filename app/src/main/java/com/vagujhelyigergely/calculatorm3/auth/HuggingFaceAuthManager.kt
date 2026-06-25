@@ -36,6 +36,15 @@ class HuggingFaceAuthManager(context: Context) {
     }
 
     /**
+     * True if [data] represents the user cancelling authorization (back button / closed Custom
+     * Tab). AppAuth returns a non-null result intent carrying [AuthorizationException] in this
+     * case, so callers must distinguish it from a genuine failure.
+     */
+    fun isUserCanceled(data: Intent): Boolean =
+        AuthorizationException.fromIntent(data) ==
+            AuthorizationException.GeneralErrors.USER_CANCELED_AUTH_FLOW
+
+    /**
      * Exchange the authorization-code result for an access token.
      *
      * @param data the Intent delivered to the ActivityResultLauncher (must be non-null and
