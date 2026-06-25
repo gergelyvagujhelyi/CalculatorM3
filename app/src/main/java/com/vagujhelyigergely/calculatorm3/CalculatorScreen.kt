@@ -45,7 +45,15 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
+val android.content.Context.dataStore by preferencesDataStore(name = "settings")
+val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
 data class CalcButton(
     val label: String,
     val type: ButtonType,
@@ -114,6 +122,47 @@ fun CalculatorScreen(
     var showCamera by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val hasSeenAiWarning by context.dataStore.data.map { it[HAS_SEEN_AI_WARNING] ?: false }.collectAsState(initial = false)
+    var showAiWarningDialog by remember { mutableStateOf(false) }
+
+    val handleShowCamera = {
+        if (hasSeenAiWarning) {
+            showCamera = true
+        } else {
+            showAiWarningDialog = true
+        }
+    }
+
+    if (showAiWarningDialog) {
+        AlertDialog(
+            onDismissRequest = { showAiWarningDialog = false },
+            title = { Text(text = stringResource(R.string.experimental_feature_title)) },
+            text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            context.dataStore.edit { preferences ->
+                                preferences[HAS_SEEN_AI_WARNING] = true
+                            }
+                        }
+                        showAiWarningDialog = false
+                        showCamera = true
+                    }
+                ) {
+                    Text(stringResource(R.string.accept))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAiWarningDialog = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     if (showHistory) {
         HistorySheet(
             sheetState = sheetState,
@@ -146,14 +195,14 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null) {{ showCamera = true }} else null
+                onShowCamera = if (scanViewModel != null) handleShowCamera else null
             )
         } else {
             PortraitLayout(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null) {{ showCamera = true }} else null
+                onShowCamera = if (scanViewModel != null) handleShowCamera else null
             )
         }
     }
