@@ -182,15 +182,15 @@ private fun PortraitLayout(
             if (onShowCamera != null) {
                 IconButton(onClick = onShowCamera) {
                     androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .androidx.compose.foundation.layout.size(width = 13.dp, height = 10.dp)
-                                .androidx.compose.foundation.background(androidx.compose.ui.graphics.Color.White)
-                        )
                         Icon(
                             painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera),
                             contentDescription = stringResource(R.string.scan_expression),
                             tint = colorScheme.onSurfaceVariant
+                        )
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera_overlay),
+                            contentDescription = null,
+                            tint = androidx.compose.ui.graphics.Color.White
                         )
                     }
                 }
@@ -275,15 +275,15 @@ private fun LandscapeLayout(
                 if (onShowCamera != null) {
                     IconButton(onClick = onShowCamera) {
                         androidx.compose.foundation.layout.Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .androidx.compose.foundation.layout.size(width = 13.dp, height = 10.dp)
-                                    .androidx.compose.foundation.background(androidx.compose.ui.graphics.Color.White)
-                            )
                             Icon(
                                 painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera),
                                 contentDescription = stringResource(R.string.scan_expression),
                                 tint = colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ai_camera_overlay),
+                                contentDescription = null,
+                                tint = androidx.compose.ui.graphics.Color.White
                             )
                         }
                     }

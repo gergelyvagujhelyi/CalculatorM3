@@ -1,0 +1,30 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+  <!-- Flashlight / AI Star (White, top right) -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M19,5.5 Q19,7.5 21,7.5 Q19,7.5 19,9.5 Q19,7.5 17,7.5 Q19,7.5 19,5.5 Z" />
+
+  <!-- "AI" Letters (White, perfectly centered, Bold) -->
+  <path
+      android:strokeColor="#FFFFFF"
+      android:strokeWidth="2"
+      android:strokeLineCap="round"
+      android:strokeLineJoin="round"
+      android:fillColor="#00000000"
+      android:pathData="M7.5,16 L10,10 L12.5,16 M9.25,13 H10.75 M15.5,10 V16" />
+
+  <!-- Stars -->
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M20.5,0 Q20.5,3 23.5,3 Q20.5,3 20.5,6 Q20.5,3 17.5,3 Q20.5,3 20.5,0 Z" />
+
+  <path
+      android:fillColor="#FFFFFF"
+      android:pathData="M22.5,5 Q22.5,6.5 24,6.5 Q22.5,6.5 22.5,8 Q22.5,6.5 21,6.5 Q22.5,6.5 22.5,5 Z" />
+
+</vector>
