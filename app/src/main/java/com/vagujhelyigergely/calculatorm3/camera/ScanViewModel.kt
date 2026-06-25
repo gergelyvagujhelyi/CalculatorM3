@@ -93,32 +93,37 @@ class ScanViewModel(
                 )
                 return@launch
             }
-            loadModel(selected)
+            // Don't load the model yet — show the capture chooser. The model is
+            // loaded lazily in onPhotoCaptured, once a photo exists.
+            uiState = ScanUiState.Capturing
         }
     }
 
-    private fun loadModel(model: AiModel) {
-        if (solver.isModelLoaded && loadedModelId == model.id) {
-            uiState = ScanUiState.Capturing
-            return
-        }
+    /**
+     * Load the selected model into memory if needed. Called lazily, only once a
+     * photo exists — so the (potentially multi-GB) model is NOT resident while the
+     * system camera app launches, which otherwise OOM-killed us with large models.
+     * Returns true if the model is ready, false (and sets an Error state) on failure.
+     */
+    private suspend fun ensureModelLoaded(model: AiModel): Boolean {
+        if (solver.isModelLoaded && loadedModelId == model.id) return true
         uiState = ScanUiState.ModelLoading()
-        viewModelScope.launch {
-            try {
-                solver.loadModel(modelManager.modelPath(model))
-                loadedModelId = model.id
-                uiState = ScanUiState.Capturing
-            } catch (e: Exception) {
-                loadedModelId = null
-                uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
-            }
+        return try {
+            solver.loadModel(modelManager.modelPath(model))
+            loadedModelId = model.id
+            true
+        } catch (e: Exception) {
+            loadedModelId = null
+            uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
+            false
         }
     }
 
     fun selectModel(model: AiModel) {
         modelManager.selectedModel = model
         if (modelManager.areModelsAvailable(model)) {
-            loadModel(model)
+            // Loaded lazily on first photo, not here.
+            uiState = ScanUiState.Capturing
         } else {
             startDownload(model)
         }
@@ -200,8 +205,9 @@ class ScanViewModel(
                         val m = AiModel.entries.find {
                             it.id == info.outputData.getString(ModelDownloadWorker.KEY_MODEL_ID)
                         } ?: modelManager.selectedModel
-                        uiState = ScanUiState.DownloadComplete()
-                        loadModel(m)
+                        modelManager.selectedModel = m
+                        // Model loads lazily on first photo, not right after download.
+                        uiState = ScanUiState.Capturing
                     }
                     WorkInfo.State.FAILED -> {
                         val out = info.outputData
@@ -226,11 +232,17 @@ class ScanViewModel(
     }
 
     fun onPhotoCaptured(imagePath: String) {
-        if (!solver.isModelLoaded) return
-        val startTime = System.currentTimeMillis()
-        val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
-        uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
+        val model = modelManager.selectedModel
         viewModelScope.launch {
+            // Load the model now that a photo exists (it wasn't resident while the
+            // camera app was open). Shows "Loading AI model…" then proceeds.
+            if (!ensureModelLoaded(model)) {
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                return@launch
+            }
+            val startTime = System.currentTimeMillis()
+            val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
+            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
             // Apply EXIF rotation + downscale: a full-res photo can blow up the
             // vision pipeline's memory, and the camera stores it sideways with an
             // EXIF orientation tag the model would otherwise ignore.
@@ -341,7 +353,9 @@ class ScanViewModel(
     }
 
     fun retry() {
-        if (solver.isModelLoaded) {
+        // Back to the capture chooser if the model is available (loaded lazily on
+        // the next photo); otherwise re-run the first-time / download flow.
+        if (modelManager.areModelsAvailable()) {
             uiState = ScanUiState.Capturing
         } else {
             initialize()
