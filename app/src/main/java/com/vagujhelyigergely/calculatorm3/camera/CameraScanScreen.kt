@@ -248,7 +248,7 @@ private fun StatusContent(
     showProgress: Boolean,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -291,7 +291,7 @@ private fun StatusContent(
 
 @Composable
 private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -354,7 +354,7 @@ private fun ProcessingContent(
         label = "pulse_scale"
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -482,7 +482,7 @@ private fun CameraContent(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         // Top bar: close + model switch
         Row(
             modifier = Modifier
@@ -624,7 +624,7 @@ private fun SuccessContent(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -708,7 +708,7 @@ private fun ErrorContent(
 ) {
     var showRaw by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -784,7 +784,7 @@ private fun ModelSelectionContent(
     onDownloadModel: (AiModel) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -957,7 +957,7 @@ private fun MobileDataWarningContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1005,7 +1005,7 @@ private fun FirstTimeWarningContent(
     onContinue: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1053,7 +1053,7 @@ private fun AuthErrorContent(
 ) {
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1124,7 +1124,7 @@ private fun TokenInputContent(
     var token by remember { mutableStateOf("") }
 
     // imePadding keeps the token field above the on-screen keyboard.
-    Box(modifier = Modifier.fillMaxSize().imePadding()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1182,7 +1182,7 @@ private fun DownloadingContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier

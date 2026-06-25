@@ -377,6 +377,8 @@ class ScanViewModel(
     }
 
     fun releaseAll() {
+        // Invalidate the cache marker so the next scan reloads if the engine is gone.
+        loadedModelId = null
         // Launch on IO to avoid blocking the main thread — release() acquires
         // the solver mutex which may be held by an in-flight inference whose
         // onToken callback dispatches to Dispatchers.Main.  Blocking main here
