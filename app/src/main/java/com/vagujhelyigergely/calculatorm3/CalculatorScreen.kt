@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import android.content.res.Configuration
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -181,11 +182,18 @@ private fun PortraitLayout(
         ) {
             if (onShowCamera != null) {
                 IconButton(onClick = onShowCamera) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = stringResource(R.string.scan_expression),
-                        tint = colorScheme.onSurfaceVariant
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_ai_camera),
+                            contentDescription = stringResource(R.string.scan_expression),
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                        Icon(
+                            painter = painterResource(R.drawable.ic_ai_camera_overlay),
+                            contentDescription = null,
+                            tint = colorScheme.surface
+                        )
+                    }
                 }
             }
             IconButton(onClick = onShowHistory) {
@@ -267,11 +275,18 @@ private fun LandscapeLayout(
             ) {
                 if (onShowCamera != null) {
                     IconButton(onClick = onShowCamera) {
-                        Icon(
-                            imageVector = Icons.Default.CameraAlt,
-                            contentDescription = stringResource(R.string.scan_expression),
-                            tint = colorScheme.onSurfaceVariant
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_ai_camera),
+                                contentDescription = stringResource(R.string.scan_expression),
+                                tint = colorScheme.onSurfaceVariant
+                            )
+                            Icon(
+                                painter = painterResource(R.drawable.ic_ai_camera_overlay),
+                                contentDescription = null,
+                                tint = colorScheme.surface
+                            )
+                        }
                     }
                 }
                 IconButton(onClick = onShowHistory) {
