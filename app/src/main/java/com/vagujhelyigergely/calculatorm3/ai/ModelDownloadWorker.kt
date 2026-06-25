@@ -83,6 +83,11 @@ class ModelDownloadWorker(
                     KEY_MODEL_ID to modelId
                 )
             )
+        } finally {
+            // setForeground can fail (background start on Android 12+), leaving a
+            // directly-posted ongoing notification WorkManager won't remove. Always
+            // clear it so it can't become a permanent ghost notification.
+            notificationManager.cancel(NOTIFICATION_ID)
         }
     }
 

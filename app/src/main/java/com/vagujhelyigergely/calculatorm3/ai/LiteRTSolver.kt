@@ -60,14 +60,24 @@ class LiteRTSolver : MathSolver {
         backendLabel = "CPU"
     }
 
-    private fun buildEngine(modelPath: String, backend: Backend, visionBackend: Backend): Engine =
-        Engine(
+    private fun buildEngine(modelPath: String, backend: Backend, visionBackend: Backend): Engine {
+        val eng = Engine(
             EngineConfig(
                 modelPath = modelPath,
                 backend = backend,
                 visionBackend = visionBackend,
             )
-        ).also { it.initialize() }
+        )
+        try {
+            eng.initialize()
+        } catch (e: Throwable) {
+            // initialize() can fault (e.g. GPU driver) after the native Engine was
+            // constructed; close it so we don't leak native memory before fallback.
+            try { eng.close() } catch (_: Exception) {}
+            throw e
+        }
+        return eng
+    }
 
     private fun createConversation(): Conversation {
         val eng = engine ?: throw IllegalStateException("Model not loaded")
