@@ -16,8 +16,6 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -231,60 +229,53 @@ class ScanViewModel(
     fun onPhotoCaptured(imagePath: String) {
         val model = modelManager.selectedModel
         viewModelScope.launch {
-            // TEMP: probe peak memory across model load + inference so thresholds can be
-            // set from real numbers rather than estimates (see [MemoryProbe]).
-            val memProbe = MemoryProbe().also { it.start(this) }
+            // Load the model now that a photo exists (it wasn't resident while the
+            // camera app was open). Shows "Loading AI model…" then proceeds.
+            if (!ensureModelLoaded(model)) {
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                return@launch
+            }
+            val startTime = System.currentTimeMillis()
+            val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
+            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
+            // Apply EXIF rotation + downscale: a full-res photo can blow up the
+            // vision pipeline's memory, and the camera stores it sideways with an
+            // EXIF orientation tag the model would otherwise ignore.
+            val processPath = withContext(Dispatchers.IO) {
+                prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
+            }
             try {
-                // Load the model now that a photo exists (it wasn't resident while the
-                // camera app was open). Shows "Loading AI model…" then proceeds.
-                if (!ensureModelLoaded(model)) {
-                    try { java.io.File(imagePath).delete() } catch (_: Exception) {}
-                    return@launch
-                }
-                val startTime = System.currentTimeMillis()
-                val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
-                uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
-                // Apply EXIF rotation + downscale: a full-res photo can blow up the
-                // vision pipeline's memory, and the camera stores it sideways with an
-                // EXIF orientation tag the model would otherwise ignore.
-                val processPath = withContext(Dispatchers.IO) {
-                    prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
-                }
-                try {
-                    var tokenCount = 0
-                    val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
-                        tokenCount++
-                        withContext(Dispatchers.Main) {
-                            uiState = ScanUiState.Processing(
-                                partialRaw = partialRaw,
-                                startTimeMs = startTime,
-                                tokenCount = tokenCount,
-                                backend = backend
-                            )
-                        }
-                    }
-                    val elapsed = System.currentTimeMillis() - startTime
-                    uiState = result.fold(
-                        onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
-                        onFailure = {
-                            val raw = (it as? RecognitionException)?.rawResponse
-                            ScanUiState.Error(it.message ?: "Recognition failed", raw)
-                        }
-                    )
-                } catch (e: Throwable) {
-                    // Let cancellation (e.g. user closed the screen) propagate instead
-                    // of showing it as an inference error.
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    uiState = ScanUiState.Error("Inference failed: ${e.message}")
-                } finally {
-                    // Clean up captured photos
-                    try { java.io.File(imagePath).delete() } catch (_: Exception) {}
-                    if (processPath != imagePath) {
-                        try { java.io.File(processPath).delete() } catch (_: Exception) {}
+                var tokenCount = 0
+                val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                    tokenCount++
+                    withContext(Dispatchers.Main) {
+                        uiState = ScanUiState.Processing(
+                            partialRaw = partialRaw,
+                            startTimeMs = startTime,
+                            tokenCount = tokenCount,
+                            backend = backend
+                        )
                     }
                 }
+                val elapsed = System.currentTimeMillis() - startTime
+                uiState = result.fold(
+                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
+                    onFailure = {
+                        val raw = (it as? RecognitionException)?.rawResponse
+                        ScanUiState.Error(it.message ?: "Recognition failed", raw)
+                    }
+                )
+            } catch (e: Throwable) {
+                // Let cancellation (e.g. user closed the screen) propagate instead
+                // of showing it as an inference error.
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                uiState = ScanUiState.Error("Inference failed: ${e.message}")
             } finally {
-                memProbe.stopAndLog("${model.id} [${solver.activeBackend}]")
+                // Clean up captured photos
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                if (processPath != imagePath) {
+                    try { java.io.File(processPath).delete() } catch (_: Exception) {}
+                }
             }
         }
     }
@@ -394,44 +385,6 @@ class ScanViewModel(
         // with runBlocking would deadlock.
         CoroutineScope(Dispatchers.IO).launch {
             solver.release()
-        }
-    }
-
-    /**
-     * TEMP instrumentation: polls process memory on a background coroutine while a scan
-     * runs and logs the peak (total PSS / native / graphics), so [com.vagujhelyigergely.calculatorm3.ai.AiModel.minRamGb]
-     * and a future EngineConfig.maxNumTokens cap can be set from real per-model numbers
-     * instead of estimates. Read with `adb logcat -s MemoryProbe`. Remove once validated.
-     */
-    private class MemoryProbe {
-        private var job: Job? = null
-        @Volatile private var peakTotalKb = 0L
-        @Volatile private var peakNativeKb = 0L
-        @Volatile private var peakGraphicsKb = 0L
-
-        fun start(scope: CoroutineScope) {
-            val info = android.os.Debug.MemoryInfo()
-            job = scope.launch(Dispatchers.Default) {
-                while (isActive) {
-                    android.os.Debug.getMemoryInfo(info)
-                    peakTotalKb = maxOf(peakTotalKb, info.totalPss.toLong())
-                    peakNativeKb = maxOf(peakNativeKb, info.nativePss.toLong())
-                    peakGraphicsKb = maxOf(
-                        peakGraphicsKb,
-                        info.getMemoryStat("summary.graphics")?.toLongOrNull() ?: 0L
-                    )
-                    delay(250)
-                }
-            }
-        }
-
-        fun stopAndLog(label: String) {
-            job?.cancel()
-            job = null
-            android.util.Log.i(
-                "MemoryProbe",
-                "$label  peak total=${peakTotalKb / 1024}MB native=${peakNativeKb / 1024}MB graphics=${peakGraphicsKb / 1024}MB"
-            )
         }
     }
 
