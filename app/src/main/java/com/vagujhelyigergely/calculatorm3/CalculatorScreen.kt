@@ -137,7 +137,7 @@ fun CalculatorScreen(
             if (deviceRamGb < MIN_RAM_REQUIRED_GB) {
                 android.widget.Toast.makeText(
                     context,
-                    "You need more RAM to use this AI feature.",
+                    context.getString(R.string.ai_feature_low_ram),
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             } else if (hasSeenAiWarningState.value) {
