@@ -271,6 +271,9 @@ class ScanViewModel(
                     }
                 )
             } catch (e: Throwable) {
+                // Let cancellation (e.g. user closed the screen) propagate instead
+                // of showing it as an inference error.
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 uiState = ScanUiState.Error("Inference failed: ${e.message}")
             } finally {
                 // Clean up captured photos

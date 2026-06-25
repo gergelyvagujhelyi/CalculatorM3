@@ -31,7 +31,13 @@ class ModelDownloadWorker(
         val model = AiModel.entries.find { it.id == modelId } ?: return Result.failure()
 
         createChannel()
-        setForeground(buildForegroundInfo(model, fileIndex = 0, downloaded = 0, total = -1))
+        // Android 12+ can reject a background-started foreground service; if so, keep
+        // running as a normal worker rather than crashing.
+        try {
+            setForeground(buildForegroundInfo(model, fileIndex = 0, downloaded = 0, total = -1))
+        } catch (e: Exception) {
+            android.util.Log.w("ModelDownloadWorker", "setForeground failed; continuing in background", e)
+        }
 
         return try {
             model.files.forEachIndexed { index, file ->
@@ -65,6 +71,10 @@ class ModelDownloadWorker(
                     KEY_MODEL_ID to modelId
                 )
             )
+        } catch (e: java.io.IOException) {
+            // Transient network error — let WorkManager reschedule; the partial
+            // .tmp resumes via HTTP Range on the next run.
+            Result.retry()
         } catch (e: Exception) {
             Result.failure(
                 workDataOf(

@@ -37,12 +37,13 @@ class LiteRTSolver : MathSolver {
     override val isModelLoaded: Boolean get() = engine != null
     override val activeBackend: String get() = backendLabel
 
-    override suspend fun loadModel(modelPath: String) =
+    override suspend fun loadModel(modelPath: String) = mutex.withLock {
         withContext(Dispatchers.IO) {
             closeEngine()
             currentModelPath = modelPath
             initEngine(modelPath)
         }
+    }
 
     /** Backend ladder: GPU → CPU. */
     private fun initEngine(modelPath: String) {
@@ -118,6 +119,9 @@ class LiteRTSolver : MathSolver {
             try {
                 runInference(imagePath, onToken)
             } catch (e: Throwable) {
+                // Never swallow cancellation — let the coroutine actually cancel
+                // instead of treating it as a failure and reloading on CPU.
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 Log.e(TAG, "LiteRT inference failed", e)
                 // If GPU was active, reload on CPU and retry once — some devices
                 // initialize the GPU backend fine but fault during inference.
@@ -130,6 +134,7 @@ class LiteRTSolver : MathSolver {
                         backendLabel = "CPU"
                         return@withContext runInference(imagePath, onToken)
                     } catch (retry: Throwable) {
+                        if (retry is kotlinx.coroutines.CancellationException) throw retry
                         Log.e(TAG, "CPU retry also failed", retry)
                         return@withContext Result.failure(retry.asException())
                     }

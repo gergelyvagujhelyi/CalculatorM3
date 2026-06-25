@@ -56,7 +56,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 
@@ -456,6 +459,7 @@ private fun CameraContent(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     // File the system camera writes the captured photo into.
     var pendingPhoto by remember { mutableStateOf<File?>(null) }
 
@@ -476,9 +480,11 @@ private fun CameraContent(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            val path = copyUriToCache(context, uri)
-            if (path != null) onPhotoCaptured(path)
-            else onCaptureError("Could not open the selected image")
+            scope.launch {
+                val path = copyUriToCache(context, uri)
+                if (path != null) onPhotoCaptured(path)
+                else onCaptureError("Could not open the selected image")
+            }
         }
     }
 
@@ -571,18 +577,21 @@ private fun fileProviderUri(context: android.content.Context, file: File): Uri =
     FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 
 /** Copy a picked gallery image into the app cache and return its path (the solver needs a file path). */
-private fun copyUriToCache(context: android.content.Context, uri: Uri): String? = try {
-    val input = context.contentResolver.openInputStream(uri)
-    if (input == null) {
-        null
-    } else {
-        val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-        input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
-        file.absolutePath
+private suspend fun copyUriToCache(context: android.content.Context, uri: Uri): String? =
+    withContext(Dispatchers.IO) {
+        try {
+            val input = context.contentResolver.openInputStream(uri)
+            if (input == null) {
+                null
+            } else {
+                val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+                input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
+                file.absolutePath
+            }
+        } catch (e: Exception) {
+            null
+        }
     }
-} catch (e: Exception) {
-    null
-}
 
 /** Renders [text] as markdown with LaTeX math (`$…$` inline and `$$…$$` block) via Markwon + jlatexmath. */
 @Composable
@@ -607,9 +616,12 @@ private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = M
 }
 
 /** Normalize \(..\) and \[..\] delimiters to $..$ / $$..$$ so Markwon's latex ext renders them. */
+private val inlineLatexRegex = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL)
+private val blockLatexRegex = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL)
+
 private fun normalizeLatex(s: String): String {
-    var r = Regex("""\\\((.+?)\\\)""", RegexOption.DOT_MATCHES_ALL).replace(s) { "$" + it.groupValues[1] + "$" }
-    r = Regex("""\\\[(.+?)\\\]""", RegexOption.DOT_MATCHES_ALL).replace(r) { "$$" + it.groupValues[1] + "$$" }
+    var r = inlineLatexRegex.replace(s) { "$" + it.groupValues[1] + "$" }
+    r = blockLatexRegex.replace(r) { "$$" + it.groupValues[1] + "$$" }
     return r
 }
 
