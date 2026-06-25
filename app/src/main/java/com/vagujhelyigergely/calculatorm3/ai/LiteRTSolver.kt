@@ -1,6 +1,5 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
-import android.content.Context
 import android.util.Log
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
@@ -23,7 +22,7 @@ import kotlinx.coroutines.withContext
  * initializes. We try GPU vision first and fall back to CPU vision — both at
  * load time and once more on the first inference failure.
  */
-class LiteRTSolver(private val context: Context) : MathSolver {
+class LiteRTSolver : MathSolver {
 
     private val mutex = Mutex()
     @Volatile private var engine: Engine? = null
@@ -31,7 +30,7 @@ class LiteRTSolver(private val context: Context) : MathSolver {
     @Volatile private var currentModelPath: String? = null
     @Volatile private var backendLabel: String = "—"
 
-    /** TEMP debug: short reason the GPU/NPU backend failed to load (null on success). */
+    /** TEMP debug: short reason the GPU backend failed to load (null on success). */
     @Volatile override var lastGpuError: String? = null
         private set
 
@@ -42,35 +41,18 @@ class LiteRTSolver(private val context: Context) : MathSolver {
         withContext(Dispatchers.IO) {
             closeEngine()
             currentModelPath = modelPath
-            // TEMP: NPU-compiled bundles carry the vendor (e.g. "qualcomm") in the filename.
-            initEngine(modelPath, tryNpu = modelPath.contains("qualcomm", ignoreCase = true))
+            initEngine(modelPath)
         }
 
-    /** Backend ladder: NPU (if requested) → GPU → CPU. */
-    private fun initEngine(modelPath: String, tryNpu: Boolean) {
-        if (tryNpu) {
-            try {
-                engine = buildEngine(
-                    modelPath,
-                    backend = Backend.NPU(nativeLibraryDir = context.applicationInfo.nativeLibraryDir),
-                    visionBackend = Backend.GPU()
-                )
-                backendLabel = "NPU"
-                lastGpuError = null
-                return
-            } catch (e: Exception) {
-                lastGpuError = "NPU: " + (e.message ?: e.toString()).replace('\n', ' ').take(160)
-                Log.w(TAG, "NPU backend failed, trying GPU", e)
-            }
-        }
+    /** Backend ladder: GPU → CPU. */
+    private fun initEngine(modelPath: String) {
         try {
             engine = buildEngine(modelPath, Backend.GPU(), Backend.GPU())
             backendLabel = "GPU"
-            if (!tryNpu) lastGpuError = null
+            lastGpuError = null
             return
         } catch (e: Exception) {
-            lastGpuError = (lastGpuError?.plus(" | ") ?: "") + "GPU: " +
-                (e.message ?: e.toString()).replace('\n', ' ').take(160)
+            lastGpuError = "GPU: " + (e.message ?: e.toString()).replace('\n', ' ').take(200)
             Log.w(TAG, "GPU backend failed, falling back to CPU", e)
         }
         engine = buildEngine(modelPath, Backend.CPU(), Backend.CPU())

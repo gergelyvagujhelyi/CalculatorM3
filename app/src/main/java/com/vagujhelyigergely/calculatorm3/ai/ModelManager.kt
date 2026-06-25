@@ -70,22 +70,6 @@ enum class AiModel(
             )
         )
     ),
-    // TEMP: Snapdragon-8-Elite (sm8750) NPU build, to benchmark NPU vs GPU on the S25.
-    GEMMA4_E2B_NPU(
-        id = "gemma4-e2b-npu",
-        displayName = "Gemma 4 E2B (NPU test)",
-        description = "Snapdragon 8 Elite NPU build — benchmark only",
-        totalSizeDisplay = "~2.6 GB",
-        minRamGb = 6,
-        primaryFilename = "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
-        files = listOf(
-            ModelFile(
-                "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it_qualcomm_sm8750.litertlm",
-                "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
-                "2.6 GB"
-            )
-        )
-    ),
     GEMMA3N_E2B(
         id = "gemma3n-e2b",
         displayName = "Gemma 3n E2B",
