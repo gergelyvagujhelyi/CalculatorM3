@@ -59,9 +59,8 @@
     <string name="download_file_progress">File %1$d of %2$d</string>
     <string name="download_warning">This is a large download. Use Wi-Fi if possible.</string>
     <string name="raw_model_output">Raw model output</string>
-    <string name="advanced_models">Advanced models</string>
-    <string name="advanced_models_description">Larger, higher-quality models. Those marked \"requires login\" need a free HuggingFace account and license acceptance before download.</string>
-    <string name="requires_login">requires login</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Needs HuggingFace login</string>
     <string name="mobile_data_title">No Wi-Fi connection</string>
     <string name="mobile_data_description">You are about to download %1$s using mobile data. This may incur charges from your carrier.</string>
     <string name="download_anyway">Download anyway</string>

@@ -30,14 +30,20 @@ sealed interface ScanUiState {
         val partialRaw: String = "",
         val startTimeMs: Long = System.currentTimeMillis(),
         val tokenCount: Int = 0,
-        val backend: String = ""
+        val backend: String = "",
+        /** Wall-clock of the first generated token; null while still prefilling the image. */
+        val firstTokenMs: Long? = null
     ) : ScanUiState
     data class Success(
         val answer: String,
         val rawResponse: String,
         val elapsedMs: Long,
         val tokenCount: Int = 0,
-        val backend: String = ""
+        val backend: String = "",
+        /** Time-to-first-token (image prefill), kept separate from the decode rate. */
+        val ttftMs: Long = 0L,
+        /** Steady-state decode speed, excluding prefill. */
+        val decodeTokensPerSec: Double = 0.0
     ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
     data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
@@ -290,20 +296,39 @@ class ScanViewModel(
             }
             try {
                 var tokenCount = 0
+                var firstTokenMs = 0L
+                var lastTokenMs = 0L
+                var lastUiUpdateMs = 0L
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                    // Time decode at the source (inference dispatcher), independent of the UI:
+                    // the first token marks end-of-prefill (TTFT); the rest is the decode window.
+                    val now = System.currentTimeMillis()
+                    if (tokenCount == 0) firstTokenMs = now
                     tokenCount++
-                    withContext(Dispatchers.Main) {
-                        uiState = ScanUiState.Processing(
-                            partialRaw = partialRaw,
-                            startTimeMs = startTime,
-                            tokenCount = tokenCount,
-                            backend = backend
-                        )
+                    lastTokenMs = now
+                    // Coalesce UI updates so per-token recomposition can't throttle the loop.
+                    if (now - lastUiUpdateMs >= UI_UPDATE_THROTTLE_MS) {
+                        lastUiUpdateMs = now
+                        withContext(Dispatchers.Main) {
+                            uiState = ScanUiState.Processing(
+                                partialRaw = partialRaw,
+                                startTimeMs = startTime,
+                                tokenCount = tokenCount,
+                                backend = backend,
+                                firstTokenMs = firstTokenMs.takeIf { it > 0L }
+                            )
+                        }
                     }
                 }
                 val elapsed = System.currentTimeMillis() - startTime
+                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - startTime else elapsed
+                val decodeMs = (lastTokenMs - firstTokenMs).coerceAtLeast(0L)
+                val decodeTps = if (tokenCount > 1 && decodeMs > 0L)
+                    (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
                 uiState = result.fold(
-                    onSuccess = { ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend) },
+                    onSuccess = {
+                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend, ttftMs, decodeTps)
+                    },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
                         ScanUiState.Error(it.message ?: "Recognition failed", raw)
@@ -436,5 +461,8 @@ class ScanViewModel(
     companion object {
         /** Longest edge (px) the captured photo is downscaled to before inference. */
         private const val MAX_IMAGE_EDGE = 1024
+
+        /** Min gap between streaming UI updates so per-token recomposition can't throttle decode. */
+        private const val UI_UPDATE_THROTTLE_MS = 50L
     }
 }
