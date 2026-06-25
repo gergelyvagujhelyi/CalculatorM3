@@ -129,22 +129,33 @@ fun CalculatorScreen(
 
     val handleShowCamera: () -> Unit = remember(scanViewModel, context, scope) {
         {
-            if (scanViewModel?.canRunAnyModel == false) {
-                android.widget.Toast.makeText(
-                    context,
-                    context.getString(R.string.ai_feature_low_ram),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                // Read the persisted flag at click time rather than from a collected
-                // State, so a fast tap right after launch can't see a stale "not seen"
-                // value before DataStore's first async read has completed.
-                scope.launch {
-                    val hasSeenWarning = context.dataStore.data.first()[HAS_SEEN_AI_WARNING] ?: false
-                    if (hasSeenWarning) {
-                        showCamera = true
-                    } else {
-                        showAiWarningDialog = true
+            when {
+                // The button isn't shown when scanViewModel is null, but guard anyway.
+                scanViewModel == null -> Unit
+                !scanViewModel.canRunAnyModel -> {
+                    android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.ai_feature_low_ram),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+                else -> {
+                    // Read the persisted flag at click time rather than from a collected
+                    // State, so a fast tap right after launch can't see a stale "not seen"
+                    // value before DataStore's first async read. Guard the disk read —
+                    // DataStore throws IOException on failure — and default to showing the
+                    // warning so a failed read can't crash the click handler.
+                    scope.launch {
+                        val hasSeenWarning = try {
+                            context.dataStore.data.first()[HAS_SEEN_AI_WARNING] ?: false
+                        } catch (e: java.io.IOException) {
+                            false
+                        }
+                        if (hasSeenWarning) {
+                            showCamera = true
+                        } else {
+                            showAiWarningDialog = true
+                        }
                     }
                 }
             }
@@ -160,8 +171,13 @@ fun CalculatorScreen(
                 TextButton(
                     onClick = {
                         scope.launch {
-                            context.dataStore.edit { preferences ->
-                                preferences[HAS_SEEN_AI_WARNING] = true
+                            // Best-effort persist; a failed write just means the warning
+                            // shows again next time rather than crashing the app.
+                            try {
+                                context.dataStore.edit { preferences ->
+                                    preferences[HAS_SEEN_AI_WARNING] = true
+                                }
+                            } catch (e: java.io.IOException) {
                             }
                         }
                         showAiWarningDialog = false

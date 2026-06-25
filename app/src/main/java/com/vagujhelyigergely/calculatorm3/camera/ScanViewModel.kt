@@ -138,6 +138,9 @@ class ScanViewModel(
     }
 
     fun startDownload(model: AiModel) {
+        // Never fetch a model the device can't run (the picker also blocks this, but
+        // guard here so no path can download an unusable multi-GB model).
+        if (modelManager.isModelTooLarge(model)) return
         modelManager.selectedModel = model
         if (model.requiresAuth && !hasHfToken) {
             uiState = ScanUiState.TokenRequired(model)

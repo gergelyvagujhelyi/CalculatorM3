@@ -884,7 +884,11 @@ private fun ModelCard(
 ) {
     Surface(
         onClick = {
-            if (isDownloaded) onSelectModel(model) else onDownloadModel(model)
+            when {
+                isDownloaded -> onSelectModel(model)
+                tooLarge -> Unit  // can't run on this device — the card shows why
+                else -> onDownloadModel(model)
+            }
         },
         modifier = Modifier
             .fillMaxWidth()
