@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -74,6 +75,11 @@ fun CameraScanScreen(
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* best-effort: the download runs regardless of notification visibility */ }
+    // Launches the AppAuth Custom Tab for HuggingFace sign-in; the returned Intent carries
+    // the authorization code, which the ViewModel exchanges for a token.
+    val signInLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result -> viewModel.onSignInResult(result.data) }
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
@@ -168,11 +174,19 @@ fun CameraScanScreen(
                         httpCode = state.httpCode,
                         model = state.model,
                         onRetry = { viewModel.startDownload(state.model) },
+                        onReauth = { viewModel.showSignIn(state.model) },
                         onDismiss = onDismiss
                     )
-                    is ScanUiState.TokenRequired -> TokenInputContent(
+                    is ScanUiState.SignInRequired -> SignInContent(
                         model = state.model,
-                        onSubmit = { token -> viewModel.setHfTokenAndDownload(token, state.model) },
+                        onSignIn = { signInLauncher.launch(viewModel.signInIntentFor(state.model)) },
+                        onDismiss = onDismiss
+                    )
+                    is ScanUiState.Authenticating -> StatusContent(
+                        icon = Icons.AutoMirrored.Filled.Login,
+                        title = stringResource(R.string.signing_in),
+                        subtitle = null,
+                        showProgress = true,
                         onDismiss = onDismiss
                     )
                     is ScanUiState.Downloading -> DownloadingContent(
@@ -1068,6 +1082,7 @@ private fun AuthErrorContent(
     httpCode: Int,
     model: AiModel,
     onRetry: () -> Unit,
+    onReauth: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -1119,11 +1134,8 @@ private fun AuthErrorContent(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center
                 )
-                Button(onClick = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW,
-                        Uri.parse("https://huggingface.co/settings/tokens")))
-                }) {
-                    Text(stringResource(R.string.create_token))
+                Button(onClick = onReauth) {
+                    Text(stringResource(R.string.sign_in_again))
                 }
             }
 
@@ -1135,15 +1147,12 @@ private fun AuthErrorContent(
 }
 
 @Composable
-private fun TokenInputContent(
+private fun SignInContent(
     model: AiModel,
-    onSubmit: (String) -> Unit,
+    onSignIn: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var token by remember { mutableStateOf("") }
-
-    // imePadding keeps the token field above the on-screen keyboard.
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
+    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
         CloseButton(
             onDismiss = onDismiss,
             modifier = Modifier
@@ -1159,7 +1168,7 @@ private fun TokenInputContent(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Storage,
+                imageVector = Icons.AutoMirrored.Filled.Login,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -1170,22 +1179,12 @@ private fun TokenInputContent(
             )
             Text(
                 text = stringResource(R.string.hf_token_description, model.displayName),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            OutlinedTextField(
-                value = token,
-                onValueChange = { token = it },
-                label = { Text(stringResource(R.string.hf_token_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Button(
-                onClick = { onSubmit(token.trim()) },
-                enabled = token.trim().startsWith("hf_")
-            ) {
-                Text(stringResource(R.string.download_model))
+            Button(onClick = onSignIn) {
+                Text(stringResource(R.string.sign_in_huggingface))
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
@@ -13,6 +14,7 @@ import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
+import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,7 +50,10 @@ sealed interface ScanUiState {
         val fileCount: Int
     ) : ScanUiState
     data class DownloadComplete(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
-    data class TokenRequired(val model: AiModel) : ScanUiState
+    /** A gated model needs HuggingFace sign-in before it can be downloaded. */
+    data class SignInRequired(val model: AiModel) : ScanUiState
+    /** Briefly shown while the OAuth code is exchanged for a token. */
+    data object Authenticating : ScanUiState
     data class AuthError(val httpCode: Int, val model: AiModel) : ScanUiState
     data object FirstTimeWarning : ScanUiState
     data class MobileDataWarning(val model: AiModel) : ScanUiState
@@ -56,7 +61,8 @@ sealed interface ScanUiState {
 
 class ScanViewModel(
     private val solver: MathSolver,
-    private val modelManager: ModelManager
+    private val modelManager: ModelManager,
+    private val authManager: HuggingFaceAuthManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
@@ -124,13 +130,48 @@ class ScanViewModel(
         }
     }
 
-    /** Set HF token and retry download. */
-    fun setHfTokenAndDownload(token: String, model: AiModel) {
-        modelManager.hfToken = token
-        startDownload(model)
+    val hasHfToken: Boolean get() = !modelManager.hfToken.isNullOrBlank()
+
+    /** Model awaiting an OAuth token, captured when the sign-in intent is created. */
+    private var pendingAuthModel: AiModel? = null
+
+    /**
+     * Build the AppAuth intent to launch for [model] and remember it as pending. The
+     * Composable launches this via an ActivityResultLauncher and routes the result back
+     * through [onSignInResult].
+     */
+    fun signInIntentFor(model: AiModel): Intent {
+        pendingAuthModel = model
+        return authManager.authRequestIntent()
     }
 
-    val hasHfToken: Boolean get() = !modelManager.hfToken.isNullOrBlank()
+    /** Drop any stale token and return to the sign-in prompt (e.g. after a 401). */
+    fun showSignIn(model: AiModel) {
+        modelManager.hfToken = null
+        uiState = ScanUiState.SignInRequired(model)
+    }
+
+    /** Handle the OAuth Custom Tab result: exchange the code for a token, then resume download. */
+    fun onSignInResult(data: Intent?) {
+        val model = pendingAuthModel ?: return
+        pendingAuthModel = null
+        // A null result means the user dismissed the browser (back button) — return to the
+        // picker quietly rather than showing an error.
+        if (data == null) {
+            showModelSelection()
+            return
+        }
+        uiState = ScanUiState.Authenticating
+        viewModelScope.launch {
+            try {
+                modelManager.hfToken = authManager.exchangeCodeForToken(data)
+                startDownload(model)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                uiState = ScanUiState.Error("Sign-in failed: ${e.message ?: "please try again"}")
+            }
+        }
+    }
 
     /** Force download even on mobile data. */
     fun confirmMobileDataDownload(model: AiModel) {
@@ -143,7 +184,7 @@ class ScanViewModel(
         if (modelManager.isModelTooLarge(model)) return
         modelManager.selectedModel = model
         if (model.requiresAuth && !hasHfToken) {
-            uiState = ScanUiState.TokenRequired(model)
+            uiState = ScanUiState.SignInRequired(model)
             return
         }
         if (!modelManager.isOnWifi && !modelManager.areModelsAvailable(model)) {
@@ -376,6 +417,7 @@ class ScanViewModel(
 
     override fun onCleared() {
         super.onCleared()
+        authManager.dispose()
         releaseAll()
     }
 

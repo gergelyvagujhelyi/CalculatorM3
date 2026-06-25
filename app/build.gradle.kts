@@ -37,6 +37,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // Custom-scheme redirect for the HuggingFace OAuth flow. AppAuth merges its
+        // RedirectUriReceiverActivity with an intent-filter for this scheme, so no
+        // manual <activity> is needed. Must match HuggingFaceAuth.REDIRECT_URI's scheme
+        // and the redirect URI registered on the HF OAuth app.
+        manifestPlaceholders["appAuthRedirectScheme"] = "calculatorm3"
+
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -95,6 +101,9 @@ dependencies {
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
+    // HuggingFace OAuth (authorization-code + PKCE) for gated model downloads.
+    // Handles the Custom Tab, redirect capture, and code→token exchange; pulls in androidx.browser.
+    implementation("net.openid:appauth:0.11.1")
     // Markdown + LaTeX rendering of the model's answer (ext-latex pulls in jlatexmath).
     implementation("io.noties.markwon:core:4.6.2")
     implementation("io.noties.markwon:ext-latex:4.6.2")
