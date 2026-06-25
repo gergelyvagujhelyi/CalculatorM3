@@ -307,13 +307,17 @@ class ScanViewModel(
                     // Coalesce UI updates so per-token recomposition can't throttle the loop.
                     if (now - lastUiUpdateMs >= UI_UPDATE_THROTTLE_MS) {
                         lastUiUpdateMs = now
-                        withContext(Dispatchers.Main) {
+                        // Dispatch the UI update without suspending the inference loop on the
+                        // Main thread; snapshot the mutable counters first to avoid a race.
+                        val uiTokenCount = tokenCount
+                        val uiFirstTokenMs = firstTokenMs.takeIf { it > 0L }
+                        viewModelScope.launch {
                             uiState = ScanUiState.Processing(
                                 partialRaw = partialRaw,
                                 startTimeMs = startTime,
-                                tokenCount = tokenCount,
+                                tokenCount = uiTokenCount,
                                 backend = backend,
-                                firstTokenMs = firstTokenMs.takeIf { it > 0L }
+                                firstTokenMs = uiFirstTokenMs
                             )
                         }
                     }

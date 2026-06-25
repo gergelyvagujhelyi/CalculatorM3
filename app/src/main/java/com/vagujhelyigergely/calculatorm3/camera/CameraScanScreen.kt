@@ -458,8 +458,8 @@ private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTo
         // Still prefilling the image — no tokens generated yet.
         "%s · prefill %.1fs".format(label, (nowMs - startTimeMs).coerceAtLeast(0L) / 1000.0)
     } else {
-        val ttftSecs = (firstTokenMs - startTimeMs) / 1000.0
-        val decodeSecs = (nowMs - firstTokenMs) / 1000.0
+        val ttftSecs = (firstTokenMs - startTimeMs).coerceAtLeast(0L) / 1000.0
+        val decodeSecs = (nowMs - firstTokenMs).coerceAtLeast(0L) / 1000.0
         val decodeTps = if (tokenCount > 1 && decodeSecs > 0.05) (tokenCount - 1) / decodeSecs else 0.0
         "%s · %.1f tok/s · ttft %.1fs".format(label, decodeTps, ttftSecs)
     }
