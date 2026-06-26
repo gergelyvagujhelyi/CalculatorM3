@@ -1,6 +1,6 @@
 New: AI Math Solver (experimental) — photograph handwritten math and solve it, fully on-device.
 
-- A hidden extra: some tapping on the keypad reveals it
+- Hidden until you reveal it: tap AC 7 times quickly
 - Runs offline on Google LiteRT-LM, GPU-accelerated
 - Snap a photo or pick one from your gallery
 - Several Gemma vision models; background downloads resume if interrupted and can be stopped
