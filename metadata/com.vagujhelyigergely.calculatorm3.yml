@@ -12,6 +12,16 @@ Repo: https://github.com/gergelyvagujhelyi/CalculatorM3.git
 Binaries: 
   https://github.com/gergelyvagujhelyi/CalculatorM3/releases/download/v%v/app-release.apk
 
+AntiFeatures:
+  NonFreeNet:
+    en-US: >-
+      The optional, off-by-default AI math solver downloads Google Gemma models
+      from Hugging Face at runtime. The calculator itself uses no network.
+  NonFreeAssets:
+    en-US: >-
+      The downloadable Gemma models are covered by the non-free Gemma Terms of
+      Use, not a free-software licence.
+
 Builds:
   - versionName: 1.4.1
     versionCode: 8
