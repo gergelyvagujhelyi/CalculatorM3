@@ -57,6 +57,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -767,10 +768,16 @@ private fun ModelSelectionContent(
         }
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp),
+            modifier = Modifier.fillMaxSize(),
+            // Fold the Scaffold insets into contentPadding (rather than Modifier.padding) so the
+            // list fills the screen and items scroll behind the translucent nav bar, while the
+            // first/last items stay clear of the app bar and system bars (incl. landscape cutouts).
+            contentPadding = PaddingValues(
+                start = 24.dp + innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                end = 24.dp + innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                top = 8.dp + innerPadding.calculateTopPadding(),
+                bottom = 24.dp + innerPadding.calculateBottomPadding()
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
@@ -783,14 +790,14 @@ private fun ModelSelectionContent(
             }
             if (gemma4Models.isNotEmpty()) {
                 item { ModelGroupHeader(stringResource(R.string.models_group_gemma4)) }
-                items(gemma4Models) { model ->
+                items(gemma4Models, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
                         model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
             }
             if (loginModels.isNotEmpty()) {
                 item { ModelGroupHeader(stringResource(R.string.models_group_login)) }
-                items(loginModels) { model ->
+                items(loginModels, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
                         model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
@@ -868,7 +875,7 @@ private fun ModelCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f).animateContentSize()) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = model.displayName,
                     style = MaterialTheme.typography.titleMedium,
