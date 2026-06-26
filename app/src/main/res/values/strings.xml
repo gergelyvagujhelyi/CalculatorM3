@@ -46,6 +46,7 @@
     <string name="use_expression">Use</string>
     <string name="use_answer">Use %1$s</string>
     <string name="retry">Retry</string>
+    <string name="stop">Stop</string>
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
     <string name="camera_permission_needed">Camera permission is needed to scan handwritten expressions</string>

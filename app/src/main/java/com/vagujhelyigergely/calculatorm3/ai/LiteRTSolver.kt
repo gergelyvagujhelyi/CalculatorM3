@@ -10,6 +10,7 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -131,6 +132,11 @@ class LiteRTSolver : MathSolver {
                 // Never swallow cancellation — let the coroutine actually cancel
                 // instead of treating it as a failure and reloading on CPU.
                 if (e is kotlinx.coroutines.CancellationException) throw e
+                // A stop() interrupts native generation via cancelProcess(), which surfaces here as
+                // a native exception (not CancellationException) while the coroutine is being
+                // cancelled. Treat that as cancellation so we skip the expensive GPU→CPU reload+retry
+                // that would just be discarded at the next suspension point.
+                if (!isActive) throw kotlinx.coroutines.CancellationException("Inference cancelled", e)
                 Log.e(TAG, "LiteRT inference failed", e)
                 // If GPU was active, reload on CPU and retry once — some devices
                 // initialize the GPU backend fine but fault during inference.
@@ -150,6 +156,17 @@ class LiteRTSolver : MathSolver {
                 }
                 Result.failure(e.asException())
             }
+        }
+    }
+
+    override fun cancel() {
+        // Signal native generation to stop. Deliberately does NOT take [mutex]: the lock is held
+        // by the in-flight solveFromImageStreaming, and cancelProcess() is a thread-safe signal to
+        // the native side (not a state mutation), so read the @Volatile conversation directly.
+        try {
+            conversation?.cancelProcess()
+        } catch (e: Exception) {
+            Log.w(TAG, "cancelProcess() failed", e)
         }
     }
 

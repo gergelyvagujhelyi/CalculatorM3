@@ -173,6 +173,7 @@ fun CameraScanScreen(
                                 tokenCount = state.tokenCount,
                                 backend = state.backend,
                                 firstTokenMs = state.firstTokenMs,
+                                onStop = { viewModel.stopInference() },
                                 onDismiss = onDismiss
                             )
                             is ScanUiState.Success -> SuccessContent(
@@ -344,6 +345,7 @@ private fun ProcessingContent(
     tokenCount: Int,
     backend: String,
     firstTokenMs: Long?,
+    onStop: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val isGenerating = partialRaw.isNotEmpty()
@@ -395,6 +397,12 @@ private fun ProcessingContent(
             }
 
             PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend, firstTokenMs = firstTokenMs)
+
+            // Abort a slow or wrong generation and return to capture. Stop is prompt during token
+            // generation; during the initial image prefill it takes effect at the next boundary.
+            OutlinedButton(onClick = onStop) {
+                Text(stringResource(R.string.stop))
+            }
         }
     }
 }
