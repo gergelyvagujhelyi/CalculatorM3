@@ -18,7 +18,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.*
@@ -336,18 +336,11 @@ private fun PortraitLayout(
         ) {
             if (onShowCamera != null) {
                 IconButton(onClick = onShowCamera) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_ai_camera),
-                            contentDescription = stringResource(R.string.scan_expression),
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                        Icon(
-                            painter = painterResource(R.drawable.ic_ai_camera_overlay),
-                            contentDescription = null,
-                            tint = colorScheme.surface
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Filled.Assistant,
+                        contentDescription = stringResource(R.string.scan_expression),
+                        tint = colorScheme.onSurfaceVariant
+                    )
                 }
             }
             IconButton(onClick = onShowHistory) {
@@ -431,18 +424,11 @@ private fun LandscapeLayout(
             ) {
                 if (onShowCamera != null) {
                     IconButton(onClick = onShowCamera) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_ai_camera),
-                                contentDescription = stringResource(R.string.scan_expression),
-                                tint = colorScheme.onSurfaceVariant
-                            )
-                            Icon(
-                                painter = painterResource(R.drawable.ic_ai_camera_overlay),
-                                contentDescription = null,
-                                tint = colorScheme.surface
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Filled.Assistant,
+                            contentDescription = stringResource(R.string.scan_expression),
+                            tint = colorScheme.onSurfaceVariant
+                        )
                     }
                 }
                 IconButton(onClick = onShowHistory) {
