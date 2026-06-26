@@ -511,8 +511,12 @@ class ScanViewModel(
     }
 
     companion object {
-        /** Longest edge (px) the captured photo is downscaled to before inference. */
-        private const val MAX_IMAGE_EDGE = 1024
+        /**
+         * Longest edge (px) the captured photo is downscaled to before inference. Capped at the
+         * model's native vision resolution (Gemma's encoder resizes any input to ≤768² anyway), so
+         * feeding more just added a redundant resample (photo→1024→768 instead of photo→768).
+         */
+        private const val MAX_IMAGE_EDGE = 768
 
         /** Min gap between streaming UI updates so per-token recomposition can't throttle decode. */
         private const val UI_UPDATE_THROTTLE_MS = 50L
