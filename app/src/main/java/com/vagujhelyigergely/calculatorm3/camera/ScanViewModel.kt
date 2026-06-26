@@ -280,8 +280,10 @@ class ScanViewModel(
 
     fun onPhotoCaptured(imagePath: String) {
         val model = modelManager.selectedModel
-        // Keep the Job so stopInference() can cancel just this inference. The ViewModel is
-        // Activity-scoped, so an un-cancelled job keeps generating in the background after dismiss.
+        // Cancel any still-running inference before starting a new one, so an overlapping call
+        // can't orphan the previous job (the ViewModel is Activity-scoped, so an un-cancelled job
+        // keeps generating in the background). Keep the new Job so stopInference() can cancel it.
+        inferenceJob?.cancel()
         inferenceJob = viewModelScope.launch {
             // Streaming UI updates launch from this scope (not viewModelScope) so cancelling the
             // inference also drops any in-flight token update, instead of it racing to overwrite
