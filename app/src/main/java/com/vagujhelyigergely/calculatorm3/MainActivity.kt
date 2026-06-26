@@ -62,6 +62,13 @@ class ScanViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ScanViewModel(LiteRTSolver(), modelManager, HuggingFaceAuthManager(appContext)) as T
+        // Pass the native-library dir so the solver can offer the NPU "dispatch" rung (it scans that
+        // dir for the vendor runtime); null-safe — an empty/missing dir just means the NPU rung fails
+        // and falls back to GPU/CPU.
+        return ScanViewModel(
+            LiteRTSolver(appContext.applicationInfo.nativeLibraryDir),
+            modelManager,
+            HuggingFaceAuthManager(appContext)
+        ) as T
     }
 }

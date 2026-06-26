@@ -10,10 +10,19 @@ class RecognitionException(message: String, val rawResponse: String) : Exception
 interface MathSolver {
     val isModelLoaded: Boolean
 
-    /** Which compute backend the loaded model is running on ("GPU", "CPU", or "—"). */
+    /** Which compute backend the loaded model is running on ("NPU", "GPU", "CPU", or "—"). */
     val activeBackend: String
 
-    suspend fun loadModel(modelPath: String)
+    /** TEMP debug: short reason the NPU backend failed to load/run, or null. */
+    val lastNpuError: String? get() = null
+
+    /**
+     * Load [modelPath] — the baseline model used for the GPU and CPU rungs. If [npuModelPath] is given
+     * and an NPU backend is available, that per-SoC NPU-compiled artifact is tried first (LLM on NPU,
+     * vision on GPU), falling back to GPU/CPU on [modelPath]. When [npuModelPath] is null the loader is
+     * the pure GPU → CPU ladder.
+     */
+    suspend fun loadModel(modelPath: String, npuModelPath: String? = null)
     suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit

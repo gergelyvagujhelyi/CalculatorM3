@@ -66,6 +66,11 @@
     <string name="raw_model_output">Raw model output</string>
     <string name="models_group_gemma4">Gemma 4</string>
     <string name="models_group_login">Needs HuggingFace login</string>
+    <string name="npu_card_title">⚡ NPU acceleration</string>
+    <string name="npu_card_title_on">⚡ NPU acceleration · On</string>
+    <string name="npu_download">Faster, lower-power inference on your %1$s. Tap to download the optimized model.</string>
+    <string name="npu_on">Running the language model on your %1$s NPU. Tap to turn off.</string>
+    <string name="npu_off">Optimized model ready for your %1$s. Tap to turn on.</string>
     <string name="mobile_data_title">No Wi-Fi connection</string>
     <string name="mobile_data_description">You are about to download %1$s using mobile data. This may incur charges from your carrier.</string>
     <string name="download_anyway">Download anyway</string>

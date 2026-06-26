@@ -18,41 +18,79 @@ import kotlinx.coroutines.withContext
 /**
  * MathSolver backend using Google LiteRT-LM for .litertlm models.
  *
- * Vision uses the GPU backend where available, but some devices have an
- * incompatible GPU/driver and throw (JNI/native) when the GPU vision backend
- * initializes. We try GPU vision first and fall back to CPU vision — both at
- * load time and once more on the first inference failure.
+ * Backend ladder: NPU → GPU → CPU. The NPU rung is attempted only when [npuLibraryDir] is set (the
+ * app's native-library dir, where LiteRT's NPU "dispatch" delegate looks for the vendor runtime) and an
+ * NPU-compiled model is passed to [loadModel]; NPU then runs the language model while the vision encoder
+ * stays on the GPU (the encoder isn't NPU-compiled upstream). Some devices initialize a backend fine but
+ * fault during the first inference, so we step down the same ladder once more at inference time.
+ *
+ * @param npuLibraryDir directory the NPU dispatch delegate scans for vendor libraries
+ *   (`context.applicationInfo.nativeLibraryDir`), or null to disable the NPU rung entirely.
  */
-class LiteRTSolver : MathSolver {
+class LiteRTSolver(private val npuLibraryDir: String? = null) : MathSolver {
 
     private val mutex = Mutex()
     @Volatile private var engine: Engine? = null
     @Volatile private var conversation: Conversation? = null
+    /** Baseline model for the GPU/CPU rungs. */
     @Volatile private var currentModelPath: String? = null
+    /** NPU-compiled artifact for the NPU rung, or null when no NPU model is loaded. */
+    @Volatile private var currentNpuPath: String? = null
     @Volatile private var backendLabel: String = "—"
+
+    /** TEMP debug: short reason the NPU backend failed (null on success / when not attempted). */
+    @Volatile override var lastNpuError: String? = null
+        private set
 
     override val isModelLoaded: Boolean get() = engine != null
     override val activeBackend: String get() = backendLabel
 
-    override suspend fun loadModel(modelPath: String) = mutex.withLock {
+    override suspend fun loadModel(modelPath: String, npuModelPath: String?) = mutex.withLock {
         withContext(Dispatchers.IO) {
             closeEngine()
             currentModelPath = modelPath
-            initEngine(modelPath)
+            // Only attempt NPU when we have both a dispatch-library dir and an NPU-compiled model.
+            currentNpuPath = npuModelPath?.takeIf { npuLibraryDir != null }
+            initEngine()
         }
     }
 
-    /** Backend ladder: GPU → CPU. */
-    private fun initEngine(modelPath: String) {
+    /** Backend ladder: NPU → GPU → CPU (NPU rung only when an NPU model + library dir are present). */
+    private fun initEngine() {
+        val gpuCpuPath = currentModelPath ?: throw IllegalStateException("No model path")
+        val npuPath = currentNpuPath
+        val npuDir = npuLibraryDir
+        if (npuPath != null && npuDir != null) {
+            try {
+                // Hybrid: language model on the NPU, vision encoder on the GPU (NPU vision isn't compiled).
+                engine = buildEngine(npuPath, Backend.NPU(npuDir), Backend.GPU())
+                backendLabel = "NPU"
+                lastNpuError = null
+                return
+            } catch (e: Exception) {
+                lastNpuError = "NPU: " + (e.message ?: e.toString()).replace('\n', ' ').take(200)
+                Log.w(TAG, "NPU backend failed, falling back to GPU", e)
+            }
+        }
         try {
-            engine = buildEngine(modelPath, Backend.GPU(), Backend.GPU())
+            engine = buildEngine(gpuCpuPath, Backend.GPU(), Backend.GPU())
             backendLabel = "GPU"
             return
         } catch (e: Exception) {
             Log.w(TAG, "GPU backend failed, falling back to CPU", e)
         }
-        engine = buildEngine(modelPath, Backend.CPU(), Backend.CPU())
+        engine = buildEngine(gpuCpuPath, Backend.CPU(), Backend.CPU())
         backendLabel = "CPU"
+    }
+
+    /** Backends below [current] in the NPU→GPU→CPU ladder, for the inference-time step-down retry. */
+    private fun lowerRungs(current: String): List<Triple<String, () -> Backend, () -> Backend>> = when (current) {
+        "NPU" -> listOf(
+            Triple("GPU", { Backend.GPU() }, { Backend.GPU() }),
+            Triple("CPU", { Backend.CPU() }, { Backend.CPU() }),
+        )
+        "GPU" -> listOf(Triple("CPU", { Backend.CPU() }, { Backend.CPU() }))
+        else -> emptyList()
     }
 
     private fun buildEngine(modelPath: String, backend: Backend, visionBackend: Backend): Engine {
@@ -138,23 +176,27 @@ class LiteRTSolver : MathSolver {
                 // that would just be discarded at the next suspension point.
                 if (!isActive) throw kotlinx.coroutines.CancellationException("Inference cancelled", e)
                 Log.e(TAG, "LiteRT inference failed", e)
-                // If GPU was active, reload on CPU and retry once — some devices
-                // initialize the GPU backend fine but fault during inference.
-                val path = currentModelPath
-                if (backendLabel != "CPU" && path != null) {
-                    Log.w(TAG, "Reloading on CPU and retrying once")
-                    try {
-                        closeEngine()
-                        engine = buildEngine(path, Backend.CPU(), Backend.CPU())
-                        backendLabel = "CPU"
-                        return@withContext runInference(imagePath, onToken)
-                    } catch (retry: Throwable) {
-                        if (retry is kotlinx.coroutines.CancellationException) throw retry
-                        Log.e(TAG, "CPU retry also failed", retry)
-                        return@withContext Result.failure(retry.asException())
+                // Some devices initialize a backend fine but fault during inference. Step down the
+                // remaining ladder (NPU→GPU→CPU), reloading the baseline model and retrying once per
+                // rung. For a GPU-active load this reduces to the original GPU→CPU retry.
+                val gpuCpuPath = currentModelPath
+                var lastError: Throwable = e
+                if (gpuCpuPath != null) {
+                    for (rung in lowerRungs(backendLabel)) {
+                        Log.w(TAG, "Reloading on ${rung.first} and retrying once")
+                        try {
+                            closeEngine()
+                            engine = buildEngine(gpuCpuPath, rung.second(), rung.third())
+                            backendLabel = rung.first
+                            return@withContext runInference(imagePath, onToken)
+                        } catch (retry: Throwable) {
+                            if (retry is kotlinx.coroutines.CancellationException) throw retry
+                            Log.e(TAG, "${rung.first} retry also failed", retry)
+                            lastError = retry
+                        }
                     }
                 }
-                Result.failure(e.asException())
+                Result.failure(lastError.asException())
             }
         }
     }

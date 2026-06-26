@@ -46,7 +46,13 @@ sealed interface ScanUiState {
         val decodeTokensPerSec: Double = 0.0
     ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
-    data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
+    data class ModelSelection(
+        val selectedModel: AiModel,
+        val downloadedModels: List<AiModel>,
+        val deviceRamGb: Int,
+        /** NPU-acceleration offer for this device's chip, or null when no model has a matching variant. */
+        val npu: NpuOption? = null
+    ) : ScanUiState
     data class Downloading(
         val model: AiModel,
         val currentFile: String,
@@ -65,6 +71,14 @@ sealed interface ScanUiState {
     data class MobileDataWarning(val model: AiModel) : ScanUiState
 }
 
+/** An NPU-acceleration offer surfaced in the model picker for the chip this device runs. */
+data class NpuOption(
+    val model: AiModel,
+    val socLabel: String,
+    val downloaded: Boolean,
+    val enabled: Boolean
+)
+
 class ScanViewModel(
     private val solver: MathSolver,
     private val modelManager: ModelManager,
@@ -77,6 +91,10 @@ class ScanViewModel(
     private var loadedModelId: String? = null
     private var downloadObserver: Job? = null
     private var inferenceJob: Job? = null
+
+    /** Backend label for the perf HUD, with the NPU error appended when the NPU rung failed. */
+    private val backendDisplay: String
+        get() = solver.activeBackend + (solver.lastNpuError?.let { "  ⚠ NPU: $it" } ?: "")
 
     fun initialize() {
         viewModelScope.launch {
@@ -97,7 +115,7 @@ class ScanViewModel(
             val selected = modelManager.selectedModel
             if (!modelManager.areModelsAvailable(selected)) {
                 uiState = ScanUiState.ModelSelection(
-                    selected, downloaded, modelManager.deviceRamGb
+                    selected, downloaded, modelManager.deviceRamGb, npuOption()
                 )
                 return@launch
             }
@@ -114,11 +132,14 @@ class ScanViewModel(
      * Returns true if the model is ready, false (and sets an Error state) on failure.
      */
     private suspend fun ensureModelLoaded(model: AiModel): Boolean {
-        if (solver.isModelLoaded && loadedModelId == model.id) return true
+        // Include NPU state in the cache key so toggling NPU forces a reload onto the right backend.
+        val npuPath = modelManager.npuModelPathIfActive(model)
+        val loadKey = model.id + (if (npuPath != null) ":npu" else "")
+        if (solver.isModelLoaded && loadedModelId == loadKey) return true
         uiState = ScanUiState.ModelLoading()
         return try {
-            solver.loadModel(modelManager.modelPath(model))
-            loadedModelId = model.id
+            solver.loadModel(modelManager.modelPath(model), npuPath)
+            loadedModelId = loadKey
             true
         } catch (e: Exception) {
             // A stop during the load cancels this coroutine; let it propagate (the caller's
@@ -297,7 +318,7 @@ class ScanViewModel(
                 // native load — otherwise the just-loaded model would stay resident.
                 if (!ensureModelLoaded(model)) return@launch
                 val startTime = System.currentTimeMillis()
-                uiState = ScanUiState.Processing(startTimeMs = startTime, backend = solver.activeBackend)
+                uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backendDisplay)
                 // Apply EXIF rotation + downscale: a full-res photo can blow up the vision
                 // pipeline's memory, and the camera stores it sideways with an EXIF orientation
                 // tag the model would otherwise ignore.
@@ -341,7 +362,7 @@ class ScanViewModel(
                                 partialRaw = partialRaw,
                                 startTimeMs = startTime,
                                 tokenCount = uiTokenCount,
-                                backend = solver.activeBackend,
+                                backend = backendDisplay,
                                 firstTokenMs = uiFirstTokenMs
                             )
                         }
@@ -355,7 +376,7 @@ class ScanViewModel(
                 uiState = result.fold(
                     onSuccess = {
                         // Re-read the backend after inference — it may have fallen back GPU→CPU.
-                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, solver.activeBackend, ttftMs, decodeTps)
+                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backendDisplay, ttftMs, decodeTps)
                     },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
@@ -483,8 +504,35 @@ class ScanViewModel(
 
     fun showModelSelection() {
         uiState = ScanUiState.ModelSelection(
-            modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb
+            modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb, npuOption()
         )
+    }
+
+    /** The NPU offer for whichever catalog model has a variant matching this device's chip, or null. */
+    private fun npuOption(): NpuOption? {
+        val model = AiModel.entries.firstOrNull { modelManager.isNpuSupported(it) } ?: return null
+        return NpuOption(
+            model = model,
+            socLabel = modelManager.npuVariantForDevice(model)!!.socLabel,
+            downloaded = modelManager.isNpuModelDownloaded(model),
+            enabled = modelManager.npuEnabled
+        )
+    }
+
+    /**
+     * Toggle NPU acceleration for [model]. Turning it on downloads the per-SoC NPU file if missing (the
+     * baseline model stays as the GPU/CPU fallback); turning it off keeps the file but reverts to GPU/CPU.
+     * Either way the engine reloads on the next scan (the load cache key includes NPU state).
+     */
+    fun toggleNpu(model: AiModel) {
+        loadedModelId = null
+        if (modelManager.npuEnabled) {
+            modelManager.npuEnabled = false
+            showModelSelection()
+        } else {
+            modelManager.npuEnabled = true
+            if (modelManager.isNpuModelDownloaded(model)) showModelSelection() else startDownload(model)
+        }
     }
 
     val selectedModelName: String get() = modelManager.selectedModel.displayName

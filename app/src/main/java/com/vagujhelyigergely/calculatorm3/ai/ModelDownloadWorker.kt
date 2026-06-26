@@ -40,9 +40,12 @@ class ModelDownloadWorker(
         }
 
         return try {
-            model.files.forEachIndexed { index, file ->
+            // filesFor() adds the per-SoC NPU variant when NPU is enabled+supported; already-present
+            // files (e.g. the baseline model) are skipped, so enabling NPU only fetches the new file.
+            val files = modelManager.filesFor(model)
+            files.forEachIndexed { index, file ->
                 if (!modelManager.isFileDownloaded(model, file)) {
-                    setProgressAsync(progressData(modelId, index, model.files.size, 0, -1))
+                    setProgressAsync(progressData(modelId, index, files.size, 0, -1))
                     var lastPct = -1
                     var lastTs = 0L
                     modelManager.downloadFile(model, file.url, file.filename) { downloaded, total ->
@@ -51,7 +54,7 @@ class ModelDownloadWorker(
                         if (pct != lastPct || now - lastTs > 500L) {
                             lastPct = pct
                             lastTs = now
-                            setProgressAsync(progressData(modelId, index, model.files.size, downloaded, total))
+                            setProgressAsync(progressData(modelId, index, files.size, downloaded, total))
                             notificationManager.notify(
                                 NOTIFICATION_ID,
                                 buildNotification(model, index, downloaded, total)

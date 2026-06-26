@@ -292,8 +292,10 @@ fun CameraScanScreen(
                                 selectedModel = state.selectedModel,
                                 downloadedModels = state.downloadedModels,
                                 deviceRamGb = state.deviceRamGb,
+                                npu = state.npu,
                                 onSelectModel = { viewModel.selectModel(it) },
                                 onDownloadModel = startDownloadWithNotifPrompt,
+                                onToggleNpu = { viewModel.toggleNpu(it) },
                                 onDismiss = onDismiss
                             )
                         }
@@ -793,8 +795,10 @@ private fun ModelSelectionContent(
     selectedModel: AiModel,
     downloadedModels: List<AiModel>,
     deviceRamGb: Int,
+    npu: NpuOption?,
     onSelectModel: (AiModel) -> Unit,
     onDownloadModel: (AiModel) -> Unit,
+    onToggleNpu: (AiModel) -> Unit,
     onDismiss: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
@@ -850,6 +854,9 @@ private fun ModelSelectionContent(
                     ModelCard(model, model in downloadedModels, model == selectedModel,
                         model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
+                // NPU acceleration applies to a Gemma 4 model; offer it only when this device's chip
+                // has a matching per-SoC variant.
+                if (npu != null) item(key = "npu") { NpuCard(npu, onToggleNpu) }
             }
             if (loginModels.isNotEmpty()) {
                 item { ModelGroupHeader(stringResource(R.string.models_group_login)) }
@@ -975,6 +982,58 @@ private fun ModelCard(
                     modifier = Modifier.size(24.dp)
                 )
             }
+        }
+    }
+}
+
+/**
+ * An NPU-acceleration offer in the model picker, shown only when the device's SoC has a matching
+ * per-chip variant. Tapping downloads the optimized model (if needed) and toggles NPU on/off.
+ */
+@Composable
+private fun NpuCard(npu: NpuOption, onToggle: (AiModel) -> Unit) {
+    val active = npu.downloaded && npu.enabled
+    val title = stringResource(if (active) R.string.npu_card_title_on else R.string.npu_card_title)
+    val subtitle = stringResource(
+        when {
+            !npu.downloaded -> R.string.npu_download
+            npu.enabled -> R.string.npu_on
+            else -> R.string.npu_off
+        },
+        npu.socLabel
+    )
+    OutlinedCard(
+        onClick = { onToggle(npu.model) },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = if (active) MaterialTheme.colorScheme.tertiaryContainer
+            else MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        border = if (active) BorderStroke(2.dp, MaterialTheme.colorScheme.tertiary)
+        else CardDefaults.outlinedCardBorder()
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = if (npu.downloaded) Icons.Default.CheckCircle else Icons.Default.CloudDownload,
+                contentDescription = null,
+                tint = if (active) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
+            )
         }
     }
 }

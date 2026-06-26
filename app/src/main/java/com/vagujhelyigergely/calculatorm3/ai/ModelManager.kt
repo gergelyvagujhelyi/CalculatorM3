@@ -37,6 +37,17 @@ data class ModelFile(
 )
 
 /**
+ * A per-SoC, NPU-compiled variant of a model. NPU artifacts are ahead-of-time compiled for a specific
+ * chip, so each [socTokens] entry is matched (case-insensitively, substring) against [android.os.Build.SOC_MODEL]
+ * to pick the right one. [socLabel] is the human name shown in the picker (e.g. "Snapdragon 8 Elite").
+ */
+data class NpuVariant(
+    val socTokens: List<String>,
+    val socLabel: String,
+    val file: ModelFile
+)
+
+/**
  * Available AI models, ranked from fastest/smallest to best quality/largest.
  *
  * All models run on Google LiteRT-LM and are vision-capable. A model may consist
@@ -58,7 +69,9 @@ enum class AiModel(
     val primaryFilename: String,
     val files: List<ModelFile>,
     val requiresAuth: Boolean = false,
-    val licenseUrl: String = ""
+    val licenseUrl: String = "",
+    /** Per-SoC NPU-accelerated variants, offered in the picker when the device's chip matches one. */
+    val npuVariants: List<NpuVariant> = emptyList()
 ) {
     GEMMA4_E2B(
         id = "gemma4-e2b",
@@ -72,6 +85,30 @@ enum class AiModel(
                 "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm",
                 "gemma-4-E2B-it.litertlm",
                 "2.6 GB"
+            )
+        ),
+        // NPU-accelerated, per-SoC builds from the same HF repo: the LLM runs on the NPU while the
+        // vision encoder stays on the GPU. The .so dispatch library must be present in jniLibs for these
+        // to load (see app/src/main/jniLibs/README). SoC tokens match Build.SOC_MODEL — CONFIRM the exact
+        // Tensor G5 string on a Pixel 10 (Qualcomm reliably reports "SM8750").
+        npuVariants = listOf(
+            NpuVariant(
+                socTokens = listOf("SM8750"),
+                socLabel = "Snapdragon 8 Elite",
+                file = ModelFile(
+                    "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it_qualcomm_sm8750.litertlm",
+                    "gemma-4-E2B-it_qualcomm_sm8750.litertlm",
+                    "3.0 GB"
+                )
+            ),
+            NpuVariant(
+                socTokens = listOf("TENSOR G5"),
+                socLabel = "Google Tensor G5",
+                file = ModelFile(
+                    "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it_Google_Tensor_G5.litertlm",
+                    "gemma-4-E2B-it_Google_Tensor_G5.litertlm",
+                    "4.0 GB"
+                )
             )
         )
     ),
@@ -161,6 +198,37 @@ class ModelManager(private val context: Context) {
 
     fun downloadedModels(): List<AiModel> =
         AiModel.entries.filter { areModelsAvailable(it) }
+
+    // --- NPU acceleration (per-SoC variants) ---
+
+    /** User opt-in to NPU acceleration. Only takes effect on a device whose SoC has a matching variant. */
+    var npuEnabled: Boolean
+        get() = prefs.getBoolean("npu_enabled", false)
+        set(value) { prefs.edit().putBoolean("npu_enabled", value).apply() }
+
+    /** The NPU variant of [model] compiled for this device's chip, or null if none applies. */
+    fun npuVariantForDevice(model: AiModel = selectedModel): NpuVariant? = NpuSupport.npuVariantFor(model)
+
+    /** True when this device has an NPU variant available for [model]. */
+    fun isNpuSupported(model: AiModel = selectedModel): Boolean = npuVariantForDevice(model) != null
+
+    /** True once the per-SoC NPU file for [model] is downloaded. */
+    fun isNpuModelDownloaded(model: AiModel = selectedModel): Boolean =
+        npuVariantForDevice(model)?.let { File(modelDir(model), it.file.filename).exists() } ?: false
+
+    /** Absolute path to the NPU file for [model], or null if no variant applies. */
+    fun npuModelPath(model: AiModel = selectedModel): String? =
+        npuVariantForDevice(model)?.let { File(modelDir(model), it.file.filename).absolutePath }
+
+    /** The NPU file to load for [model] only when NPU is enabled, supported, and downloaded — else null. */
+    fun npuModelPathIfActive(model: AiModel = selectedModel): String? =
+        if (npuEnabled && isNpuModelDownloaded(model)) npuModelPath(model) else null
+
+    /** Files to fetch for [model]: its baseline files, plus the NPU variant when NPU is enabled+supported. */
+    fun filesFor(model: AiModel): List<ModelFile> {
+        val npuFile = if (npuEnabled) npuVariantForDevice(model)?.file else null
+        return if (npuFile != null) model.files + npuFile else model.files
+    }
 
     /**
      * Marketed device RAM in GB. [ActivityManager.MemoryInfo.totalMem] reports the RAM

@@ -48,11 +48,18 @@
 
         <!-- Allow LiteRT-LM to dlopen vendor GPU/NPU libraries (Android 12+ namespace
              restriction). Without libvndksupport/libOpenCL the GPU backend can't load
-             OpenCL and silently falls back to CPU. -->
+             OpenCL and silently falls back to CPU. The NPU "dispatch" delegate also reaches
+             the vendor runtime through these: Qualcomm via libcdsprpc.so (Hexagon FastRPC),
+             Google Tensor via libedgetpu_litert.so, MediaTek via its libapuware* libs. The
+             app-bundled NPU libs themselves go in jniLibs/arm64-v8a (see jniLibs/README.md).
+             All required="false" so devices/SoCs without them still run (NPU just falls back). -->
         <uses-native-library android:name="libvndksupport.so" android:required="false" />
         <uses-native-library android:name="libOpenCL.so" android:required="false" />
         <uses-native-library android:name="libcdsprpc.so" android:required="false" />
         <uses-native-library android:name="libedgetpu_litert.so" android:required="false" />
+        <uses-native-library android:name="libapuwareutils.so" android:required="false" />
+        <uses-native-library android:name="libapuwarexrp.so" android:required="false" />
+        <uses-native-library android:name="libapuwareapusys.so" android:required="false" />
     </application>
 
 </manifest>
