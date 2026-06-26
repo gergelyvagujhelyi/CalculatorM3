@@ -27,6 +27,16 @@
     </tr>
   </table>
 
+  <br>
+
+  <table>
+    <tr>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.png" width="180" alt="AI Math Solver scan"><br><sub>AI Math Solver</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.png" width="180" alt="On-device AI models"><br><sub>On-Device Models</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.png" width="180" alt="AI solved on-device"><br><sub>Solved On-Device</sub></td>
+    </tr>
+  </table>
+
 </div>
 
 ---
