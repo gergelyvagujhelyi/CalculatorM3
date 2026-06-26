@@ -13,9 +13,6 @@ interface MathSolver {
     /** Which compute backend the loaded model is running on ("GPU", "CPU", or "—"). */
     val activeBackend: String
 
-    /** TEMP debug: short reason the GPU backend failed to load, or null. */
-    val lastGpuError: String? get() = null
-
     suspend fun loadModel(modelPath: String)
     suspend fun solveFromImageStreaming(
         imagePath: String,
@@ -41,25 +38,36 @@ object SolverPrompts {
     const val TOP_P = 0.95f
     const val TEMPERATURE = 1.0f
 
-    /** Extract the numerical answer from the LLM response.
-     *  Checks the last non-empty line first (where the model is prompted to put the answer),
-     *  then falls back to the last number in the full response. */
+    private val numberPattern = Regex("-?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?")
+    // English thousands separators ("1,234" -> "1234"): a comma between a digit and exactly
+    // three digits that aren't themselves followed by another digit.
+    private val thousandsSeparator = Regex("(?<=\\d),(?=\\d{3}(?:\\D|\$))")
+
+    /**
+     * Extract the numerical answer from the LLM response. The model is prompted to put only
+     * the number on the last line, so that case is trusted first; the remaining steps degrade
+     * gracefully for messier output (an `= 42` tail, an aside like `17 (12+5)`, `1,234`)
+     * instead of blindly grabbing the last trailing token.
+     */
     fun extractAnswer(raw: String): String {
-        val numberPattern = Regex("-?(\\d+\\.?\\d*|\\.\\d+)([eE][+-]?\\d+)?")
-        // Try the last non-empty line first (system prompt tells model to put answer there)
-        val lastLine = raw.trimEnd().lines().lastOrNull { it.isNotBlank() }?.trim() ?: ""
-        val lastLineMatch = numberPattern.find(lastLine)
-        if (lastLineMatch != null && lastLineMatch.value == lastLine) {
-            // Last line is purely a number — high confidence answer
-            return lastLineMatch.value
+        val cleaned = raw.replace(thousandsSeparator, "")
+        val lastLine = cleaned.trimEnd().lines().lastOrNull { it.isNotBlank() }?.trim() ?: ""
+
+        // 1) Last line is exactly a number (what the system prompt asks for) — highest confidence.
+        numberPattern.matchEntire(lastLine)?.let { return it.value }
+
+        // 2) The number right after the last '=' ("x = 42", "= 17 (i.e. 12+5)").
+        val afterEquals = lastLine.substringAfterLast('=', "")
+        if (afterEquals.isNotEmpty() && afterEquals.length < lastLine.length) {
+            numberPattern.find(afterEquals)?.let { return it.value }
         }
-        // Fall back to last number on the last line
+
+        // 3) A single number on the last line is unambiguous; with several, the stated result
+        //    usually leads and asides like "17 (12+5)" follow, so prefer the first.
         val lastLineNumbers = numberPattern.findAll(lastLine).toList()
-        if (lastLineNumbers.isNotEmpty()) {
-            return lastLineNumbers.last().value
-        }
-        // Final fallback: last number anywhere in the response
-        val allNumbers = numberPattern.findAll(raw).toList()
-        return allNumbers.lastOrNull()?.value ?: ""
+        if (lastLineNumbers.isNotEmpty()) return lastLineNumbers.first().value
+
+        // 4) Nothing on the last line — fall back to the last number anywhere.
+        return numberPattern.findAll(cleaned).lastOrNull()?.value ?: ""
     }
 }

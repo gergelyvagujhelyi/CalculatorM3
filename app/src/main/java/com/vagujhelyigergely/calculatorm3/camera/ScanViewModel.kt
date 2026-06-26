@@ -284,23 +284,37 @@ class ScanViewModel(
                 return@launch
             }
             val startTime = System.currentTimeMillis()
-            val backend = solver.activeBackend + (solver.lastGpuError?.let { "  ⚠ GPU: $it" } ?: "")
-            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = backend)
-            // Apply EXIF rotation + downscale: a full-res photo can blow up the
-            // vision pipeline's memory, and the camera stores it sideways with an
-            // EXIF orientation tag the model would otherwise ignore.
-            val processPath = withContext(Dispatchers.IO) {
-                prepareImage(imagePath, MAX_IMAGE_EDGE) ?: imagePath
-            }
+            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = solver.activeBackend)
+            var processPath: String? = null
             try {
+                // Apply EXIF rotation + downscale: a full-res photo can blow up the vision
+                // pipeline's memory, and the camera stores it sideways with an EXIF orientation
+                // tag the model would otherwise ignore.
+                processPath = withContext(Dispatchers.IO) { prepareImage(imagePath, MAX_IMAGE_EDGE) }
+                if (processPath == null) {
+                    // Preprocessing failed — do NOT fall back to the original full-resolution
+                    // photo, which can OOM the vision pipeline. Surface an error instead.
+                    uiState = ScanUiState.Error("Couldn't process that image. Please try another photo.")
+                    return@launch
+                }
                 var tokenCount = 0
                 var firstTokenMs = 0L
                 var lastTokenMs = 0L
                 var lastUiUpdateMs = 0L
+                var lastRawLen = 0
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
                     // Time decode at the source (inference dispatcher), independent of the UI:
                     // the first token marks end-of-prefill (TTFT); the rest is the decode window.
                     val now = System.currentTimeMillis()
+                    // The solver can silently reload GPU→CPU and replay inference with this same
+                    // callback, restarting the streamed text from empty. Detect that reset (the
+                    // cumulative output shrank) and restart our counters so the stats reflect the
+                    // attempt that actually produced the answer.
+                    if (partialRaw.length < lastRawLen) {
+                        tokenCount = 0
+                        firstTokenMs = 0L
+                    }
+                    lastRawLen = partialRaw.length
                     if (tokenCount == 0) firstTokenMs = now
                     tokenCount++
                     lastTokenMs = now
@@ -316,7 +330,7 @@ class ScanViewModel(
                                 partialRaw = partialRaw,
                                 startTimeMs = startTime,
                                 tokenCount = uiTokenCount,
-                                backend = backend,
+                                backend = solver.activeBackend,
                                 firstTokenMs = uiFirstTokenMs
                             )
                         }
@@ -329,7 +343,8 @@ class ScanViewModel(
                     (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
                 uiState = result.fold(
                     onSuccess = {
-                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, backend, ttftMs, decodeTps)
+                        // Re-read the backend after inference — it may have fallen back GPU→CPU.
+                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, solver.activeBackend, ttftMs, decodeTps)
                     },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
@@ -342,9 +357,14 @@ class ScanViewModel(
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 uiState = ScanUiState.Error("Inference failed: ${e.message}")
             } finally {
+                // Free the engine as soon as inference is done: it must NOT stay resident while
+                // the system camera launches for the next scan (large models OOM-kill the app —
+                // the reason model loading is deferred to here). It reloads lazily on the next
+                // photo.
+                releaseAll()
                 // Clean up captured photos
                 try { java.io.File(imagePath).delete() } catch (_: Exception) {}
-                if (processPath != imagePath) {
+                if (processPath != null && processPath != imagePath) {
                     try { java.io.File(processPath).delete() } catch (_: Exception) {}
                 }
             }

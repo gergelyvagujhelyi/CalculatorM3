@@ -391,32 +391,50 @@ class CalculatorViewModel(
     val displayExpression: String
         get() = formatForDisplay(expression)
 
+    // π as a plain decimal string, plus the implicit-multiplication / normalization patterns
+    // for [evaluate]. Compiled once (per ViewModel) instead of on every keystroke — evaluate()
+    // runs from updatePreview() on each input.
+    private val piPlain = PI.toPlainString()
+    private val rePctDigit = Regex("%(\\d)")
+    private val rePctPi = Regex("%π")
+    private val reDigitPi = Regex("(\\d)π")
+    private val rePiDigit = Regex("π(\\d)")
+    private val rePiBeforePi = Regex("π(?=π)")
+    private val reRParenPi = Regex("\\)π")
+    private val rePiLParen = Regex("π\\(")
+    private val reRParenDigit = Regex("\\)(\\d)")
+    private val reDigitLParen = Regex("(\\d)\\(")
+    private val reDigitSqrt = Regex("(\\d)√")
+    private val reFactDigit = Regex("!(\\d)")
+    private val reRParenSqrt = Regex("\\)√")
+    private val reFactSqrt = Regex("!√")
+    private val rePctSqrt = Regex("%√")
+
     private fun evaluate(expr: String): String {
         return try {
-            val piPlain = PI.toPlainString()
             val sanitized = expr
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
                 // Implicit multiply after %: 50%3 → 50%*3, 50%π → 50%*π
-                .replace(Regex("%(\\d)"), "%*$1")
-                .replace(Regex("%π"), "%*π")
+                .replace(rePctDigit, "%*$1")
+                .replace(rePctPi, "%*π")
                 // Implicit multiplication around π
-                .replace(Regex("(\\d)π"), "$1*π")
-                .replace(Regex("π(\\d)"), "π*$1")
-                .replace(Regex("π(?=π)"), "π*")
-                .replace(Regex("\\)π"), ")*π")
-                .replace(Regex("π\\("), "π*(")
+                .replace(reDigitPi, "$1*π")
+                .replace(rePiDigit, "π*$1")
+                .replace(rePiBeforePi, "π*")
+                .replace(reRParenPi, ")*π")
+                .replace(rePiLParen, "π*(")
                 .replace("π", piPlain)
                 // Implicit multiplication between ) and digit, digit and (, digit and √, ! and digit
-                .replace(Regex("\\)(\\d)"), ")*$1")
-                .replace(Regex("(\\d)\\("), "$1*(")
-                .replace(Regex("(\\d)√"), "$1*√")
-                .replace(Regex("!(\\d)"), "!*$1")
+                .replace(reRParenDigit, ")*$1")
+                .replace(reDigitLParen, "$1*(")
+                .replace(reDigitSqrt, "$1*√")
+                .replace(reFactDigit, "!*$1")
                 // Implicit multiplication before √ from ), !, %
-                .replace(Regex("\\)√"), ")*√")
-                .replace(Regex("!√"), "!*√")
-                .replace(Regex("%√"), "%*√")
+                .replace(reRParenSqrt, ")*√")
+                .replace(reFactSqrt, "!*√")
+                .replace(rePctSqrt, "%*√")
 
             val result = evaluateExpression(sanitized)
 

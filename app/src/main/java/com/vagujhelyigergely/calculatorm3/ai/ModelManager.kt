@@ -180,7 +180,11 @@ class ModelManager(private val context: Context) {
 
     /** True if the device has enough RAM to run at least one model. */
     val canRunAnyModel: Boolean
-        get() = AiModel.entries.any { it.minRamGb <= deviceRamGb }
+        get() {
+            // Read deviceRamGb once — its getter does an ActivityManager binder call.
+            val ram = deviceRamGb
+            return AiModel.entries.any { it.minRamGb <= ram }
+        }
 
     /** True if the device is connected to Wi-Fi. */
     val isOnWifi: Boolean
@@ -217,7 +221,13 @@ class ModelManager(private val context: Context) {
             connection.instanceFollowRedirects = true
             if (model.requiresAuth) {
                 val token = hfToken
-                    ?: throw Exception("HuggingFace token required. Go to huggingface.co/settings/tokens to create one, then enter it in the app.")
+                    // DownloadAuthException (not a generic Exception) so the worker reports
+                    // ERROR_AUTH and the UI routes to the sign-in prompt, not a generic error.
+                    ?: throw DownloadAuthException(
+                        "HuggingFace sign-in is required for this model.",
+                        httpCode = 401,
+                        model = model
+                    )
                 connection.setRequestProperty("Authorization", "Bearer $token")
             }
             if (existingBytes > 0) {
@@ -226,6 +236,28 @@ class ModelManager(private val context: Context) {
             connection.connect()
 
             val code = connection.responseCode
+
+            // HTTP 416 (Range Not Satisfiable): the existing .tmp is already >= the full file —
+            // a prior run finished the bytes but died before renaming. Promote it if it's
+            // exactly the complete file; otherwise discard the unusable partial so the next run
+            // restarts cleanly instead of failing on 416 forever.
+            if (code == 416 && existingBytes > 0) {
+                val total = connection.getHeaderField("Content-Range")
+                    ?.substringAfterLast('/')?.toLongOrNull()
+                connection.disconnect()
+                if (total != null && existingBytes == total) {
+                    if (!tmpFile.renameTo(destFile)) {
+                        tmpFile.copyTo(destFile, overwrite = true)
+                        tmpFile.delete()
+                    }
+                    onProgress(existingBytes, existingBytes)
+                    return@withContext
+                }
+                tmpFile.delete()
+                // IOException so WorkManager retries — the next run starts fresh (tmp deleted).
+                throw java.io.IOException("Couldn't resume the download (HTTP 416); please retry.")
+            }
+
             val isResuming = code == HttpURLConnection.HTTP_PARTIAL && existingBytes > 0
             if (code != HttpURLConnection.HTTP_OK && !isResuming) {
                 throw when (code) {
@@ -259,6 +291,16 @@ class ModelManager(private val context: Context) {
                         onProgress(downloadedBytes, totalBytes)
                     }
                 }
+            }
+
+            // Don't promote a silently-truncated download: if the server announced a size
+            // (Content-Length present) but the stream ended early — a clean proxy/server EOF —
+            // keep the .tmp so the next run resumes via Range rather than marking a corrupt,
+            // unloadable model as "installed".
+            if (totalBytes > 0 && downloadedBytes < totalBytes) {
+                // IOException (not a generic Exception) so the worker treats this transient
+                // truncation as retryable (Result.retry()) and resumes via the kept .tmp.
+                throw java.io.IOException("Download incomplete: received $downloadedBytes of $totalBytes bytes")
             }
 
             if (!tmpFile.renameTo(destFile)) {
