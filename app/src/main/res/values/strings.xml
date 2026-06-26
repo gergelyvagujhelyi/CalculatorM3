@@ -84,7 +84,7 @@
     <string name="experimental_feature_warning">The AI Camera feature is experimental and might have bugs or unexpected behavior.</string>
     <string name="accept">Accept</string>
 
-    <!-- Hidden AI unlock (rapidly press "=", Android "tap Build number" style) -->
+    <!-- Hidden AI unlock (rapidly press "AC", Android "tap Build number" style) -->
     <string name="ai_unlocked">AI features unlocked!</string>
     <plurals name="ai_unlock_countdown">
         <item quantity="one">You are now %1$d press away from unlocking AI features</item>
