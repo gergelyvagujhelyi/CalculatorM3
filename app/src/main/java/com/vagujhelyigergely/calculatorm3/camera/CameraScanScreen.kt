@@ -4,12 +4,14 @@ package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -91,6 +94,9 @@ fun CameraScanScreen(
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* best-effort: the download runs regardless of notification visibility */ }
+    // Show a rationale first so the user understands why notifications are requested:
+    // the model download is large and runs in a background service with a progress notification.
+    var showNotifRationale by remember { mutableStateOf(false) }
     // Launches the AppAuth Custom Tab for HuggingFace sign-in; the returned Intent carries
     // the authorization code, which the ViewModel exchanges for a token.
     val signInLauncher = rememberLauncherForActivityResult(
@@ -99,9 +105,32 @@ fun CameraScanScreen(
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            showNotifRationale = true
         }
+    }
+
+    if (showNotifRationale) {
+        AlertDialog(
+            onDismissRequest = { showNotifRationale = false },
+            icon = { Icon(Icons.Filled.Notifications, contentDescription = null) },
+            title = { Text(stringResource(R.string.notif_permission_title)) },
+            text = { Text(stringResource(R.string.notif_permission_rationale)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNotifRationale = false
+                    notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }) { Text(stringResource(R.string.notif_permission_allow)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showNotifRationale = false }) {
+                    Text(stringResource(R.string.not_now))
+                }
+            }
+        )
     }
 
     // Keep screen on while the user is actively waiting in-app (model load / inference).
