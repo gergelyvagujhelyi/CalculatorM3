@@ -91,12 +91,31 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    // Model whose download is queued behind the notification-permission flow.
+    var pendingDownloadModel by remember { mutableStateOf<AiModel?>(null) }
+    var showNotifRationale by remember { mutableStateOf(false) }
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* best-effort: the download runs regardless of notification visibility */ }
-    // Show a rationale first so the user understands why notifications are requested:
-    // the model download is large and runs in a background service with a progress notification.
-    var showNotifRationale by remember { mutableStateOf(false) }
+    ) {
+        // Start the queued download regardless of the result — the notification only shows
+        // progress; the download itself runs either way.
+        pendingDownloadModel?.let { viewModel.startDownload(it) }
+        pendingDownloadModel = null
+    }
+    // Start a model download. On Android 13+ without notification permission, first explain why
+    // we ask (the download is large and runs in a background service with a progress
+    // notification), then request it. Pre-Tiramisu or already-granted: download straight away.
+    val startDownloadWithNotifPrompt: (AiModel) -> Unit = { model ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingDownloadModel = model
+            showNotifRationale = true
+        } else {
+            viewModel.startDownload(model)
+        }
+    }
     // Launches the AppAuth Custom Tab for HuggingFace sign-in; the returned Intent carries
     // the authorization code, which the ViewModel exchanges for a token.
     val signInLauncher = rememberLauncherForActivityResult(
@@ -105,17 +124,17 @@ fun CameraScanScreen(
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-        ) {
-            showNotifRationale = true
-        }
     }
 
     if (showNotifRationale) {
+        // Proceed with the queued download whether the user allows, declines, or dismisses.
+        val proceedWithoutPermission = {
+            showNotifRationale = false
+            pendingDownloadModel?.let { viewModel.startDownload(it) }
+            pendingDownloadModel = null
+        }
         AlertDialog(
-            onDismissRequest = { showNotifRationale = false },
+            onDismissRequest = proceedWithoutPermission,
             icon = { Icon(Icons.Filled.Notifications, contentDescription = null) },
             title = { Text(stringResource(R.string.notif_permission_title)) },
             text = { Text(stringResource(R.string.notif_permission_rationale)) },
@@ -126,7 +145,7 @@ fun CameraScanScreen(
                 }) { Text(stringResource(R.string.notif_permission_allow)) }
             },
             dismissButton = {
-                TextButton(onClick = { showNotifRationale = false }) {
+                TextButton(onClick = proceedWithoutPermission) {
                     Text(stringResource(R.string.not_now))
                 }
             }
@@ -239,7 +258,7 @@ fun CameraScanScreen(
                             is ScanUiState.AuthError -> AuthErrorContent(
                                 httpCode = state.httpCode,
                                 model = state.model,
-                                onRetry = { viewModel.startDownload(state.model) },
+                                onRetry = { startDownloadWithNotifPrompt(state.model) },
                                 onReauth = { viewModel.showSignIn(state.model) },
                                 onDismiss = onDismiss
                             )
@@ -274,7 +293,7 @@ fun CameraScanScreen(
                                 downloadedModels = state.downloadedModels,
                                 deviceRamGb = state.deviceRamGb,
                                 onSelectModel = { viewModel.selectModel(it) },
-                                onDownloadModel = { viewModel.startDownload(it) },
+                                onDownloadModel = startDownloadWithNotifPrompt,
                                 onDismiss = onDismiss
                             )
                         }
