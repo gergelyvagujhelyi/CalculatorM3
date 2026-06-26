@@ -37,7 +37,7 @@
 - Scientific functions — square root, pi, power, factorial
 - Calculation history — persists across restarts
 - Expression cursor — tap to edit mid-expression
-- **AI Math Solver** — photograph handwritten math and get the answer (see below)
+- **AI Math Solver** — photograph handwritten math and solve it on-device (experimental; hidden until you unlock it — see below)
 - Dynamic color theming that matches your wallpaper (Android 12+)
 - Automatic light and dark mode
 - Adaptive layout — portrait, landscape, and foldable support
@@ -49,8 +49,10 @@
 
 Point your camera at a handwritten math expression and let an on-device AI model solve it for you. Everything runs locally — no data leaves your device.
 
+> **The AI Math Solver is hidden by default.** To reveal it, rapidly tap **AC** seven times — the same idea as Android's "tap Build number 7 times" to unlock developer options. A countdown toast guides the final taps, and once unlocked a camera icon appears in the top-left corner. The unlock is remembered across restarts.
+
 **How it works:**
-1. Tap the camera icon (top-left)
+1. Unlock the feature (see above), then tap the camera icon (top-left)
 2. Choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off). Gated models (Gemma 3n) first prompt a one-tap **Sign in with Hugging Face**
 3. Take a photo with your camera, or choose an existing photo from your gallery
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
@@ -63,12 +65,12 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 | Model | Download | Min RAM | Auth |
 |-------|----------|---------|------|
 | Gemma 4 E2B | ~2.6 GB | 6 GB | — |
-| Gemma 3n E2B | ~3.7 GB | 4 GB | HuggingFace sign-in |
+| Gemma 3n E2B | ~3.7 GB | 6 GB | HuggingFace sign-in |
 | Gemma 4 E4B | ~3.7 GB | 8 GB | — |
-| Gemma 3n E4B | ~4.9 GB | 6 GB | HuggingFace sign-in |
+| Gemma 3n E4B | ~4.9 GB | 8 GB | HuggingFace sign-in |
 
 **Requirements:**
-- Android device with 4+ GB RAM
+- Android device with 6+ GB RAM — the smallest model (Gemma 4 E2B) needs 6 GB and the larger E4B models need 8 GB; on devices with less, the solver shows a "not enough RAM" notice
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
 - Internet for the one-time model download (Wi-Fi recommended)
 - Gemma 3n models require a free [HuggingFace](https://huggingface.co) account — you sign in once, in-app, and accept the model license; Gemma 4 models need no account ([setup](docs/huggingface-oauth-setup.md))
