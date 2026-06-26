@@ -68,8 +68,8 @@
     <string name="models_group_login">Needs HuggingFace login</string>
     <string name="npu_card_title">⚡ NPU acceleration</string>
     <string name="npu_card_title_on">⚡ NPU acceleration · On</string>
-    <string name="npu_download">Faster, lower-power inference on your %1$s. Tap to download the optimized model.</string>
-    <string name="npu_on">Running the language model on your %1$s NPU. Tap to turn off.</string>
+    <string name="npu_download">Experimental — much faster, lower-power on your %1$s, but it can misread the image. Tap to download the optimized model.</string>
+    <string name="npu_on">On your %1$s NPU: fast but experimental — may misread the image, so double-check results. Tap to turn off.</string>
     <string name="npu_off">Optimized model ready for your %1$s. Tap to turn on.</string>
     <string name="mobile_data_title">No Wi-Fi connection</string>
     <string name="mobile_data_description">You are about to download %1$s using mobile data. This may incur charges from your carrier.</string>

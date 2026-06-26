@@ -63,6 +63,10 @@ class LiteRTSolver(private val npuLibraryDir: String? = null) : MathSolver {
         if (npuPath != null && npuDir != null) {
             try {
                 // Hybrid: language model on the NPU, vision encoder on the GPU (NPU vision isn't compiled).
+                // KNOWN LIMITATION: the per-SoC NPU artifact has a small, fixed image-token budget — it
+                // oversimplifies the image and can answer wrong (fast but inaccurate). This is the model, not
+                // our handoff: GPU feeds the identical preprocessed image and reads it fine. Don't "fix" it in
+                // preprocessing — see NPU-FINDINGS.md §6. NPU is opt-in / off-by-default for this reason.
                 engine = buildEngine(npuPath, Backend.NPU(npuDir), Backend.GPU())
                 backendLabel = "NPU"
                 lastNpuError = null
