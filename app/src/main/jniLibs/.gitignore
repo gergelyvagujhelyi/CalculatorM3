@@ -1,0 +1,4 @@
+# Nothing in here is committed. The Qualcomm QNN backend libs come from Gradle
+# (com.qualcomm.qti:qnn-runtime); the LiteRT dispatch bridge (libLiteRtDispatch_Qualcomm.so) is
+# downloaded at build time by the fetchNpuDispatchLib task (see app/build.gradle.kts). Ignore all .so.
+*.so

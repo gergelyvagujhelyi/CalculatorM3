@@ -1,4 +1,8 @@
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Properties
+import java.util.zip.ZipFile
 
 plugins {
     id("com.android.application")
@@ -92,6 +96,24 @@ android {
         }
         jniLibs {
             useLegacyPackaging = true
+            // qnn-runtime ships every Hexagon arch (v68–v81) plus an 82 MB JIT "Prepare" lib. The S25
+            // is Hexagon v79 and runs an AOT-precompiled model, so keep only libQnnHtp/libQnnSystem and
+            // the v79 Stub+Skel (~22 MB) and drop the rest. To support another SoC, keep its vXX pair.
+            excludes += "**/libQnnHtpPrepare.so"
+            excludes += "**/libQnnGpu.so"
+            excludes += "**/libQnnDsp.so"
+            excludes += "**/libQnnDspV66Stub.so"
+            excludes += "**/libQnnDspV66Skel.so"
+            excludes += "**/libQnnHtpV68Stub.so"
+            excludes += "**/libQnnHtpV68Skel.so"
+            excludes += "**/libQnnHtpV69Stub.so"
+            excludes += "**/libQnnHtpV69Skel.so"
+            excludes += "**/libQnnHtpV73Stub.so"
+            excludes += "**/libQnnHtpV73Skel.so"
+            excludes += "**/libQnnHtpV75Stub.so"
+            excludes += "**/libQnnHtpV75Skel.so"
+            excludes += "**/libQnnHtpV81Stub.so"
+            excludes += "**/libQnnHtpV81Skel.so"
         }
     }
 }
@@ -112,6 +134,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
+    // Qualcomm QNN runtime for the NPU "dispatch" path (Snapdragon 8 Elite / SM8750 → Hexagon v79).
+    // Public Maven Central artifact that bundles the HTP backend .so files — no QAIRT SDK login needed.
+    // Pinned to the QAIRT version the per-SoC gemma-4-E2B model was built against (2.44.0). The bridge
+    // libLiteRtDispatch_Qualcomm.so is fetched at build time by fetchNpuDispatchLib (below) — not in git.
+    // Packaging below keeps only the v79 libs out of the ~280 MB the AAR carries for all Hexagon archs.
+    implementation("com.qualcomm.qti:qnn-runtime:2.44.0")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     // HuggingFace OAuth (authorization-code + PKCE) for gated model downloads.
@@ -131,3 +159,47 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.6.2")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// --- NPU dispatch bridge: fetched at build time, NOT committed ---
+// libLiteRtDispatch_Qualcomm.so (Apache-2.0) is the LiteRT→QNN bridge our Backend.NPU path dlopens.
+// Google publishes it only inside LiteRT's NPU release zip (not on Maven), so this task downloads it
+// into jniLibs (gitignored) before the build. It runs once and is skipped when the file already exists
+// (survives `gradlew clean`; re-fetched after `git clean -x`). Network is needed only on the first build.
+val npuDispatchSo = layout.projectDirectory.file("src/main/jniLibs/arm64-v8a/libLiteRtDispatch_Qualcomm.so")
+val fetchNpuDispatchLib by tasks.registering {
+    description = "Download the LiteRT Qualcomm NPU dispatch bridge (not vendored in git)."
+    val out = npuDispatchSo.asFile
+    outputs.file(out)
+    onlyIf { !out.exists() }
+    doLast {
+        val zipUrl =
+            "https://github.com/google-ai-edge/LiteRT/releases/download/v2.1.5/litert_npu_runtime_libraries.zip"
+        // v79 = Hexagon arch for the Snapdragon 8 Elite / SM8750 (the bridge is identical across archs).
+        val entry = "qualcomm_runtime_v79/src/main/jni/arm64-v8a/libLiteRtDispatch_Qualcomm.so"
+        out.parentFile.mkdirs()
+        val tmpZip = File.createTempFile("litert_npu", ".zip")
+        fun open(u: String) = (URL(u).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 30_000; readTimeout = 120_000; instanceFollowRedirects = true
+        }
+        try {
+            logger.lifecycle("Fetching NPU dispatch bridge: $zipUrl")
+            var conn = open(zipUrl)
+            var hops = 0
+            // GitHub release downloads redirect to objects.githubusercontent.com; follow manually too.
+            while (conn.responseCode in 300..399 && hops++ < 5) {
+                val loc = conn.getHeaderField("Location") ?: error("redirect without Location")
+                conn.disconnect(); conn = open(loc)
+            }
+            check(conn.responseCode == 200) { "download failed: HTTP ${conn.responseCode} for $zipUrl" }
+            conn.inputStream.use { i -> tmpZip.outputStream().use { o -> i.copyTo(o) } }
+            ZipFile(tmpZip).use { zip ->
+                val ze = zip.getEntry(entry) ?: error("entry not found in zip: $entry")
+                zip.getInputStream(ze).use { i -> out.outputStream().use { o -> i.copyTo(o) } }
+            }
+            logger.lifecycle("NPU dispatch bridge -> $out (${out.length()} bytes)")
+        } finally {
+            tmpZip.delete()
+        }
+    }
+}
+tasks.named("preBuild").configure { dependsOn(fetchNpuDispatchLib) }
