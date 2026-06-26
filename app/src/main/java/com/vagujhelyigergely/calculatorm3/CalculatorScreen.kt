@@ -153,10 +153,7 @@ fun CalculatorScreen(
 
     val onAllClearPressed: () -> Unit = {
         if (!aiUnlocked) {
-            // elapsedRealtime() is the monotonic clock — the right primitive for a
-            // short interval. (Impact is nil here: a wall-clock jump during the ~2s
-            // mashing window could at most reset the streak, never falsely unlock.)
-            val now = android.os.SystemClock.elapsedRealtime()
+            val now = System.currentTimeMillis()
             if (now - lastAllClearPressTime > rapidPressWindowMs) allClearPressCount = 0
             lastAllClearPressTime = now
             allClearPressCount++
