@@ -4,12 +4,14 @@ package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.TextView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -88,9 +91,31 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    // Model whose download is queued behind the notification-permission flow.
+    var pendingDownloadModel by remember { mutableStateOf<AiModel?>(null) }
+    var showNotifRationale by remember { mutableStateOf(false) }
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* best-effort: the download runs regardless of notification visibility */ }
+    ) {
+        // Start the queued download regardless of the result — the notification only shows
+        // progress; the download itself runs either way.
+        pendingDownloadModel?.let { viewModel.startDownload(it) }
+        pendingDownloadModel = null
+    }
+    // Start a model download. On Android 13+ without notification permission, first explain why
+    // we ask (the download is large and runs in a background service with a progress
+    // notification), then request it. Pre-Tiramisu or already-granted: download straight away.
+    val startDownloadWithNotifPrompt: (AiModel) -> Unit = { model ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingDownloadModel = model
+            showNotifRationale = true
+        } else {
+            viewModel.startDownload(model)
+        }
+    }
     // Launches the AppAuth Custom Tab for HuggingFace sign-in; the returned Intent carries
     // the authorization code, which the ViewModel exchanges for a token.
     val signInLauncher = rememberLauncherForActivityResult(
@@ -99,9 +124,32 @@ fun CameraScanScreen(
 
     LaunchedEffect(Unit) {
         viewModel.initialize()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    if (showNotifRationale) {
+        // Proceed with the queued download whether the user allows, declines, or dismisses.
+        val proceedWithoutPermission = {
+            showNotifRationale = false
+            pendingDownloadModel?.let { viewModel.startDownload(it) }
+            pendingDownloadModel = null
         }
+        AlertDialog(
+            onDismissRequest = proceedWithoutPermission,
+            icon = { Icon(Icons.Filled.Notifications, contentDescription = null) },
+            title = { Text(stringResource(R.string.notif_permission_title)) },
+            text = { Text(stringResource(R.string.notif_permission_rationale)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showNotifRationale = false
+                    notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }) { Text(stringResource(R.string.notif_permission_allow)) }
+            },
+            dismissButton = {
+                TextButton(onClick = proceedWithoutPermission) {
+                    Text(stringResource(R.string.not_now))
+                }
+            }
+        )
     }
 
     // Keep screen on while the user is actively waiting in-app (model load / inference).
@@ -210,7 +258,7 @@ fun CameraScanScreen(
                             is ScanUiState.AuthError -> AuthErrorContent(
                                 httpCode = state.httpCode,
                                 model = state.model,
-                                onRetry = { viewModel.startDownload(state.model) },
+                                onRetry = { startDownloadWithNotifPrompt(state.model) },
                                 onReauth = { viewModel.showSignIn(state.model) },
                                 onDismiss = onDismiss
                             )
@@ -245,7 +293,7 @@ fun CameraScanScreen(
                                 downloadedModels = state.downloadedModels,
                                 deviceRamGb = state.deviceRamGb,
                                 onSelectModel = { viewModel.selectModel(it) },
-                                onDownloadModel = { viewModel.startDownload(it) },
+                                onDownloadModel = startDownloadWithNotifPrompt,
                                 onDismiss = onDismiss
                             )
                         }
