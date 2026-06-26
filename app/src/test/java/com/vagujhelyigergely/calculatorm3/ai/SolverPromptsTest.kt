@@ -109,4 +109,28 @@ class SolverPromptsTest {
     fun `scientific notation with plus`() {
         assertEquals("2.5e+8", SolverPrompts.extractAnswer("2.5e+8"))
     }
+
+    // ── Hardened fallbacks (avoid confidently-wrong trailing tokens) ──
+
+    @Test
+    fun `strips thousands separators on bare last line`() {
+        assertEquals("12345", SolverPrompts.extractAnswer("Result:\n12,345"))
+    }
+
+    @Test
+    fun `strips thousands separators in prose`() {
+        assertEquals("1234", SolverPrompts.extractAnswer("The total comes to 1,234"))
+    }
+
+    @Test
+    fun `number right after equals on a messy last line`() {
+        // Was '5' before (last number on the line); the result after '=' is the answer.
+        assertEquals("17", SolverPrompts.extractAnswer("So x = 17 (that is 12 + 5)"))
+    }
+
+    @Test
+    fun `prefers the stated result over a trailing aside`() {
+        // Was '5' before (last number); the leading number is the stated answer.
+        assertEquals("17", SolverPrompts.extractAnswer("The answer is 17 (i.e. 12+5)"))
+    }
 }
