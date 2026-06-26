@@ -36,10 +36,13 @@ Type complete mathematical expressions with proper operator precedence (PEMDAS) 
 - Tap entries to reload them
 - Clear history when needed
 
-📷 AI MATH SOLVER (OPTIONAL)
+📷 AI MATH SOLVER (OPTIONAL, EXPERIMENTAL)
 
-Photograph a handwritten math expression and let an on-device AI model read and solve it — entirely on your device, with nothing sent to any server.
+An experimental extra for higher-RAM devices: photograph a handwritten math expression and let an on-device AI model read and solve it — entirely on your device, with nothing sent to any server.
 
+➡️ HOW TO TURN IT ON: the AI features are hidden until you unlock them. In the calculator, tap the "AC" (all-clear) button 7 times in quick succession — a countdown guides the final taps. A camera icon then appears in the top-left corner, and the unlock is remembered.
+
+- Needs a 6 GB+ device and a one-time vision-model download (2.6–4.9 GB)
 - Take a photo with your system camera, or pick one from your gallery
 - Choose from several open vision models (Gemma 4, Gemma 3n)
 - Models run fully on-device, GPU-accelerated where supported
