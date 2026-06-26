@@ -153,6 +153,17 @@ class LiteRTSolver : MathSolver {
         }
     }
 
+    override fun cancel() {
+        // Signal native generation to stop. Deliberately does NOT take [mutex]: the lock is held
+        // by the in-flight solveFromImageStreaming, and cancelProcess() is a thread-safe signal to
+        // the native side (not a state mutation), so read the @Volatile conversation directly.
+        try {
+            conversation?.cancelProcess()
+        } catch (e: Exception) {
+            Log.w(TAG, "cancelProcess() failed", e)
+        }
+    }
+
     private fun closeEngine() {
         try { conversation?.close() } catch (_: Exception) {}
         conversation = null

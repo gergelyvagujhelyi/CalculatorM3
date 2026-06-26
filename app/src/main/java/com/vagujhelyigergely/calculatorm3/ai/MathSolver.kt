@@ -18,6 +18,15 @@ interface MathSolver {
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
     ): Result<RecognitionResult>
+
+    /**
+     * Interrupt an in-flight [solveFromImageStreaming] so native generation stops promptly.
+     * Must be safe to call WITHOUT holding the backend's internal lock — the running inference
+     * already holds it, and this is only a signal to the native side, not a state change.
+     * No-op by default for backends without a hard stop.
+     */
+    fun cancel() {}
+
     suspend fun release()
 }
 

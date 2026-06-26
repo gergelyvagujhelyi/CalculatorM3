@@ -216,7 +216,12 @@ fun CalculatorScreen(
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
-            onDismiss = { showCamera = false }
+            // Stop any in-flight inference before closing — the ViewModel is Activity-scoped, so
+            // without this the scan coroutine would keep generating in the background after dismiss.
+            onDismiss = {
+                scanViewModel.stopInference()
+                showCamera = false
+            }
         )
     }
 

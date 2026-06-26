@@ -76,6 +76,7 @@ class ScanViewModel(
 
     private var loadedModelId: String? = null
     private var downloadObserver: Job? = null
+    private var inferenceJob: Job? = null
 
     fun initialize() {
         viewModelScope.launch {
@@ -120,6 +121,9 @@ class ScanViewModel(
             loadedModelId = model.id
             true
         } catch (e: Exception) {
+            // A stop during the load cancels this coroutine; let it propagate (the caller's
+            // finally releases the engine) instead of surfacing it as a load error.
+            if (e is kotlinx.coroutines.CancellationException) throw e
             loadedModelId = null
             uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
             false
@@ -276,17 +280,22 @@ class ScanViewModel(
 
     fun onPhotoCaptured(imagePath: String) {
         val model = modelManager.selectedModel
-        viewModelScope.launch {
-            // Load the model now that a photo exists (it wasn't resident while the
-            // camera app was open). Shows "Loading AI model…" then proceeds.
-            if (!ensureModelLoaded(model)) {
-                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
-                return@launch
-            }
-            val startTime = System.currentTimeMillis()
-            uiState = ScanUiState.Processing(startTimeMs = startTime, backend = solver.activeBackend)
+        // Keep the Job so stopInference() can cancel just this inference. The ViewModel is
+        // Activity-scoped, so an un-cancelled job keeps generating in the background after dismiss.
+        inferenceJob = viewModelScope.launch {
+            // Streaming UI updates launch from this scope (not viewModelScope) so cancelling the
+            // inference also drops any in-flight token update, instead of it racing to overwrite
+            // the Capturing state stopInference() returns to.
+            val inferenceScope = this
             var processPath: String? = null
             try {
+                // Load the model now that a photo exists (it wasn't resident while the camera app
+                // was open). Shows "Loading AI model…" then proceeds. Kept inside the try so the
+                // finally releases the engine even if a stop cancels during the (uninterruptible)
+                // native load — otherwise the just-loaded model would stay resident.
+                if (!ensureModelLoaded(model)) return@launch
+                val startTime = System.currentTimeMillis()
+                uiState = ScanUiState.Processing(startTimeMs = startTime, backend = solver.activeBackend)
                 // Apply EXIF rotation + downscale: a full-res photo can blow up the vision
                 // pipeline's memory, and the camera stores it sideways with an EXIF orientation
                 // tag the model would otherwise ignore.
@@ -325,7 +334,7 @@ class ScanViewModel(
                         // Main thread; snapshot the mutable counters first to avoid a race.
                         val uiTokenCount = tokenCount
                         val uiFirstTokenMs = firstTokenMs.takeIf { it > 0L }
-                        viewModelScope.launch {
+                        inferenceScope.launch {
                             uiState = ScanUiState.Processing(
                                 partialRaw = partialRaw,
                                 startTimeMs = startTime,
@@ -368,6 +377,25 @@ class ScanViewModel(
                     try { java.io.File(processPath).delete() } catch (_: Exception) {}
                 }
             }
+        }
+    }
+
+    /**
+     * Abort an in-flight scan: signal the native side to stop generating, cancel the coroutine,
+     * and return to the capture screen with no error. The engine is released by onPhotoCaptured's
+     * finally (same as a normal scan), so the next photo reloads it lazily. Safe to call when
+     * nothing is running — used by both the Stop button and dialog dismiss.
+     */
+    fun stopInference() {
+        // Order matters: interrupt native generation first (it ignores coroutine cancellation),
+        // then cancel the coroutine so it unwinds cleanly via its CancellationException guards.
+        solver.cancel()
+        inferenceJob?.cancel()
+        inferenceJob = null
+        // Only snap back to capture if we were actually mid-scan; calling this from a dialog
+        // dismiss in another state (Success, Downloading, …) must not disturb that state.
+        if (uiState is ScanUiState.Processing || uiState is ScanUiState.ModelLoading) {
+            uiState = ScanUiState.Capturing
         }
     }
 
