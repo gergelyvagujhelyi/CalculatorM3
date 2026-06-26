@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -165,6 +166,7 @@ fun CalculatorScreen(
     if (showAiWarningDialog) {
         AlertDialog(
             onDismissRequest = { showAiWarningDialog = false },
+            icon = { Icon(imageVector = Icons.Default.Psychology, contentDescription = null) },
             title = { Text(text = stringResource(R.string.experimental_feature_title)) },
             text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
             confirmButton = {

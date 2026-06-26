@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+
 package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
@@ -9,18 +11,31 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.ExpandLess
@@ -29,18 +44,20 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import android.view.WindowManager
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -50,7 +67,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.zIndex
 import io.noties.markwon.Markwon
 import io.noties.markwon.ext.latex.JLatexMathPlugin
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
@@ -114,126 +130,152 @@ fun CameraScanScreen(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
         ) {
-            run {
-                when (val state = viewModel.uiState) {
-                    is ScanUiState.Idle -> StatusContent(
-                        icon = Icons.Default.Psychology,
-                        title = stringResource(R.string.initializing),
-                        subtitle = null,
-                        showProgress = true,
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.ModelLoading -> ModelLoadingContent(
-                        startTimeMs = state.startTimeMs,
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Capturing -> CameraContent(
-                        modelName = viewModel.selectedModelName,
-                        onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
-                        onCaptureError = { msg -> viewModel.onCaptureError(msg) },
-                        onSwitchModel = { viewModel.showModelSelection() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Processing -> ProcessingContent(
-                        partialRaw = state.partialRaw,
-                        startTimeMs = state.startTimeMs,
-                        tokenCount = state.tokenCount,
-                        backend = state.backend,
-                        firstTokenMs = state.firstTokenMs,
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Success -> SuccessContent(
-                        answer = state.answer,
-                        rawResponse = state.rawResponse,
-                        elapsedMs = state.elapsedMs,
-                        tokenCount = state.tokenCount,
-                        backend = state.backend,
-                        ttftMs = state.ttftMs,
-                        decodeTokensPerSec = state.decodeTokensPerSec,
-                        onUse = {
-                            onExpressionRecognized(state.answer)
-                            onDismiss()
-                        },
-                        onRetry = { viewModel.retry() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Error -> ErrorContent(
-                        message = state.message,
-                        rawResponse = state.rawResponse,
-                        onRetry = { viewModel.retry() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
-                        onContinue = { viewModel.showModelSelection() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.MobileDataWarning -> MobileDataWarningContent(
-                        model = state.model,
-                        onContinue = { viewModel.confirmMobileDataDownload(state.model) },
-                        onCancel = { viewModel.showModelSelection() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.AuthError -> AuthErrorContent(
-                        httpCode = state.httpCode,
-                        model = state.model,
-                        onRetry = { viewModel.startDownload(state.model) },
-                        onReauth = { viewModel.showSignIn(state.model) },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.SignInRequired -> SignInContent(
-                        model = state.model,
-                        onSignIn = { signInLauncher.launch(viewModel.signInIntentFor(state.model)) },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Authenticating -> StatusContent(
-                        icon = Icons.AutoMirrored.Filled.Login,
-                        title = stringResource(R.string.signing_in),
-                        subtitle = null,
-                        showProgress = true,
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.Downloading -> DownloadingContent(
-                        currentFile = state.currentFile,
-                        downloadedBytes = state.downloadedBytes,
-                        totalBytes = state.totalBytes,
-                        fileIndex = state.fileIndex,
-                        fileCount = state.fileCount,
-                        onCancel = { viewModel.cancelDownload() },
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.DownloadComplete -> StatusContent(
-                        icon = Icons.Default.CheckCircle,
-                        title = stringResource(R.string.download_complete),
-                        subtitle = stringResource(R.string.model_loading),
-                        showProgress = true,
-                        onDismiss = onDismiss
-                    )
-                    is ScanUiState.ModelSelection -> ModelSelectionContent(
-                        selectedModel = state.selectedModel,
-                        downloadedModels = state.downloadedModels,
-                        deviceRamGb = state.deviceRamGb,
-                        onSelectModel = { viewModel.selectModel(it) },
-                        onDownloadModel = { viewModel.startDownload(it) },
-                        onDismiss = onDismiss
-                    )
+            // One SharedTransitionLayout + AnimatedContent drive every state change: states
+            // cross-fade/scale into each other and tagged elements (the close button, the hero
+            // icon/title, the answer card) morph across states instead of cutting. The content
+            // key is coarse so streaming/progress updates (new Processing/Downloading instances
+            // on every token/byte) recompose in place rather than replaying the transition.
+            SharedTransitionLayout {
+                AnimatedContent(
+                    targetState = viewModel.uiState,
+                    contentKey = { it.screenKey() },
+                    transitionSpec = {
+                        (fadeIn(animationSpec = tween(240)) +
+                            scaleIn(initialScale = 0.94f, animationSpec = tween(240))) togetherWith
+                            fadeOut(animationSpec = tween(160))
+                    },
+                    label = "scanState"
+                ) { state ->
+                    CompositionLocalProvider(
+                        LocalSharedTransitionScope provides this@SharedTransitionLayout,
+                        LocalAiVisibilityScope provides this@AnimatedContent
+                    ) {
+                        when (state) {
+                            is ScanUiState.Idle -> StatusContent(
+                                title = stringResource(R.string.initializing),
+                                subtitle = null,
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.ModelLoading -> ModelLoadingContent(
+                                startTimeMs = state.startTimeMs,
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Capturing -> CameraContent(
+                                modelName = viewModel.selectedModelName,
+                                onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
+                                onCaptureError = { msg -> viewModel.onCaptureError(msg) },
+                                onSwitchModel = { viewModel.showModelSelection() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Processing -> ProcessingContent(
+                                partialRaw = state.partialRaw,
+                                startTimeMs = state.startTimeMs,
+                                tokenCount = state.tokenCount,
+                                backend = state.backend,
+                                firstTokenMs = state.firstTokenMs,
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Success -> SuccessContent(
+                                answer = state.answer,
+                                rawResponse = state.rawResponse,
+                                elapsedMs = state.elapsedMs,
+                                tokenCount = state.tokenCount,
+                                backend = state.backend,
+                                ttftMs = state.ttftMs,
+                                decodeTokensPerSec = state.decodeTokensPerSec,
+                                onUse = {
+                                    onExpressionRecognized(state.answer)
+                                    onDismiss()
+                                },
+                                onRetry = { viewModel.retry() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Error -> ErrorContent(
+                                message = state.message,
+                                rawResponse = state.rawResponse,
+                                onRetry = { viewModel.retry() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
+                                onContinue = { viewModel.showModelSelection() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.MobileDataWarning -> MobileDataWarningContent(
+                                model = state.model,
+                                onContinue = { viewModel.confirmMobileDataDownload(state.model) },
+                                onCancel = { viewModel.showModelSelection() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.AuthError -> AuthErrorContent(
+                                httpCode = state.httpCode,
+                                model = state.model,
+                                onRetry = { viewModel.startDownload(state.model) },
+                                onReauth = { viewModel.showSignIn(state.model) },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.SignInRequired -> SignInContent(
+                                model = state.model,
+                                onSignIn = { signInLauncher.launch(viewModel.signInIntentFor(state.model)) },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Authenticating -> StatusContent(
+                                title = stringResource(R.string.signing_in),
+                                subtitle = null,
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.Downloading -> DownloadingContent(
+                                currentFile = state.currentFile,
+                                downloadedBytes = state.downloadedBytes,
+                                totalBytes = state.totalBytes,
+                                fileIndex = state.fileIndex,
+                                fileCount = state.fileCount,
+                                onCancel = { viewModel.cancelDownload() },
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.DownloadComplete -> StatusContent(
+                                title = stringResource(R.string.download_complete),
+                                subtitle = stringResource(R.string.model_loading),
+                                onDismiss = onDismiss,
+                                icon = Icons.Default.CheckCircle,
+                                loading = false
+                            )
+                            is ScanUiState.ModelSelection -> ModelSelectionContent(
+                                selectedModel = state.selectedModel,
+                                downloadedModels = state.downloadedModels,
+                                deviceRamGb = state.deviceRamGb,
+                                onSelectModel = { viewModel.selectModel(it) },
+                                onDownloadModel = { viewModel.startDownload(it) },
+                                onDismiss = onDismiss
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-@Composable
-private fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(
-        onClick = onDismiss,
-        modifier = modifier
-    ) {
-        Icon(
-            imageVector = Icons.Default.Close,
-            contentDescription = stringResource(R.string.close),
-            tint = MaterialTheme.colorScheme.onSurface
-        )
-    }
+/**
+ * Coarse, stable identity per screen so [AnimatedContent] only animates real screen
+ * changes. Crucially, Processing and Downloading collapse to a single key each: their
+ * state object is replaced on every streamed token / progress tick, and we don't want
+ * the enter/exit transition to replay each time.
+ */
+private fun ScanUiState.screenKey(): Any = when (this) {
+    is ScanUiState.Idle -> "idle"
+    is ScanUiState.ModelLoading -> "modelLoading"
+    is ScanUiState.Capturing -> "capturing"
+    is ScanUiState.Processing -> "processing"
+    is ScanUiState.Success -> "success"
+    is ScanUiState.Error -> "error"
+    is ScanUiState.ModelSelection -> "modelSelection"
+    is ScanUiState.Downloading -> "downloading"
+    is ScanUiState.DownloadComplete -> "downloadComplete"
+    is ScanUiState.SignInRequired -> "signIn"
+    is ScanUiState.Authenticating -> "authenticating"
+    is ScanUiState.AuthError -> "authError"
+    is ScanUiState.FirstTimeWarning -> "firstTime"
+    is ScanUiState.MobileDataWarning -> "mobileData"
 }
 
 /** Elapsed time counter that updates every second. */
@@ -253,93 +295,42 @@ private fun ElapsedTimeText(startTimeMs: Long) {
     )
 }
 
-/** Generic status screen with icon, title, optional subtitle and progress. */
+/** Generic centered status screen: a hero (expressive loader or icon) plus optional subtitle. */
 @Composable
 private fun StatusContent(
-    icon: ImageVector,
     title: String,
     subtitle: String?,
-    showProgress: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    icon: ImageVector? = null,
+    loading: Boolean = true
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-        Column(
+    AiStateScaffold(onDismiss = onDismiss) {
+        AiHero(
+            title = title,
+            subtitle = subtitle,
+            icon = icon,
+            loading = loading,
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-            }
-            if (showProgress) {
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 32.dp)
-                )
-            }
-        }
+                .padding(32.dp)
+        )
     }
 }
 
 @Composable
 private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Storage,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.model_loading),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.model_loading_hint),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp)
+            AiHero(
+                title = stringResource(R.string.model_loading),
+                subtitle = stringResource(R.string.model_loading_hint),
+                loading = true
             )
             ElapsedTimeText(startTimeMs = startTimeMs)
         }
@@ -357,84 +348,49 @@ private fun ProcessingContent(
 ) {
     val isGenerating = partialRaw.isNotEmpty()
 
-    // Pulsing icon
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = EaseInOutSine),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse_scale"
-    )
-
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
+                .fillMaxWidth()
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Psychology,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .graphicsLayer(scaleX = scale, scaleY = scale),
-                tint = MaterialTheme.colorScheme.primary
+            AiHero(
+                title = if (isGenerating)
+                    stringResource(R.string.camera_generating)
+                else
+                    stringResource(R.string.camera_processing_image),
+                subtitle = if (isGenerating) null else stringResource(R.string.processing_image_hint),
+                icon = Icons.Default.Psychology,
+                pulsing = true
             )
 
-            if (!isGenerating) {
-                // Phase 1: processing image (prefill) — no tokens yet
-                Text(
-                    text = stringResource(R.string.camera_processing_image),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = stringResource(R.string.processing_image_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
-            } else {
-                // Phase 2: generating tokens — show streaming output
-                Text(
-                    text = stringResource(R.string.camera_generating),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                val scrollState = rememberScrollState()
-                LaunchedEffect(partialRaw) {
-                    scrollState.animateScrollTo(scrollState.maxValue)
-                }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 1.dp
-                ) {
+            // One card spans the whole "answer" lifecycle: a shimmering skeleton while the
+            // model prefills the image (no tokens yet), then the live streaming text. Tagged
+            // as the shared "answer-card" so it morphs straight into the Success result card.
+            val scrollState = rememberScrollState()
+            LaunchedEffect(partialRaw) {
+                scrollState.animateScrollTo(scrollState.maxValue)
+            }
+            AiCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 300.dp)
+                    .aiSharedBounds("answer-card")
+                    .animateContentSize()
+            ) {
+                if (isGenerating) {
                     Text(
                         text = partialRaw,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier
-                            .padding(12.dp)
+                            .padding(16.dp)
                             .verticalScroll(scrollState)
                     )
+                } else {
+                    ShimmerLines(modifier = Modifier.padding(16.dp))
                 }
             }
 
@@ -463,11 +419,17 @@ private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTo
         val decodeTps = if (tokenCount > 1 && decodeSecs > 0.05) (tokenCount - 1) / decodeSecs else 0.0
         "%s · %.1f tok/s · ttft %.1fs".format(label, decodeTps, ttftSecs)
     }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.primary
-    )
+    Surface(
+        shape = RoundedCornerShape(percent = 50),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+        )
+    }
 }
 
 @Composable
@@ -510,53 +472,37 @@ private fun CameraContent(
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        // Top bar: close + model switch
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            CloseButton(onDismiss = onDismiss)
-            TextButton(onClick = onSwitchModel) {
+    AiStateScaffold(onDismiss = onDismiss) {
+        // Model switcher, top-end (close button is supplied by the scaffold, top-start).
+        AssistChip(
+            onClick = onSwitchModel,
+            label = { Text(text = modelName, style = MaterialTheme.typography.labelLarge) },
+            leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.SwapHoriz,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = modelName,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
+            },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(8.dp)
+        )
 
-        // Centered prompt + capture/pick actions
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
+                .fillMaxWidth()
                 .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.PhotoCamera,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(64.dp)
+            AiHero(
+                title = stringResource(R.string.scan_hint),
+                icon = Icons.Default.PhotoCamera
             )
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.scan_hint),
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Button(
                 onClick = {
                     val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
@@ -573,7 +519,6 @@ private fun CameraContent(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(R.string.take_photo))
             }
-            Spacer(modifier = Modifier.height(12.dp))
             OutlinedButton(
                 onClick = {
                     pickImageLauncher.launch(
@@ -667,15 +612,7 @@ private fun SuccessContent(
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-                .zIndex(1f)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -686,23 +623,13 @@ private fun SuccessContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+            AiHero(
+                title = stringResource(R.string.answer_found),
+                icon = Icons.Default.CheckCircle
             )
-            Text(
-                text = stringResource(R.string.answer_found),
-                style = MaterialTheme.typography.titleMedium
-            )
-            // The model's full answer, rendered with markdown + LaTeX math.
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                tonalElevation = 1.dp
-            ) {
+            // The model's full answer (markdown + LaTeX). Shares the "answer-card" bounds with
+            // the Processing card, so the streaming text morphs into this result.
+            AiCard(modifier = Modifier.fillMaxWidth().aiSharedBounds("answer-card")) {
                 MarkdownLatexText(
                     text = rawResponse.trim(),
                     color = MaterialTheme.colorScheme.onSurface,
@@ -752,36 +679,22 @@ private fun ErrorContent(
 ) {
     var showRaw by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(32.dp),
+                .fillMaxWidth()
+                .padding(32.dp)
+                .animateContentSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.ErrorOutline,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = stringResource(R.string.recognition_error),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+            AiHero(
+                title = stringResource(R.string.recognition_error),
+                subtitle = message,
+                icon = Icons.Default.ErrorOutline,
+                tint = MaterialTheme.colorScheme.error,
+                titleColor = MaterialTheme.colorScheme.error
             )
             OutlinedButton(onClick = onRetry) {
                 Text(stringResource(R.string.retry))
@@ -798,14 +711,14 @@ private fun ErrorContent(
                         modifier = Modifier.size(18.dp)
                     )
                 }
-                if (showRaw) {
-                    Surface(
+                AnimatedVisibility(visible = showRaw) {
+                    AiCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        tonalElevation = 1.dp
+                        colors = CardDefaults.elevatedCardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                        )
                     ) {
                         Text(
                             text = rawResponse,
@@ -828,58 +741,63 @@ private fun ModelSelectionContent(
     onDownloadModel: (AiModel) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .statusBarsPadding()
-                .padding(horizontal = 24.dp)
-                .padding(top = 56.dp, bottom = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+
+    // Two top-level groups: the Gemma 4 models (no account needed) and the gated models
+    // that need a HuggingFace login. Today these coincide exactly with the requiresAuth split.
+    val gemma4Models = AiModel.entries.filter { !it.requiresAuth }
+    val loginModels = AiModel.entries.filter { it.requiresAuth }
+
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surface,
+        topBar = {
+            LargeTopAppBar(
+                title = { Text(stringResource(R.string.choose_model)) },
+                navigationIcon = {
+                    CloseButton(onDismiss = onDismiss, modifier = Modifier.aiSharedElement("close"))
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            // Fold the Scaffold insets into contentPadding (rather than Modifier.padding) so the
+            // list fills the screen and items scroll behind the translucent nav bar, while the
+            // first/last items stay clear of the app bar and system bars (incl. landscape cutouts).
+            contentPadding = PaddingValues(
+                start = 24.dp + innerPadding.calculateStartPadding(LocalLayoutDirection.current),
+                end = 24.dp + innerPadding.calculateEndPadding(LocalLayoutDirection.current),
+                top = 8.dp + innerPadding.calculateTopPadding(),
+                bottom = 24.dp + innerPadding.calculateBottomPadding()
+            ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Psychology,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.choose_model),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.choose_model_description, deviceRamGb),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            // Two top-level groups: the Gemma 4 models (no account needed) and the gated
-            // models that need a HuggingFace login. Today these coincide exactly with the
-            // requiresAuth split.
-            val gemma4Models = AiModel.entries.filter { !it.requiresAuth }
-            val loginModels = AiModel.entries.filter { it.requiresAuth }
-
+            item {
+                AiHint(
+                    text = stringResource(R.string.choose_model_description, deviceRamGb),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                )
+            }
             if (gemma4Models.isNotEmpty()) {
-                ModelGroupHeader(stringResource(R.string.models_group_gemma4))
-                gemma4Models.forEach { model ->
+                item { ModelGroupHeader(stringResource(R.string.models_group_gemma4)) }
+                items(gemma4Models, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
                         model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
             }
-
             if (loginModels.isNotEmpty()) {
-                ModelGroupHeader(stringResource(R.string.models_group_login))
-                loginModels.forEach { model ->
+                item { ModelGroupHeader(stringResource(R.string.models_group_login)) }
+                items(loginModels, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
                         model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
                 }
@@ -911,7 +829,28 @@ private fun ModelCard(
     onSelectModel: (AiModel) -> Unit,
     onDownloadModel: (AiModel) -> Unit
 ) {
-    Surface(
+    val haptic = LocalHapticFeedback.current
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    // Press feedback mirroring the calculator buttons: a subtle spring scale + haptic.
+    LaunchedEffect(isPressed) {
+        if (isPressed) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+    }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.97f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "modelCardScale"
+    )
+    val containerColor by animateColorAsState(
+        targetValue = when {
+            tooLarge -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            isSelected -> MaterialTheme.colorScheme.secondaryContainer
+            else -> MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        label = "modelCardColor"
+    )
+
+    OutlinedCard(
         onClick = {
             when {
                 isDownloaded -> onSelectModel(model)
@@ -919,21 +858,16 @@ private fun ModelCard(
                 else -> onDownloadModel(model)
             }
         },
+        interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
-            .then(
-                if (isSelected) Modifier.border(
-                    2.dp,
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(12.dp)
-                ) else Modifier
-            ),
-        shape = RoundedCornerShape(12.dp),
-        color = if (tooLarge)
-            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            .graphicsLayer { scaleX = scale; scaleY = scale },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = containerColor),
+        border = if (isSelected)
+            BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         else
-            MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 1.dp
+            CardDefaults.outlinedCardBorder()
     ) {
         Row(
             modifier = Modifier
@@ -944,7 +878,7 @@ private fun ModelCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = model.displayName,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
@@ -953,7 +887,7 @@ private fun ModelCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${model.totalSizeDisplay} | ${model.minRamGb} GB+ RAM",
+                    text = "${model.totalSizeDisplay} · ${model.minRamGb} GB+ RAM",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -966,6 +900,7 @@ private fun ModelCard(
                     )
                 }
             }
+            Spacer(modifier = Modifier.width(8.dp))
             if (isDownloaded) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
@@ -995,36 +930,19 @@ private fun MobileDataWarningContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.ErrorOutline,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
+            AiHero(
+                title = stringResource(R.string.mobile_data_title),
+                subtitle = stringResource(R.string.mobile_data_description, model.totalSizeDisplay),
+                icon = Icons.Default.ErrorOutline,
                 tint = MaterialTheme.colorScheme.error
-            )
-            Text(
-                text = stringResource(R.string.mobile_data_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.mobile_data_description, model.totalSizeDisplay),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = onCancel) {
@@ -1043,14 +961,7 @@ private fun FirstTimeWarningContent(
     onContinue: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -1058,22 +969,10 @@ private fun FirstTimeWarningContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Psychology,
-                contentDescription = null,
-                modifier = Modifier.size(56.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.ai_feature_title),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(R.string.ai_feature_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+            AiHero(
+                title = stringResource(R.string.ai_feature_title),
+                subtitle = stringResource(R.string.ai_feature_description),
+                icon = Icons.Default.Psychology
             )
             Button(onClick = onContinue) {
                 Text(stringResource(R.string.ai_feature_continue))
@@ -1092,37 +991,20 @@ private fun AuthErrorContent(
 ) {
     val context = LocalContext.current
 
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.ErrorOutline,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-
             if (httpCode == 403) {
-                Text(
-                    text = stringResource(R.string.license_required_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = stringResource(R.string.license_required_description, model.displayName),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                AiHero(
+                    title = stringResource(R.string.license_required_title),
+                    subtitle = stringResource(R.string.license_required_description, model.displayName),
+                    icon = Icons.Default.ErrorOutline,
+                    tint = MaterialTheme.colorScheme.error
                 )
                 Button(onClick = {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(model.licenseUrl)))
@@ -1130,14 +1012,11 @@ private fun AuthErrorContent(
                     Text(stringResource(R.string.accept_license))
                 }
             } else {
-                Text(
-                    text = stringResource(R.string.token_invalid_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = stringResource(R.string.token_invalid_description),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                AiHero(
+                    title = stringResource(R.string.token_invalid_title),
+                    subtitle = stringResource(R.string.token_invalid_description),
+                    icon = Icons.Default.ErrorOutline,
+                    tint = MaterialTheme.colorScheme.error
                 )
                 Button(onClick = onReauth) {
                     Text(stringResource(R.string.sign_in_again))
@@ -1157,36 +1036,18 @@ private fun SignInContent(
     onSignIn: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.Login,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.hf_token_title),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = stringResource(R.string.hf_token_description, model.displayName),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+            AiHero(
+                title = stringResource(R.string.hf_token_title),
+                subtitle = stringResource(R.string.hf_token_description, model.displayName),
+                icon = Icons.AutoMirrored.Filled.Login
             )
             Button(onClick = onSignIn) {
                 Text(stringResource(R.string.sign_in_huggingface))
@@ -1205,14 +1066,7 @@ private fun DownloadingContent(
     onCancel: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().navigationBarsPadding()) {
-        CloseButton(
-            onDismiss = onDismiss,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
+    AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -1220,15 +1074,10 @@ private fun DownloadingContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.CloudDownload,
-                contentDescription = null,
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = stringResource(R.string.downloading_model),
-                style = MaterialTheme.typography.titleMedium
+            AiHero(
+                title = stringResource(R.string.downloading_model),
+                icon = Icons.Default.CloudDownload,
+                pulsing = true
             )
             Text(
                 text = stringResource(R.string.download_file_progress, fileIndex + 1, fileCount),
@@ -1241,33 +1090,24 @@ private fun DownloadingContent(
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
             )
-            if (totalBytes > 0) {
-                val progress = downloadedBytes.toFloat() / totalBytes.toFloat()
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                )
-                Text(
-                    text = "${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)} (${(progress * 100).toInt()}%)",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                )
-                if (downloadedBytes > 0) {
-                    Text(
-                        text = formatBytes(downloadedBytes),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            val progress = if (totalBytes > 0) downloadedBytes.toFloat() / totalBytes.toFloat() else null
+            AiDownloadBar(
+                progress = progress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+            Text(
+                text = when {
+                    progress != null ->
+                        "${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)} (${(progress * 100).toInt()}%)"
+                    downloadedBytes > 0 -> formatBytes(downloadedBytes)
+                    else -> ""
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.animateContentSize()
+            )
             Text(
                 text = stringResource(R.string.download_warning),
                 style = MaterialTheme.typography.bodySmall,

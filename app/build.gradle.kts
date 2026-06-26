@@ -72,6 +72,15 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        // The bumped AndroidX libraries (Compose 1.9 / lifecycle) ship lint checks built
+        // against a newer lint-api than AGP 8.7.3 bundles, so the built-in
+        // NonNullableMutableLiveDataDetector throws IncompatibleClassChangeError mid-analysis
+        // and aborts the release-only lintVital task. It's a tooling-version crash, not a code
+        // finding; disabling its issue id makes lint skip that one detector (its UAST visitor
+        // never runs) while every other lint check keeps working.
+        disable += "NullSafeMutableLiveData"
+    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -88,14 +97,18 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation(platform("androidx.compose:compose-bom:2025.10.01"))
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3:1.3.1")
+    // material3 1.5.0-alpha brings the M3-Expressive loaders (LoadingIndicator,
+    // LinearWavyProgressIndicator) used by the AI views — they are NOT in 1.4.0 stable.
+    // alpha14 is the last 1.5.0 alpha that still targets Compose 1.8/1.9 (the BOM above);
+    // alpha16+ requires Compose 1.11+. Pinned explicitly to override the BOM's material3.
+    implementation("androidx.compose.material3:material3:1.5.0-alpha14")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
@@ -112,7 +125,7 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
 
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2025.10.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
