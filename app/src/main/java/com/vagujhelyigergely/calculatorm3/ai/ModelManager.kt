@@ -221,7 +221,13 @@ class ModelManager(private val context: Context) {
             connection.instanceFollowRedirects = true
             if (model.requiresAuth) {
                 val token = hfToken
-                    ?: throw Exception("HuggingFace sign-in is required for this model.")
+                    // DownloadAuthException (not a generic Exception) so the worker reports
+                    // ERROR_AUTH and the UI routes to the sign-in prompt, not a generic error.
+                    ?: throw DownloadAuthException(
+                        "HuggingFace sign-in is required for this model.",
+                        httpCode = 401,
+                        model = model
+                    )
                 connection.setRequestProperty("Authorization", "Bearer $token")
             }
             if (existingBytes > 0) {
@@ -248,7 +254,8 @@ class ModelManager(private val context: Context) {
                     return@withContext
                 }
                 tmpFile.delete()
-                throw Exception("Couldn't resume the download (HTTP 416); please retry.")
+                // IOException so WorkManager retries — the next run starts fresh (tmp deleted).
+                throw java.io.IOException("Couldn't resume the download (HTTP 416); please retry.")
             }
 
             val isResuming = code == HttpURLConnection.HTTP_PARTIAL && existingBytes > 0
@@ -291,7 +298,9 @@ class ModelManager(private val context: Context) {
             // keep the .tmp so the next run resumes via Range rather than marking a corrupt,
             // unloadable model as "installed".
             if (totalBytes > 0 && downloadedBytes < totalBytes) {
-                throw Exception("Download incomplete: received $downloadedBytes of $totalBytes bytes")
+                // IOException (not a generic Exception) so the worker treats this transient
+                // truncation as retryable (Result.retry()) and resumes via the kept .tmp.
+                throw java.io.IOException("Download incomplete: received $downloadedBytes of $totalBytes bytes")
             }
 
             if (!tmpFile.renameTo(destFile)) {
