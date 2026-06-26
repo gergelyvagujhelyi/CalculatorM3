@@ -49,12 +49,16 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private val android.content.Context.dataStore by preferencesDataStore(name = "settings")
 private val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
+private val AI_UNLOCKED = booleanPreferencesKey("ai_unlocked")
 
 data class CalcButton(
     val label: String,
@@ -127,6 +131,65 @@ fun CalculatorScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showAiWarningDialog by remember { mutableStateOf(false) }
+
+    // AI features stay hidden until the user reveals them with the rapid-equals
+    // easter egg below. The unlock is persisted, so it survives restarts.
+    val aiUnlocked by remember(context) {
+        context.dataStore.data
+            .catch { emit(emptyPreferences()) }
+            .map { it[AI_UNLOCKED] ?: false }
+    }.collectAsState(initial = false)
+
+    // Rapid-AC easter egg: hammering "AC" reveals the AI features, mirroring
+    // Android's "tap Build number 7 times" developer-options unlock — countdown
+    // toasts and all. The streak only survives genuinely rapid taps: pause longer
+    // than the window below and it resets, so everyday "AC" presses (always spaced
+    // out by other input between them) can never drift toward an accidental unlock.
+    val tapsToUnlockAi = 7
+    val rapidPressWindowMs = 800L
+    var allClearPressCount by remember { mutableIntStateOf(0) }
+    var lastAllClearPressTime by remember { mutableLongStateOf(0L) }
+    val unlockToast = remember { arrayOfNulls<android.widget.Toast>(1) }
+
+    val onAllClearPressed: () -> Unit = {
+        if (!aiUnlocked) {
+            val now = System.currentTimeMillis()
+            if (now - lastAllClearPressTime > rapidPressWindowMs) allClearPressCount = 0
+            lastAllClearPressTime = now
+            allClearPressCount++
+            val remaining = tapsToUnlockAi - allClearPressCount
+            when {
+                remaining <= 0 -> {
+                    allClearPressCount = 0
+                    scope.launch {
+                        // Best-effort persist; a failed write just means the user has
+                        // to do the unlock gesture again rather than crashing.
+                        try {
+                            context.dataStore.edit { it[AI_UNLOCKED] = true }
+                        } catch (e: java.io.IOException) {
+                        }
+                    }
+                    unlockToast[0]?.cancel()
+                    unlockToast[0] = android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.ai_unlocked),
+                        android.widget.Toast.LENGTH_LONG
+                    ).also { it.show() }
+                }
+                // Like AOSP, only start the countdown once you're a few taps in.
+                remaining < tapsToUnlockAi - 2 -> {
+                    unlockToast[0]?.cancel()
+                    unlockToast[0] = android.widget.Toast.makeText(
+                        context,
+                        context.resources.getQuantityString(
+                            R.plurals.ai_unlock_countdown, remaining, remaining
+                        ),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).also { it.show() }
+                }
+            }
+        }
+    }
 
     val handleShowCamera: () -> Unit = remember(scanViewModel, context, scope) {
         {
@@ -234,14 +297,16 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null) handleShowCamera else null
+                onShowCamera = if (scanViewModel != null && aiUnlocked) handleShowCamera else null,
+                onAllClearPressed = onAllClearPressed
             )
         } else {
             PortraitLayout(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null) handleShowCamera else null
+                onShowCamera = if (scanViewModel != null && aiUnlocked) handleShowCamera else null,
+                onAllClearPressed = onAllClearPressed
             )
         }
     }
@@ -252,7 +317,8 @@ private fun PortraitLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
-    onShowCamera: (() -> Unit)? = null
+    onShowCamera: (() -> Unit)? = null,
+    onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -328,6 +394,7 @@ private fun PortraitLayout(
             buttons = buttons,
             viewModel = viewModel,
             usePortraitAspect = true,
+            onAllClearPressed = onAllClearPressed,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp)
@@ -341,7 +408,8 @@ private fun LandscapeLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
-    onShowCamera: (() -> Unit)? = null
+    onShowCamera: (() -> Unit)? = null,
+    onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -417,6 +485,7 @@ private fun LandscapeLayout(
                 viewModel = viewModel,
                 usePortraitAspect = false,
                 compact = true,
+                onAllClearPressed = onAllClearPressed,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
@@ -469,6 +538,7 @@ private fun ButtonGrid(
     viewModel: CalculatorViewModel,
     usePortraitAspect: Boolean,
     compact: Boolean = false,
+    onAllClearPressed: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -485,7 +555,10 @@ private fun ButtonGrid(
                 row.forEach { button ->
                     CalcButtonView(
                         button = button,
-                        onClick = { viewModel.onButtonPress(button.label) },
+                        onClick = {
+                            viewModel.onButtonPress(button.label)
+                            if (button.label == "AC") onAllClearPressed()
+                        },
                         compact = compact,
                         modifier = Modifier
                             .weight(1f)
