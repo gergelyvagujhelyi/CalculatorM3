@@ -23,16 +23,9 @@ AntiFeatures:
       Use, not a free-software licence.
 
 Builds:
-  - versionName: 1.4.1
-    versionCode: 8
-    commit: TBD
-    subdir: app
-    gradle:
-      - yes
-
   - versionName: 1.4.3
     versionCode: 10
-    commit: TBD
+    commit: 69a183f9c31781ee51504ace357ea0edfab760eb
     subdir: app
     gradle:
       - yes
