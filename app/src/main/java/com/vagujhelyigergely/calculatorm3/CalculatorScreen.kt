@@ -151,49 +151,44 @@ fun CalculatorScreen(
     var lastAllClearPressTime by remember { mutableLongStateOf(0L) }
     val unlockToast = remember { arrayOfNulls<android.widget.Toast>(1) }
 
-    // Wrapped in remember (the lambda captures the unstable Toast array, so the
-    // compiler won't auto-memoize it) to keep the button grid skippable on the
-    // recompositions that do reach CalculatorScreen — opening the history/camera
-    // sheets, the unlock itself, and rotation.
-    val onAllClearPressed: () -> Unit = remember(context, scope, aiUnlocked) {
-        {
-            if (!aiUnlocked) {
-                // elapsedRealtime is monotonic; wall-clock time can jump backward
-                // on NTP/manual/DST changes and corrupt the inter-tap interval.
-                val now = android.os.SystemClock.elapsedRealtime()
-                if (now - lastAllClearPressTime > rapidPressWindowMs) allClearPressCount = 0
-                lastAllClearPressTime = now
-                allClearPressCount++
-                val remaining = tapsToUnlockAi - allClearPressCount
-                when {
-                    remaining <= 0 -> {
-                        allClearPressCount = 0
-                        scope.launch {
-                            // Best-effort persist; a failed write just means the user has
-                            // to do the unlock gesture again rather than crashing.
-                            try {
-                                context.dataStore.edit { it[AI_UNLOCKED] = true }
-                            } catch (e: java.io.IOException) {
-                            }
+    val onAllClearPressed: () -> Unit = {
+        if (!aiUnlocked) {
+            // elapsedRealtime() is the monotonic clock — the right primitive for a
+            // short interval. (Impact is nil here: a wall-clock jump during the ~2s
+            // mashing window could at most reset the streak, never falsely unlock.)
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - lastAllClearPressTime > rapidPressWindowMs) allClearPressCount = 0
+            lastAllClearPressTime = now
+            allClearPressCount++
+            val remaining = tapsToUnlockAi - allClearPressCount
+            when {
+                remaining <= 0 -> {
+                    allClearPressCount = 0
+                    scope.launch {
+                        // Best-effort persist; a failed write just means the user has
+                        // to do the unlock gesture again rather than crashing.
+                        try {
+                            context.dataStore.edit { it[AI_UNLOCKED] = true }
+                        } catch (e: java.io.IOException) {
                         }
-                        unlockToast[0]?.cancel()
-                        unlockToast[0] = android.widget.Toast.makeText(
-                            context,
-                            context.getString(R.string.ai_unlocked),
-                            android.widget.Toast.LENGTH_LONG
-                        ).also { it.show() }
                     }
-                    // Like AOSP, only start the countdown once you're a few taps in.
-                    remaining < tapsToUnlockAi - 2 -> {
-                        unlockToast[0]?.cancel()
-                        unlockToast[0] = android.widget.Toast.makeText(
-                            context,
-                            context.resources.getQuantityString(
-                                R.plurals.ai_unlock_countdown, remaining, remaining
-                            ),
-                            android.widget.Toast.LENGTH_SHORT
-                        ).also { it.show() }
-                    }
+                    unlockToast[0]?.cancel()
+                    unlockToast[0] = android.widget.Toast.makeText(
+                        context,
+                        context.getString(R.string.ai_unlocked),
+                        android.widget.Toast.LENGTH_LONG
+                    ).also { it.show() }
+                }
+                // Like AOSP, only start the countdown once you're a few taps in.
+                remaining < tapsToUnlockAi - 2 -> {
+                    unlockToast[0]?.cancel()
+                    unlockToast[0] = android.widget.Toast.makeText(
+                        context,
+                        context.resources.getQuantityString(
+                            R.plurals.ai_unlock_countdown, remaining, remaining
+                        ),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).also { it.show() }
                 }
             }
         }
