@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">Kalkulator</string>
+
+    <!-- Pesan kesalahan kalkulator -->
+    <string name="error_division_by_zero">Tidak bisa membagi dengan nol</string>
+    <string name="error_invalid_operation">Operasi tidak valid</string>
+    <string name="error_overflow">Angka terlalu besar</string>
+
+    <!-- Riwayat -->
+    <string name="history">Riwayat</string>
+    <string name="clear_history">Hapus riwayat</string>
+    <string name="no_history_yet">Belum ada riwayat</string>
+
+    <!-- Aksesibilitas tombol -->
+    <string name="btn_backspace">Hapus mundur</string>
+    <string name="btn_all_clear">Hapus semua</string>
+    <string name="btn_percent">Persen</string>
+    <string name="btn_divide">Bagi</string>
+    <string name="btn_multiply">Kali</string>
+    <string name="btn_subtract">Kurang</string>
+    <string name="btn_add">Tambah</string>
+    <string name="btn_equals">Sama dengan</string>
+    <string name="btn_decimal">Koma desimal</string>
+    <string name="btn_toggle_sign">Ubah tanda</string>
+    <string name="btn_square_root">Akar kuadrat</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Pangkat</string>
+    <string name="btn_factorial">Faktorial</string>
+
+    <!-- Kamera / Pemindaian AI -->
+    <string name="scan_expression">Pindai ekspresi</string>
+    <string name="scan_hint">Ambil atau pilih foto ekspresi matematika tulisan tangan</string>
+    <string name="take_photo">Ambil foto</string>
+    <string name="choose_from_gallery">Pilih dari galeri</string>
+    <string name="camera_processing_image">Memproses gambar…</string>
+    <string name="processing_image_hint">Model visi sedang menganalisis foto Anda. Ini bisa memakan waktu 1–2 menit.</string>
+    <string name="camera_generating">Menyelesaikan…</string>
+    <string name="initializing">Menginisialisasi…</string>
+    <string name="model_loading">Memuat model AI…</string>
+    <string name="model_loading_hint">Memuat model visi ke memori. Pada penggunaan pertama, ini bisa memakan waktu hingga satu menit.</string>
+    <string name="answer_found">Jawaban</string>
+    <string name="recognized_in">Diselesaikan dalam %1$s</string>
+    <string name="use_expression">Gunakan</string>
+    <string name="use_answer">Gunakan %1$s</string>
+    <string name="retry">Coba lagi</string>
+    <string name="stop">Hentikan</string>
+    <string name="close">Tutup</string>
+    <string name="recognition_error">Pengenalan gagal</string>
+    <string name="choose_model">Pilih model AI</string>
+    <string name="choose_model_description">Perangkat Anda memiliki RAM %1$d GB. Model yang lebih besar lebih akurat tetapi lebih lambat. Semua model berjalan sepenuhnya di perangkat Anda.</string>
+    <string name="model_too_large">Memerlukan RAM %1$d GB — perangkat Anda memiliki %2$d GB</string>
+    <string name="download_model">Unduh</string>
+    <string name="downloaded">Terunduh</string>
+    <string name="downloading_model">Mengunduh model AI</string>
+    <string name="download_complete">Unduhan selesai</string>
+    <string name="download_file_progress">File %1$d dari %2$d</string>
+    <string name="download_warning">Ini unduhan besar. Gunakan Wi-Fi jika memungkinkan.</string>
+    <string name="notif_permission_title">Izinkan notifikasi?</string>
+    <string name="notif_permission_rationale">Izinkan notifikasi agar unduhan model AI dapat berjalan di latar belakang dan menampilkan progresnya.</string>
+    <string name="notif_permission_allow">Izinkan</string>
+    <string name="not_now">Nanti saja</string>
+    <string name="raw_model_output">Keluaran mentah model</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Memerlukan login HuggingFace</string>
+    <string name="mobile_data_title">Tidak ada koneksi Wi-Fi</string>
+    <string name="mobile_data_description">Anda akan mengunduh %1$s menggunakan data seluler. Ini dapat menimbulkan biaya dari operator Anda.</string>
+    <string name="download_anyway">Tetap unduh</string>
+    <string name="cancel">Batal</string>
+    <string name="ai_feature_low_ram">Anda memerlukan lebih banyak RAM untuk menggunakan fitur AI ini.</string>
+    <string name="ai_feature_title">Pemecah Matematika AI</string>
+    <string name="ai_feature_description">Fitur ini menggunakan model AI besar yang berjalan sepenuhnya di perangkat Anda untuk memecahkan matematika tulisan tangan dari foto.\n\nHarap diperhatikan:\n\n• Diperlukan unduhan model sebesar 4–6 GB\n• Kami menyarankan menggunakan Wi-Fi untuk mengunduh\n• Menjalankan model AI menggunakan banyak baterai\n• Tidak ada data yang dikirim ke cloud</string>
+    <string name="ai_feature_continue">Pilih model</string>
+    <string name="license_required_title">Penerimaan lisensi diperlukan</string>
+    <string name="license_required_description">%1$s mengharuskan Anda menerima lisensi di HuggingFace sebelum mengunduh. Ketuk tombol di bawah untuk membuka halaman model, lalu klik \"Agree and access repository\".</string>
+    <string name="accept_license">Terima lisensi di HuggingFace</string>
+    <string name="token_invalid_title">Sesi berakhir</string>
+    <string name="token_invalid_description">Sesi HuggingFace Anda telah berakhir. Masuk lagi untuk melanjutkan unduhan.</string>
+    <string name="hf_token_title">Masuk ke HuggingFace</string>
+    <string name="hf_token_description">%1$s adalah model dengan akses terbatas. Masuk dengan akun HuggingFace gratis Anda untuk mengunduhnya. Anda mungkin juga perlu menerima lisensi model di halamannya.</string>
+    <string name="sign_in_huggingface">Masuk dengan Hugging Face</string>
+    <string name="sign_in_again">Masuk lagi</string>
+    <string name="signing_in">Masuk…</string>
+    <string name="experimental_feature_title">Fitur eksperimental</string>
+    <string name="experimental_feature_warning">Fitur Kamera AI bersifat eksperimental dan mungkin memiliki bug atau perilaku tak terduga.</string>
+    <string name="accept">Terima</string>
+
+    <!-- Buka kunci AI tersembunyi -->
+    <string name="ai_unlocked">Fitur AI telah dibuka!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="other">%1$d ketukan lagi untuk membuka fitur AI</item>
+    </plurals>
+</resources>

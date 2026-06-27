@@ -1,0 +1,76 @@
+Minden számítás, amit végzel, csak rád tartozik – nem a tech-óriásokra. A Számológép M3 egy igényesen megtervezett, Material 3 alapú számológép, amely a hétköznapi matematikához teljesen offline működik, adatgyűjtés, analitika és nyomkövetés nélkül.
+
+Más számológépekkel ellentétben ez az alkalmazás nem küldözget adatokat a háttérben. Nincs használatkövetés, nincs telemetria, nincs a kódba rejtett reklámkeretrendszer. Csak számol – és egy opcionális, teljes egészében az eszközön futó MI matematikai megoldót kínál –, semmi mást.
+
+✓ Teljes kifejezés-kiértékelés
+✓ Élő eredmény-előnézet
+✓ Tudományos függvények
+✓ Számítási előzmények
+✓ Dinamikus Material 3 téma
+✓ Offline működik (opcionális, eszközön futó MI matematikai megoldóval)
+
+🔢 TELJES KIFEJEZÉS-KIÉRTÉKELÉS
+
+Írj be teljes matematikai kifejezéseket helyes műveleti sorrenddel és akár 20 szint mélységű zárójelezéssel. Nézd, ahogy az eredmény valós időben frissül, miközben gépelsz.
+
+- Teljes műveleti sorrend (precedencia)
+- Zárójelek akár 20 szint mélységig
+- Élő eredmény-előnézet gépelés közben
+- Koppints bárhová a kifejezésben a szerkesztéshez
+- Nagy pontosságú BigDecimal aritmetika
+- Mérnöki jelölés a nagy számokhoz
+
+🔬 TUDOMÁNYOS FÜGGVÉNYEK
+
+- Négyzetgyök (√)
+- Pi (π) állandó
+- Hatványozás (^)
+- Faktoriális (!) a 0–99 értékekhez
+- Százalék (%) a hétköznapi számológépek stílusában
+- Implicit szorzás (2π, 3√2 stb.)
+
+📜 SZÁMÍTÁSI ELŐZMÉNYEK
+
+- Akár 100 legutóbbi számítást tárol
+- Megőrződik az alkalmazás újraindítása után is
+- Koppints egy bejegyzésre az újratöltéséhez
+- Töröld az előzményeket, amikor szükséges
+
+📷 MI MATEMATIKAI MEGOLDÓ (OPCIONÁLIS, KÍSÉRLETI)
+
+Kísérleti extra a több RAM-mal rendelkező eszközökhöz: fényképezz le egy kézzel írt matematikai kifejezést, és hagyd, hogy egy eszközön futó MI-modell beolvassa és megoldja – teljes egészében a te eszközödön, anélkül, hogy bármi szerverre kerülne.
+
+➡️ HOGYAN KAPCSOLD BE: az MI-funkciók rejtve vannak, amíg fel nem oldod őket. A számológépben koppints az „AC" (összes törlése) gombra 7-szer gyors egymásutánban – egy visszaszámláló segít az utolsó koppintásoknál. Ezután egy kamera ikon jelenik meg a bal felső sarokban, és a feloldás megjegyződik.
+
+- 6 GB+ eszközt és a vizuális modell egyszeri letöltését igényli (2,6–4,9 GB)
+- Készíts fényképet a rendszerkamerával, vagy válassz egyet a galériádból
+- Válassz több nyílt vizuális modell közül (Gemma 4, Gemma 3n)
+- A modellek teljesen az eszközön futnak, GPU-gyorsítással, ahol támogatott
+- A megoldás szépen formázott matematikával jelenik meg – törtek, gyökök és kitevők
+- Az internetet csak egyszer használja, a kiválasztott modell letöltéséhez
+- Semmilyen fénykép, számítás vagy használati adat nem hagyja el az eszközödet
+
+🎨 MATERIAL 3 DIZÁJN
+
+- Dinamikus Material You színek (Android 12+)
+- Automatikus világos és sötét mód
+- Folyékony animációk a gombnyomásokra
+- Haptikus visszajelzés
+- Alkalmazkodó elrendezés álló, fekvő és összehajtható eszközökhöz
+- Automatikusan méreteződő kijelző a hosszú kifejezésekhez
+
+🛡️ ADATVÉDELEM ÉS NYÍLT FORRÁSKÓD
+
+- 100%-ban nyílt forráskódú (GPL v3)
+- Nincs nyomkövetés, analitika vagy reklám
+- Semmilyen adatgyűjtés
+- Maga a számológép egyáltalán nem igényel hálózatot
+- Az internetet csak akkor használja, ha úgy döntesz, hogy letöltesz egy MI-modellt – soha nem az adataid elküldésére
+- A számításaid és fényképeid az eszközödön maradnak, pont
+
+📱 MINDEN ESZKÖZÖN MŰKÖDIK
+
+- Telefonok álló és fekvő módban
+- Összehajtható eszközök (Pixel Fold, Galaxy Z Fold)
+- Táblagépek
+- Reszponzív gombméret és elrendezés

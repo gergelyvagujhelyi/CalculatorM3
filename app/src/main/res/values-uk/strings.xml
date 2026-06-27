@@ -1,0 +1,95 @@
+<resources>
+    <string name="app_name">Калькулятор</string>
+
+    <!-- Повідомлення про помилки калькулятора -->
+    <string name="error_division_by_zero">Не можна ділити на нуль</string>
+    <string name="error_invalid_operation">Недопустима операція</string>
+    <string name="error_overflow">Занадто велике число</string>
+
+    <!-- Історія -->
+    <string name="history">Історія</string>
+    <string name="clear_history">Очистити історію</string>
+    <string name="no_history_yet">Історії ще немає</string>
+
+    <!-- Доступність кнопок -->
+    <string name="btn_backspace">Видалити</string>
+    <string name="btn_all_clear">Очистити все</string>
+    <string name="btn_percent">Відсоток</string>
+    <string name="btn_divide">Поділити</string>
+    <string name="btn_multiply">Помножити</string>
+    <string name="btn_subtract">Відняти</string>
+    <string name="btn_add">Додати</string>
+    <string name="btn_equals">Дорівнює</string>
+    <string name="btn_decimal">Десяткова кома</string>
+    <string name="btn_toggle_sign">Змінити знак</string>
+    <string name="btn_square_root">Квадратний корінь</string>
+    <string name="btn_pi">Пі</string>
+    <string name="btn_power">Степінь</string>
+    <string name="btn_factorial">Факторіал</string>
+
+    <!-- Камера / ШІ-сканування -->
+    <string name="scan_expression">Сканувати вираз</string>
+    <string name="scan_hint">Зробіть або виберіть фото рукописного математичного виразу</string>
+    <string name="take_photo">Зробити фото</string>
+    <string name="choose_from_gallery">Вибрати з галереї</string>
+    <string name="camera_processing_image">Обробка зображення…</string>
+    <string name="processing_image_hint">Модель зору аналізує ваше фото. Це може зайняти 1–2 хвилини.</string>
+    <string name="camera_generating">Розв’язування…</string>
+    <string name="initializing">Ініціалізація…</string>
+    <string name="model_loading">Завантаження моделі ШІ…</string>
+    <string name="model_loading_hint">Завантаження моделі зору в пам’ять. Під час першого використання це може зайняти до хвилини.</string>
+    <string name="answer_found">Відповідь</string>
+    <string name="recognized_in">Розв’язано за %1$s</string>
+    <string name="use_expression">Використати</string>
+    <string name="use_answer">Використати %1$s</string>
+    <string name="retry">Повторити</string>
+    <string name="stop">Зупинити</string>
+    <string name="close">Закрити</string>
+    <string name="recognition_error">Не вдалося розпізнати</string>
+    <string name="choose_model">Вибрати модель ШІ</string>
+    <string name="choose_model_description">На вашому пристрої %1$d ГБ ОЗП. Більші моделі точніші, але повільніші. Усі моделі працюють повністю на вашому пристрої.</string>
+    <string name="model_too_large">Потрібно %1$d ГБ ОЗП — на вашому пристрої %2$d ГБ</string>
+    <string name="download_model">Завантажити</string>
+    <string name="downloaded">Завантажено</string>
+    <string name="downloading_model">Завантаження моделі ШІ</string>
+    <string name="download_complete">Завантаження завершено</string>
+    <string name="download_file_progress">Файл %1$d з %2$d</string>
+    <string name="download_warning">Це велике завантаження. За можливості використовуйте Wi-Fi.</string>
+    <string name="notif_permission_title">Дозволити сповіщення?</string>
+    <string name="notif_permission_rationale">Дозвольте сповіщення, щоб завантаження моделі ШІ могло виконуватися у фоновому режимі та показувати свій прогрес.</string>
+    <string name="notif_permission_allow">Дозволити</string>
+    <string name="not_now">Не зараз</string>
+    <string name="raw_model_output">Необроблений вивід моделі</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Потрібен вхід у HuggingFace</string>
+    <string name="mobile_data_title">Немає підключення до Wi-Fi</string>
+    <string name="mobile_data_description">Ви збираєтеся завантажити %1$s за допомогою мобільного передавання даних. Це може призвести до витрат у вашого оператора.</string>
+    <string name="download_anyway">Усе одно завантажити</string>
+    <string name="cancel">Скасувати</string>
+    <string name="ai_feature_low_ram">Для використання цієї функції ШІ потрібно більше ОЗП.</string>
+    <string name="ai_feature_title">ШІ-розв’язувач математики</string>
+    <string name="ai_feature_description">Ця функція використовує велику модель ШІ, що працює повністю на вашому пристрої, щоб розв’язувати рукописну математику з фотографій.\n\nЗверніть увагу:\n\n• Потрібно завантажити модель розміром 4–6 ГБ\n• Для завантаження рекомендуємо використовувати Wi-Fi\n• Робота моделі ШІ споживає багато заряду батареї\n• Жодні дані не надсилаються в хмару</string>
+    <string name="ai_feature_continue">Вибрати модель</string>
+    <string name="license_required_title">Потрібне прийняття ліцензії</string>
+    <string name="license_required_description">%1$s вимагає прийняти ліцензію на HuggingFace перед завантаженням. Натисніть кнопку нижче, щоб відкрити сторінку моделі, потім натисніть \"Agree and access repository\".</string>
+    <string name="accept_license">Прийняти ліцензію на HuggingFace</string>
+    <string name="token_invalid_title">Сеанс завершився</string>
+    <string name="token_invalid_description">Ваш сеанс HuggingFace завершився. Увійдіть знову, щоб продовжити завантаження.</string>
+    <string name="hf_token_title">Вхід у HuggingFace</string>
+    <string name="hf_token_description">%1$s — це модель з обмеженим доступом. Увійдіть за допомогою безкоштовного облікового запису HuggingFace, щоб завантажити її. Можливо, вам також доведеться прийняти ліцензію моделі на її сторінці.</string>
+    <string name="sign_in_huggingface">Увійти через Hugging Face</string>
+    <string name="sign_in_again">Увійти знову</string>
+    <string name="signing_in">Вхід…</string>
+    <string name="experimental_feature_title">Експериментальна функція</string>
+    <string name="experimental_feature_warning">Функція камери зі ШІ є експериментальною і може містити помилки або поводитися несподівано.</string>
+    <string name="accept">Прийняти</string>
+
+    <!-- Прихована розблокування ШІ -->
+    <string name="ai_unlocked">Функції ШІ розблоковано!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Залишилося %1$d натискання до розблокування функцій ШІ</item>
+        <item quantity="few">Залишилося %1$d натискання до розблокування функцій ШІ</item>
+        <item quantity="many">Залишилося %1$d натискань до розблокування функцій ШІ</item>
+        <item quantity="other">Залишилося %1$d натискань до розблокування функцій ШІ</item>
+    </plurals>
+</resources>

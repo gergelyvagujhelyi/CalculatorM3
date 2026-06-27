@@ -1,0 +1,76 @@
+Setiap perhitungan yang Anda lakukan adalah urusan Anda — bukan urusan raksasa teknologi. Kalkulator M3 adalah kalkulator dengan desain apik berbasis Material 3 yang bekerja sepenuhnya offline untuk matematika sehari-hari, tanpa pengumpulan data, tanpa analitik, dan tanpa pelacakan.
+
+Tidak seperti kalkulator lain, aplikasi ini tidak diam-diam mengirim data. Tanpa pelacakan penggunaan, tanpa telemetri, tanpa framework iklan yang tersembunyi dalam kode. Ia mengerjakan matematika — dan menawarkan pemecah matematika AI opsional yang berjalan sepenuhnya di perangkat — dan tidak ada yang lain.
+
+✓ Evaluasi ekspresi lengkap
+✓ Pratinjau hasil langsung
+✓ Fungsi ilmiah
+✓ Riwayat perhitungan
+✓ Tema dinamis Material 3
+✓ Bekerja offline (dengan pemecah matematika AI opsional di perangkat)
+
+🔢 EVALUASI EKSPRESI LENGKAP
+
+Ketik ekspresi matematika lengkap dengan urutan operasi yang benar dan tanda kurung bersarang hingga 20 tingkat. Lihat hasilnya diperbarui secara real-time saat Anda mengetik.
+
+- Urutan operasi lengkap
+- Tanda kurung dengan 20 tingkat penyarangan
+- Pratinjau hasil saat Anda mengetik
+- Ketuk bagian mana pun dari ekspresi untuk mengedit
+- Aritmetika presisi tinggi (BigDecimal)
+- Notasi teknik untuk angka besar
+
+🔬 FUNGSI ILMIAH
+
+- Akar kuadrat (√)
+- Konstanta Pi (π)
+- Pangkat (^)
+- Faktorial (!) untuk nilai 0-99
+- Persen (%) ala kalkulator sehari-hari
+- Perkalian implisit (2π, 3√2, dll.)
+
+📜 RIWAYAT PERHITUNGAN
+
+- Menyimpan hingga 100 perhitungan terbaru
+- Tetap ada setelah aplikasi dimulai ulang
+- Ketuk entri untuk memuatnya kembali
+- Hapus riwayat saat diperlukan
+
+📷 PEMECAH MATEMATIKA AI (OPSIONAL, EKSPERIMENTAL)
+
+Tambahan eksperimental untuk perangkat dengan RAM lebih besar: foto sebuah ekspresi matematika tulisan tangan dan biarkan model AI di perangkat membaca dan menyelesaikannya — sepenuhnya di perangkat Anda, tanpa mengirim apa pun ke server mana pun.
+
+➡️ CARA MENGAKTIFKAN: fitur AI tersembunyi sampai Anda membukanya. Di kalkulator, ketuk tombol "AC" (hapus semua) 7 kali berturut-turut — hitung mundur memandu ketukan terakhir. Ikon kamera lalu muncul di pojok kiri atas, dan pembukaan kunci diingat.
+
+- Memerlukan perangkat 6 GB+ dan unduhan model visi sekali saja (2,6–4,9 GB)
+- Ambil foto dengan kamera sistem, atau pilih satu dari galeri Anda
+- Pilih dari beberapa model visi terbuka (Gemma 4, Gemma 3n)
+- Model berjalan sepenuhnya di perangkat, dengan akselerasi GPU jika didukung
+- Solusi ditampilkan dengan matematika yang diformat rapi — pecahan, akar, dan eksponen
+- Internet hanya digunakan sekali, untuk mengunduh model yang Anda pilih
+- Tidak ada foto, perhitungan, atau data penggunaan yang pernah meninggalkan perangkat Anda
+
+🎨 DESAIN MATERIAL 3
+
+- Warna dinamis Material You (Android 12+)
+- Mode terang dan gelap otomatis
+- Animasi penekanan tombol yang halus
+- Umpan balik haptik
+- Tata letak adaptif untuk potret, lanskap, dan perangkat lipat
+- Layar berukuran otomatis untuk ekspresi panjang
+
+🛡️ PRIVASI & SUMBER TERBUKA
+
+- 100% sumber terbuka (GPL v3)
+- Tanpa pelacakan, analitik, atau iklan
+- Tanpa pengumpulan data apa pun
+- Kalkulatornya sendiri sama sekali tidak memerlukan jaringan
+- Internet hanya digunakan jika Anda memilih untuk mengunduh model AI — tidak pernah untuk mengirim data Anda
+- Perhitungan dan foto Anda tetap di perangkat Anda, titik
+
+📱 BEKERJA DI SEMUA PERANGKAT
+
+- Ponsel dalam mode potret dan lanskap
+- Perangkat lipat (Pixel Fold, Galaxy Z Fold)
+- Tablet
+- Ukuran dan tata letak tombol yang responsif

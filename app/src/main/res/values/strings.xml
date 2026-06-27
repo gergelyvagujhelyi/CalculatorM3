@@ -1,11 +1,10 @@
 <resources>
     <string name="app_name">Calculator</string>
 
-    <!-- IEEE 754 standard error messages -->
-    <string name="error">Error</string>
-    <string name="error_division_by_zero">divisionByZero</string>
-    <string name="error_invalid_operation">invalidOperation</string>
-    <string name="error_overflow">overflow</string>
+    <!-- Calculator error messages (shown in place of a result) -->
+    <string name="error_division_by_zero">Cannot divide by zero</string>
+    <string name="error_invalid_operation">Invalid operation</string>
+    <string name="error_overflow">Number too large</string>
 
     <!-- History -->
     <string name="history">History</string>
@@ -30,8 +29,6 @@
 
     <!-- Camera / AI scan -->
     <string name="scan_expression">Scan expression</string>
-    <string name="capture">Capture</string>
-    <string name="camera_hint">Point at a handwritten math expression</string>
     <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>
     <string name="take_photo">Take photo</string>
     <string name="choose_from_gallery">Choose from gallery</string>
@@ -49,7 +46,6 @@
     <string name="stop">Stop</string>
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
-    <string name="camera_permission_needed">Camera permission is needed to scan handwritten expressions</string>
     <string name="choose_model">Choose AI model</string>
     <string name="choose_model_description">Your device has %1$d GB RAM. Larger models are more accurate but slower. All models run entirely on your device.</string>
     <string name="model_too_large">Needs %1$d GB RAM — your device has %2$d GB</string>

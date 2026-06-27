@@ -1,0 +1,95 @@
+<resources>
+    <string name="app_name">Калькулятор</string>
+
+    <!-- Сообщения об ошибках калькулятора -->
+    <string name="error_division_by_zero">Нельзя делить на ноль</string>
+    <string name="error_invalid_operation">Недопустимая операция</string>
+    <string name="error_overflow">Слишком большое число</string>
+
+    <!-- История -->
+    <string name="history">История</string>
+    <string name="clear_history">Очистить историю</string>
+    <string name="no_history_yet">Истории пока нет</string>
+
+    <!-- Специальные возможности кнопок -->
+    <string name="btn_backspace">Удалить</string>
+    <string name="btn_all_clear">Очистить всё</string>
+    <string name="btn_percent">Процент</string>
+    <string name="btn_divide">Разделить</string>
+    <string name="btn_multiply">Умножить</string>
+    <string name="btn_subtract">Вычесть</string>
+    <string name="btn_add">Сложить</string>
+    <string name="btn_equals">Равно</string>
+    <string name="btn_decimal">Десятичная запятая</string>
+    <string name="btn_toggle_sign">Сменить знак</string>
+    <string name="btn_square_root">Квадратный корень</string>
+    <string name="btn_pi">Пи</string>
+    <string name="btn_power">Степень</string>
+    <string name="btn_factorial">Факториал</string>
+
+    <!-- Камера / ИИ-сканирование -->
+    <string name="scan_expression">Сканировать выражение</string>
+    <string name="scan_hint">Сделайте или выберите фото рукописного математического выражения</string>
+    <string name="take_photo">Сделать фото</string>
+    <string name="choose_from_gallery">Выбрать из галереи</string>
+    <string name="camera_processing_image">Обработка изображения…</string>
+    <string name="processing_image_hint">Модель зрения анализирует ваше фото. Это может занять 1–2 минуты.</string>
+    <string name="camera_generating">Решение…</string>
+    <string name="initializing">Инициализация…</string>
+    <string name="model_loading">Загрузка модели ИИ…</string>
+    <string name="model_loading_hint">Загрузка модели зрения в память. При первом использовании это может занять до минуты.</string>
+    <string name="answer_found">Ответ</string>
+    <string name="recognized_in">Решено за %1$s</string>
+    <string name="use_expression">Использовать</string>
+    <string name="use_answer">Использовать %1$s</string>
+    <string name="retry">Повторить</string>
+    <string name="stop">Остановить</string>
+    <string name="close">Закрыть</string>
+    <string name="recognition_error">Не удалось распознать</string>
+    <string name="choose_model">Выбрать модель ИИ</string>
+    <string name="choose_model_description">На вашем устройстве %1$d ГБ ОЗУ. Более крупные модели точнее, но медленнее. Все модели работают полностью на вашем устройстве.</string>
+    <string name="model_too_large">Требуется %1$d ГБ ОЗУ — на вашем устройстве %2$d ГБ</string>
+    <string name="download_model">Скачать</string>
+    <string name="downloaded">Скачано</string>
+    <string name="downloading_model">Загрузка модели ИИ</string>
+    <string name="download_complete">Загрузка завершена</string>
+    <string name="download_file_progress">Файл %1$d из %2$d</string>
+    <string name="download_warning">Это большая загрузка. По возможности используйте Wi-Fi.</string>
+    <string name="notif_permission_title">Разрешить уведомления?</string>
+    <string name="notif_permission_rationale">Разрешите уведомления, чтобы загрузка модели ИИ могла выполняться в фоновом режиме и показывать свой прогресс.</string>
+    <string name="notif_permission_allow">Разрешить</string>
+    <string name="not_now">Не сейчас</string>
+    <string name="raw_model_output">Необработанный вывод модели</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Требуется вход в HuggingFace</string>
+    <string name="mobile_data_title">Нет подключения к Wi-Fi</string>
+    <string name="mobile_data_description">Вы собираетесь скачать %1$s через мобильную сеть. Это может привести к расходам у вашего оператора.</string>
+    <string name="download_anyway">Всё равно скачать</string>
+    <string name="cancel">Отмена</string>
+    <string name="ai_feature_low_ram">Для использования этой функции ИИ нужно больше ОЗУ.</string>
+    <string name="ai_feature_title">ИИ-решатель математики</string>
+    <string name="ai_feature_description">Эта функция использует большую модель ИИ, работающую полностью на вашем устройстве, чтобы решать рукописную математику по фотографиям.\n\nОбратите внимание:\n\n• Требуется загрузка модели размером 4–6 ГБ\n• Для загрузки рекомендуем использовать Wi-Fi\n• Работа модели ИИ потребляет много заряда батареи\n• Никакие данные не отправляются в облако</string>
+    <string name="ai_feature_continue">Выбрать модель</string>
+    <string name="license_required_title">Требуется принятие лицензии</string>
+    <string name="license_required_description">%1$s требует принять лицензию на HuggingFace перед загрузкой. Нажмите кнопку ниже, чтобы открыть страницу модели, затем нажмите \"Agree and access repository\".</string>
+    <string name="accept_license">Принять лицензию на HuggingFace</string>
+    <string name="token_invalid_title">Сеанс истёк</string>
+    <string name="token_invalid_description">Ваш сеанс HuggingFace истёк. Войдите снова, чтобы продолжить загрузку.</string>
+    <string name="hf_token_title">Вход в HuggingFace</string>
+    <string name="hf_token_description">%1$s — это модель с ограниченным доступом. Войдите с помощью бесплатной учётной записи HuggingFace, чтобы скачать её. Возможно, вам также потребуется принять лицензию модели на её странице.</string>
+    <string name="sign_in_huggingface">Войти через Hugging Face</string>
+    <string name="sign_in_again">Войти снова</string>
+    <string name="signing_in">Вход…</string>
+    <string name="experimental_feature_title">Экспериментальная функция</string>
+    <string name="experimental_feature_warning">Функция камеры с ИИ является экспериментальной и может содержать ошибки или вести себя непредсказуемо.</string>
+    <string name="accept">Принять</string>
+
+    <!-- Скрытая разблокировка ИИ -->
+    <string name="ai_unlocked">Функции ИИ разблокированы!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Осталось %1$d нажатие до разблокировки функций ИИ</item>
+        <item quantity="few">Осталось %1$d нажатия до разблокировки функций ИИ</item>
+        <item quantity="many">Осталось %1$d нажатий до разблокировки функций ИИ</item>
+        <item quantity="other">Осталось %1$d нажатий до разблокировки функций ИИ</item>
+    </plurals>
+</resources>

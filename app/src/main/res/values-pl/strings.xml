@@ -1,0 +1,95 @@
+<resources>
+    <string name="app_name">Kalkulator</string>
+
+    <!-- Komunikaty o błędach kalkulatora -->
+    <string name="error_division_by_zero">Nie można dzielić przez zero</string>
+    <string name="error_invalid_operation">Nieprawidłowa operacja</string>
+    <string name="error_overflow">Liczba zbyt duża</string>
+
+    <!-- Historia -->
+    <string name="history">Historia</string>
+    <string name="clear_history">Wyczyść historię</string>
+    <string name="no_history_yet">Brak historii</string>
+
+    <!-- Dostępność przycisków -->
+    <string name="btn_backspace">Usuń znak</string>
+    <string name="btn_all_clear">Wyczyść wszystko</string>
+    <string name="btn_percent">Procent</string>
+    <string name="btn_divide">Dzielenie</string>
+    <string name="btn_multiply">Mnożenie</string>
+    <string name="btn_subtract">Odejmowanie</string>
+    <string name="btn_add">Dodawanie</string>
+    <string name="btn_equals">Równa się</string>
+    <string name="btn_decimal">Przecinek dziesiętny</string>
+    <string name="btn_toggle_sign">Zmień znak</string>
+    <string name="btn_square_root">Pierwiastek kwadratowy</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Potęga</string>
+    <string name="btn_factorial">Silnia</string>
+
+    <!-- Aparat / Skanowanie AI -->
+    <string name="scan_expression">Skanuj wyrażenie</string>
+    <string name="scan_hint">Zrób lub wybierz zdjęcie odręcznego wyrażenia matematycznego</string>
+    <string name="take_photo">Zrób zdjęcie</string>
+    <string name="choose_from_gallery">Wybierz z galerii</string>
+    <string name="camera_processing_image">Przetwarzanie obrazu…</string>
+    <string name="processing_image_hint">Model wizyjny analizuje Twoje zdjęcie. Może to potrwać 1–2 minuty.</string>
+    <string name="camera_generating">Rozwiązywanie…</string>
+    <string name="initializing">Inicjowanie…</string>
+    <string name="model_loading">Ładowanie modelu AI…</string>
+    <string name="model_loading_hint">Ładowanie modelu wizyjnego do pamięci. Przy pierwszym użyciu może to potrwać do minuty.</string>
+    <string name="answer_found">Odpowiedź</string>
+    <string name="recognized_in">Rozwiązano w %1$s</string>
+    <string name="use_expression">Użyj</string>
+    <string name="use_answer">Użyj %1$s</string>
+    <string name="retry">Ponów</string>
+    <string name="stop">Zatrzymaj</string>
+    <string name="close">Zamknij</string>
+    <string name="recognition_error">Rozpoznawanie nie powiodło się</string>
+    <string name="choose_model">Wybierz model AI</string>
+    <string name="choose_model_description">Twoje urządzenie ma %1$d GB RAM. Większe modele są dokładniejsze, ale wolniejsze. Wszystkie modele działają w całości na Twoim urządzeniu.</string>
+    <string name="model_too_large">Wymaga %1$d GB RAM — Twoje urządzenie ma %2$d GB</string>
+    <string name="download_model">Pobierz</string>
+    <string name="downloaded">Pobrano</string>
+    <string name="downloading_model">Pobieranie modelu AI</string>
+    <string name="download_complete">Pobieranie zakończone</string>
+    <string name="download_file_progress">Plik %1$d z %2$d</string>
+    <string name="download_warning">To duże pobieranie. W miarę możliwości użyj Wi-Fi.</string>
+    <string name="notif_permission_title">Zezwolić na powiadomienia?</string>
+    <string name="notif_permission_rationale">Zezwól na powiadomienia, aby pobieranie modelu AI mogło działać w tle i pokazywać postęp.</string>
+    <string name="notif_permission_allow">Zezwól</string>
+    <string name="not_now">Nie teraz</string>
+    <string name="raw_model_output">Surowe dane wyjściowe modelu</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Wymaga logowania do HuggingFace</string>
+    <string name="mobile_data_title">Brak połączenia Wi-Fi</string>
+    <string name="mobile_data_description">Zamierzasz pobrać %1$s przy użyciu danych komórkowych. Może to wiązać się z opłatami od Twojego operatora.</string>
+    <string name="download_anyway">Pobierz mimo to</string>
+    <string name="cancel">Anuluj</string>
+    <string name="ai_feature_low_ram">Potrzebujesz więcej RAM, aby korzystać z tej funkcji AI.</string>
+    <string name="ai_feature_title">Solver matematyczny AI</string>
+    <string name="ai_feature_description">Ta funkcja używa dużego modelu AI działającego w całości na Twoim urządzeniu, aby rozwiązywać odręczną matematykę ze zdjęć.\n\nUwaga:\n\n• Wymagane jest pobranie modelu o rozmiarze 4–6 GB\n• Do pobierania zalecamy Wi-Fi\n• Uruchamianie modelu AI zużywa dużo baterii\n• Żadne dane nie są wysyłane do chmury</string>
+    <string name="ai_feature_continue">Wybierz model</string>
+    <string name="license_required_title">Wymagana akceptacja licencji</string>
+    <string name="license_required_description">%1$s wymaga zaakceptowania licencji na HuggingFace przed pobraniem. Dotknij przycisku poniżej, aby otworzyć stronę modelu, a następnie kliknij \"Agree and access repository\".</string>
+    <string name="accept_license">Zaakceptuj licencję na HuggingFace</string>
+    <string name="token_invalid_title">Sesja wygasła</string>
+    <string name="token_invalid_description">Twoja sesja HuggingFace wygasła. Zaloguj się ponownie, aby kontynuować pobieranie.</string>
+    <string name="hf_token_title">Zaloguj się do HuggingFace</string>
+    <string name="hf_token_description">%1$s to model o ograniczonym dostępie. Zaloguj się przy użyciu bezpłatnego konta HuggingFace, aby go pobrać. Może być również konieczne zaakceptowanie licencji modelu na jego stronie.</string>
+    <string name="sign_in_huggingface">Zaloguj się przez Hugging Face</string>
+    <string name="sign_in_again">Zaloguj się ponownie</string>
+    <string name="signing_in">Logowanie…</string>
+    <string name="experimental_feature_title">Funkcja eksperymentalna</string>
+    <string name="experimental_feature_warning">Funkcja kamery AI jest eksperymentalna i może zawierać błędy lub działać w nieoczekiwany sposób.</string>
+    <string name="accept">Akceptuj</string>
+
+    <!-- Ukryte odblokowanie AI -->
+    <string name="ai_unlocked">Funkcje AI odblokowane!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Pozostało %1$d naciśnięcie do odblokowania funkcji AI</item>
+        <item quantity="few">Pozostały %1$d naciśnięcia do odblokowania funkcji AI</item>
+        <item quantity="many">Pozostało %1$d naciśnięć do odblokowania funkcji AI</item>
+        <item quantity="other">Pozostało %1$d naciśnięć do odblokowania funkcji AI</item>
+    </plurals>
+</resources>

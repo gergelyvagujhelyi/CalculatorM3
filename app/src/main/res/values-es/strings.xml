@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Calculadora</string>
+
+    <!-- Mensajes de error de la calculadora -->
+    <string name="error_division_by_zero">No se puede dividir por cero</string>
+    <string name="error_invalid_operation">Operación no válida</string>
+    <string name="error_overflow">Número demasiado grande</string>
+
+    <!-- Historial -->
+    <string name="history">Historial</string>
+    <string name="clear_history">Borrar historial</string>
+    <string name="no_history_yet">Aún no hay historial</string>
+
+    <!-- Accesibilidad de botones -->
+    <string name="btn_backspace">Retroceso</string>
+    <string name="btn_all_clear">Borrar todo</string>
+    <string name="btn_percent">Porcentaje</string>
+    <string name="btn_divide">Dividir</string>
+    <string name="btn_multiply">Multiplicar</string>
+    <string name="btn_subtract">Restar</string>
+    <string name="btn_add">Sumar</string>
+    <string name="btn_equals">Igual</string>
+    <string name="btn_decimal">Punto decimal</string>
+    <string name="btn_toggle_sign">Cambiar signo</string>
+    <string name="btn_square_root">Raíz cuadrada</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Potencia</string>
+    <string name="btn_factorial">Factorial</string>
+
+    <!-- Cámara / Escaneo con IA -->
+    <string name="scan_expression">Escanear expresión</string>
+    <string name="scan_hint">Toma o elige una foto de una expresión matemática manuscrita</string>
+    <string name="take_photo">Tomar foto</string>
+    <string name="choose_from_gallery">Elegir de la galería</string>
+    <string name="camera_processing_image">Procesando imagen…</string>
+    <string name="processing_image_hint">El modelo de visión está analizando tu foto. Esto puede tardar 1–2 minutos.</string>
+    <string name="camera_generating">Resolviendo…</string>
+    <string name="initializing">Inicializando…</string>
+    <string name="model_loading">Cargando modelo de IA…</string>
+    <string name="model_loading_hint">Cargando el modelo de visión en memoria. Esto puede tardar hasta un minuto la primera vez.</string>
+    <string name="answer_found">Respuesta</string>
+    <string name="recognized_in">Resuelto en %1$s</string>
+    <string name="use_expression">Usar</string>
+    <string name="use_answer">Usar %1$s</string>
+    <string name="retry">Reintentar</string>
+    <string name="stop">Detener</string>
+    <string name="close">Cerrar</string>
+    <string name="recognition_error">Error de reconocimiento</string>
+    <string name="choose_model">Elegir modelo de IA</string>
+    <string name="choose_model_description">Tu dispositivo tiene %1$d GB de RAM. Los modelos más grandes son más precisos pero más lentos. Todos los modelos se ejecutan por completo en tu dispositivo.</string>
+    <string name="model_too_large">Necesita %1$d GB de RAM — tu dispositivo tiene %2$d GB</string>
+    <string name="download_model">Descargar</string>
+    <string name="downloaded">Descargado</string>
+    <string name="downloading_model">Descargando modelo de IA</string>
+    <string name="download_complete">Descarga completa</string>
+    <string name="download_file_progress">Archivo %1$d de %2$d</string>
+    <string name="download_warning">Esta es una descarga grande. Usa Wi-Fi si es posible.</string>
+    <string name="notif_permission_title">¿Permitir notificaciones?</string>
+    <string name="notif_permission_rationale">Permite las notificaciones para que la descarga del modelo de IA pueda ejecutarse en segundo plano y mostrar su progreso.</string>
+    <string name="notif_permission_allow">Permitir</string>
+    <string name="not_now">Ahora no</string>
+    <string name="raw_model_output">Salida sin procesar del modelo</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Requiere inicio de sesión en HuggingFace</string>
+    <string name="mobile_data_title">Sin conexión Wi-Fi</string>
+    <string name="mobile_data_description">Estás a punto de descargar %1$s usando datos móviles. Esto puede generar cargos de tu operador.</string>
+    <string name="download_anyway">Descargar de todos modos</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ai_feature_low_ram">Necesitas más RAM para usar esta función de IA.</string>
+    <string name="ai_feature_title">Resolutor de mates con IA</string>
+    <string name="ai_feature_description">Esta función usa un gran modelo de IA que se ejecuta por completo en tu dispositivo para resolver matemáticas manuscritas a partir de fotos.\n\nTen en cuenta:\n\n• Se requiere una descarga de modelo de 4–6 GB\n• Recomendamos usar Wi-Fi para la descarga\n• Ejecutar el modelo de IA consume mucha batería\n• No se envía ningún dato a la nube</string>
+    <string name="ai_feature_continue">Elegir un modelo</string>
+    <string name="license_required_title">Se requiere aceptar la licencia</string>
+    <string name="license_required_description">%1$s requiere que aceptes la licencia en HuggingFace antes de descargar. Toca el botón de abajo para abrir la página del modelo y luego haz clic en \"Agree and access repository\".</string>
+    <string name="accept_license">Aceptar licencia en HuggingFace</string>
+    <string name="token_invalid_title">Sesión caducada</string>
+    <string name="token_invalid_description">Tu sesión de HuggingFace ha caducado. Vuelve a iniciar sesión para continuar la descarga.</string>
+    <string name="hf_token_title">Iniciar sesión en HuggingFace</string>
+    <string name="hf_token_description">%1$s es un modelo restringido. Inicia sesión con tu cuenta gratuita de HuggingFace para descargarlo. Quizás también debas aceptar la licencia del modelo en su página.</string>
+    <string name="sign_in_huggingface">Iniciar sesión con Hugging Face</string>
+    <string name="sign_in_again">Volver a iniciar sesión</string>
+    <string name="signing_in">Iniciando sesión…</string>
+    <string name="experimental_feature_title">Función experimental</string>
+    <string name="experimental_feature_warning">La función de cámara con IA es experimental y puede tener errores o comportamientos inesperados.</string>
+    <string name="accept">Aceptar</string>
+
+    <!-- Desbloqueo de IA oculto -->
+    <string name="ai_unlocked">¡Funciones de IA desbloqueadas!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Te queda %1$d pulsación para desbloquear las funciones de IA</item>
+        <item quantity="other">Te quedan %1$d pulsaciones para desbloquear las funciones de IA</item>
+    </plurals>
+</resources>

@@ -99,6 +99,14 @@ class CalculatorViewModel(
         private const val MAX_HISTORY_SIZE = 100
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
+
+        // Locale-independent error codes used as the internal "result" sentinel
+        // (detected via startsWith("Error")) and persisted across config changes.
+        // They are mapped to localized, human-readable text only at the display
+        // layer (CalculatorScreen) so calculator errors honor the device language.
+        const val ERROR_DIVISION_BY_ZERO = "Error: divisionByZero"
+        const val ERROR_INVALID_OPERATION = "Error: invalidOperation"
+        const val ERROR_OVERFLOW = "Error: overflow"
     }
 
     fun moveCursorTo(position: Int) {
@@ -447,15 +455,15 @@ class CalculatorViewModel(
             }
         } catch (e: ArithmeticException) {
             when {
-                e.message?.contains("Division by zero") == true -> "Error: divisionByZero"
-                e.message?.contains("Negative sqrt") == true -> "Error: invalidOperation"
-                e.message?.contains("Invalid factorial") == true -> "Error: invalidOperation"
-                e.message?.contains("Non-finite") == true -> "Error: overflow"
-                e.message?.contains("Nesting too deep") == true -> "Error: invalidOperation"
-                else -> "Error: invalidOperation"
+                e.message?.contains("Division by zero") == true -> ERROR_DIVISION_BY_ZERO
+                e.message?.contains("Negative sqrt") == true -> ERROR_INVALID_OPERATION
+                e.message?.contains("Invalid factorial") == true -> ERROR_INVALID_OPERATION
+                e.message?.contains("Non-finite") == true -> ERROR_OVERFLOW
+                e.message?.contains("Nesting too deep") == true -> ERROR_INVALID_OPERATION
+                else -> ERROR_INVALID_OPERATION
             }
         } catch (_: Exception) {
-            "Error: invalidOperation"
+            ERROR_INVALID_OPERATION
         }
     }
 

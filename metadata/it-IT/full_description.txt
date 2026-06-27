@@ -1,0 +1,76 @@
+Ogni calcolo che fai riguarda solo te, non i giganti della tecnologia. Calcolatrice M3 è una calcolatrice dal design curato, realizzata con Material 3, che funziona completamente offline per la matematica di tutti i giorni, senza alcuna raccolta di dati, senza analisi e senza tracciamento.
+
+A differenza di altre calcolatrici, questa app non comunica di nascosto. Nessun monitoraggio dell'uso, nessuna telemetria, nessun framework pubblicitario nascosto nel codice. Fa calcoli — e offre un risolutore di matematica con IA opzionale, completamente sul dispositivo — e nient'altro.
+
+✓ Valutazione completa delle espressioni
+✓ Anteprima del risultato in tempo reale
+✓ Funzioni scientifiche
+✓ Cronologia dei calcoli
+✓ Tema dinamico Material 3
+✓ Funziona offline (con un risolutore di matematica con IA opzionale sul dispositivo)
+
+🔢 VALUTAZIONE COMPLETA DELLE ESPRESSIONI
+
+Digita espressioni matematiche complete con la corretta precedenza degli operatori e parentesi annidate fino a 20 livelli. Guarda il risultato aggiornarsi in tempo reale mentre scrivi.
+
+- Precedenza degli operatori completa
+- Parentesi con 20 livelli di annidamento
+- Anteprima del risultato in tempo reale mentre scrivi
+- Tocca un punto qualsiasi dell'espressione per modificarla
+- Aritmetica BigDecimal ad alta precisione
+- Notazione ingegneristica per i numeri grandi
+
+🔬 FUNZIONI SCIENTIFICHE
+
+- Radice quadrata (√)
+- Costante Pi greco (π)
+- Potenza (^)
+- Fattoriale (!) per valori da 0 a 99
+- Percentuale (%) in stile calcolatrici di uso comune
+- Moltiplicazione implicita (2π, 3√2, ecc.)
+
+📜 CRONOLOGIA DEI CALCOLI
+
+- Memorizza fino a 100 calcoli recenti
+- Si conserva al riavvio dell'app
+- Tocca le voci per ricaricarle
+- Cancella la cronologia quando serve
+
+📷 RISOLUTORE DI MATEMATICA CON IA (OPZIONALE, SPERIMENTALE)
+
+Un extra sperimentale per i dispositivi con più RAM: fotografa un'espressione matematica scritta a mano e lascia che un modello di IA sul dispositivo la legga e la risolva — interamente sul tuo dispositivo, senza inviare nulla ad alcun server.
+
+➡️ COME ATTIVARLO: le funzioni IA sono nascoste finché non le sblocchi. Nella calcolatrice, tocca il pulsante «AC» (cancella tutto) 7 volte in rapida successione — un conto alla rovescia guida gli ultimi tocchi. Compare quindi un'icona della fotocamera in alto a sinistra e lo sblocco viene ricordato.
+
+- Richiede un dispositivo da 6 GB+ e un download una tantum del modello visivo (2,6–4,9 GB)
+- Scatta una foto con la fotocamera di sistema o scegline una dalla galleria
+- Scegli tra diversi modelli visivi aperti (Gemma 4, Gemma 3n)
+- I modelli vengono eseguiti interamente sul dispositivo, con accelerazione GPU dove supportata
+- La soluzione viene mostrata con una matematica ben formattata — frazioni, radici ed esponenti
+- Internet viene usato una sola volta, per scaricare il modello che scegli
+- Nessuna foto, calcolo o dato di utilizzo lascia mai il tuo dispositivo
+
+🎨 DESIGN MATERIAL 3
+
+- Colori dinamici Material You (Android 12+)
+- Modalità chiara e scura automatica
+- Animazioni fluide alla pressione dei pulsanti
+- Feedback aptico
+- Layout adattivo per verticale, orizzontale e dispositivi pieghevoli
+- Display a dimensionamento automatico per le espressioni lunghe
+
+🛡️ PRIVACY E OPEN SOURCE
+
+- 100% open source (GPL v3)
+- Nessun tracciamento, analisi o pubblicità
+- Nessuna raccolta di dati di alcun tipo
+- La calcolatrice in sé non ha bisogno di alcuna rete
+- Internet viene usato solo se scegli di scaricare un modello di IA — mai per inviare i tuoi dati
+- I tuoi calcoli e le tue foto restano sul tuo dispositivo, punto e basta
+
+📱 FUNZIONA SU TUTTI I DISPOSITIVI
+
+- Telefoni in verticale e orizzontale
+- Dispositivi pieghevoli (Pixel Fold, Galaxy Z Fold)
+- Tablet
+- Dimensioni e layout dei pulsanti responsivi

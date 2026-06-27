@@ -518,21 +518,21 @@ class CalculatorUiTest {
     fun divisionByZero() {
         launch()
         tap("5", "÷", "0", "=")
-        expressionShows("Error: divisionByZero")
+        expressionShows("Cannot divide by zero")
     }
 
     @Test
     fun divisionByZeroInChain() {
         launch()
         tap("5", "+", "1", "0", "÷", "0", "=")
-        expressionShows("Error: divisionByZero")
+        expressionShows("Cannot divide by zero")
     }
 
     @Test
     fun zeroByZero() {
         launch()
         tap("0", "÷", "0", "=")
-        expressionShows("Error: divisionByZero")
+        expressionShows("Cannot divide by zero")
     }
 
     // ── Factorial (additional) ────────────────────────────────────
@@ -548,7 +548,7 @@ class CalculatorUiTest {
     fun factorialAbove99ReturnsInvalidOperation() {
         launch()
         tap("1", "0", "0", "!", "=")
-        expressionShows("Error: invalidOperation")
+        expressionShows("Invalid operation")
     }
 
     @Test
@@ -601,7 +601,7 @@ class CalculatorUiTest {
     fun sqrtOfNegativeReturnsInvalidOperation() {
         launch()
         tap("4", "+/−", "√", "=")
-        expressionShows("Error: invalidOperation")
+        expressionShows("Invalid operation")
     }
 
     @Test
@@ -958,7 +958,7 @@ class CalculatorUiTest {
         launch()
         // 9^9999 overflows Double → Error: overflow
         tap("9", "^", "9", "9", "9", "9", "=")
-        expressionShows("Error: overflow")
+        expressionShows("Number too large")
     }
 
     // ── IEEE 754 error recovery ──────────────────────────────────────
@@ -967,7 +967,7 @@ class CalculatorUiTest {
     fun newExpressionAfterDivisionByZero() {
         launch()
         tap("5", "÷", "0", "=")
-        expressionShows("Error: divisionByZero")
+        expressionShows("Cannot divide by zero")
         tap("3", "+", "2", "=")
         expressionShows("5")
     }
@@ -976,7 +976,7 @@ class CalculatorUiTest {
     fun newExpressionAfterInvalidOperation() {
         launch()
         tap("4", "+/−", "√", "=")
-        expressionShows("Error: invalidOperation")
+        expressionShows("Invalid operation")
         tap("9", "√", "=")
         expressionShows("3")
     }
@@ -985,7 +985,7 @@ class CalculatorUiTest {
     fun newExpressionAfterOverflow() {
         launch()
         tap("9", "^", "9", "9", "9", "9", "=")
-        expressionShows("Error: overflow")
+        expressionShows("Number too large")
         tap("2", "+", "3", "=")
         expressionShows("5")
     }

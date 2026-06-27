@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Számológép</string>
+
+    <!-- A számológép hibaüzenetei -->
+    <string name="error_division_by_zero">Nullával nem lehet osztani</string>
+    <string name="error_invalid_operation">Érvénytelen művelet</string>
+    <string name="error_overflow">Túl nagy szám</string>
+
+    <!-- Előzmények -->
+    <string name="history">Előzmények</string>
+    <string name="clear_history">Előzmények törlése</string>
+    <string name="no_history_yet">Még nincsenek előzmények</string>
+
+    <!-- Gombok akadálymentesítése -->
+    <string name="btn_backspace">Visszatörlés</string>
+    <string name="btn_all_clear">Összes törlése</string>
+    <string name="btn_percent">Százalék</string>
+    <string name="btn_divide">Osztás</string>
+    <string name="btn_multiply">Szorzás</string>
+    <string name="btn_subtract">Kivonás</string>
+    <string name="btn_add">Összeadás</string>
+    <string name="btn_equals">Egyenlő</string>
+    <string name="btn_decimal">Tizedesvessző</string>
+    <string name="btn_toggle_sign">Előjelváltás</string>
+    <string name="btn_square_root">Négyzetgyök</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Hatvány</string>
+    <string name="btn_factorial">Faktoriális</string>
+
+    <!-- Kamera / MI-beolvasás -->
+    <string name="scan_expression">Kifejezés beolvasása</string>
+    <string name="scan_hint">Készíts vagy válassz fényképet egy kézzel írt matematikai kifejezésről</string>
+    <string name="take_photo">Fénykép készítése</string>
+    <string name="choose_from_gallery">Választás a galériából</string>
+    <string name="camera_processing_image">Kép feldolgozása…</string>
+    <string name="processing_image_hint">A vizuális modell elemzi a fényképedet. Ez 1–2 percig tarthat.</string>
+    <string name="camera_generating">Megoldás…</string>
+    <string name="initializing">Inicializálás…</string>
+    <string name="model_loading">MI-modell betöltése…</string>
+    <string name="model_loading_hint">A vizuális modell betöltése a memóriába. Az első használatkor ez akár egy percig is eltarthat.</string>
+    <string name="answer_found">Válasz</string>
+    <string name="recognized_in">Megoldva %1$s alatt</string>
+    <string name="use_expression">Használat</string>
+    <string name="use_answer">%1$s használata</string>
+    <string name="retry">Újrapróbálkozás</string>
+    <string name="stop">Leállítás</string>
+    <string name="close">Bezárás</string>
+    <string name="recognition_error">A felismerés sikertelen</string>
+    <string name="choose_model">Válassz MI-modellt</string>
+    <string name="choose_model_description">Az eszközöd %1$d GB RAM-mal rendelkezik. A nagyobb modellek pontosabbak, de lassabbak. Minden modell teljes egészében az eszközödön fut.</string>
+    <string name="model_too_large">%1$d GB RAM szükséges — az eszközöd %2$d GB-tal rendelkezik</string>
+    <string name="download_model">Letöltés</string>
+    <string name="downloaded">Letöltve</string>
+    <string name="downloading_model">MI-modell letöltése</string>
+    <string name="download_complete">Letöltés kész</string>
+    <string name="download_file_progress">%1$d/%2$d fájl</string>
+    <string name="download_warning">Ez egy nagy letöltés. Ha lehet, használj Wi-Fi-t.</string>
+    <string name="notif_permission_title">Engedélyezed az értesítéseket?</string>
+    <string name="notif_permission_rationale">Engedélyezd az értesítéseket, hogy az MI-modell letöltése a háttérben futhasson és mutathassa a haladását.</string>
+    <string name="notif_permission_allow">Engedélyezés</string>
+    <string name="not_now">Most nem</string>
+    <string name="raw_model_output">A modell nyers kimenete</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace-bejelentkezés szükséges</string>
+    <string name="mobile_data_title">Nincs Wi-Fi-kapcsolat</string>
+    <string name="mobile_data_description">A(z) %1$s letöltésére készülsz mobiladat használatával. Ez a szolgáltatód díjaival járhat.</string>
+    <string name="download_anyway">Letöltés mindenképp</string>
+    <string name="cancel">Mégse</string>
+    <string name="ai_feature_low_ram">Több RAM szükséges ennek az MI-funkciónak a használatához.</string>
+    <string name="ai_feature_title">MI matematikai megoldó</string>
+    <string name="ai_feature_description">Ez a funkció egy nagy, teljes egészében az eszközödön futó MI-modellt használ, hogy fényképekről megoldja a kézzel írt matematikát.\n\nNe feledd:\n\n• 4–6 GB méretű modell letöltése szükséges\n• A letöltéshez Wi-Fi használatát javasoljuk\n• Az MI-modell futtatása jelentős akkumulátort fogyaszt\n• Semmilyen adat nem kerül felküldésre a felhőbe</string>
+    <string name="ai_feature_continue">Modell választása</string>
+    <string name="license_required_title">Licenc elfogadása szükséges</string>
+    <string name="license_required_description">A(z) %1$s használatához el kell fogadnod a licencet a HuggingFace-en a letöltés előtt. Koppints az alábbi gombra a modell oldalának megnyitásához, majd kattints az \"Agree and access repository\" gombra.</string>
+    <string name="accept_license">Licenc elfogadása a HuggingFace-en</string>
+    <string name="token_invalid_title">A munkamenet lejárt</string>
+    <string name="token_invalid_description">A HuggingFace-munkameneted lejárt. Jelentkezz be újra a letöltés folytatásához.</string>
+    <string name="hf_token_title">Bejelentkezés a HuggingFace-re</string>
+    <string name="hf_token_description">A(z) %1$s egy korlátozott hozzáférésű modell. Jelentkezz be az ingyenes HuggingFace-fiókoddal a letöltéséhez. Lehet, hogy a modell licencét is el kell fogadnod a modell oldalán.</string>
+    <string name="sign_in_huggingface">Bejelentkezés a Hugging Face-szel</string>
+    <string name="sign_in_again">Bejelentkezés újra</string>
+    <string name="signing_in">Bejelentkezés…</string>
+    <string name="experimental_feature_title">Kísérleti funkció</string>
+    <string name="experimental_feature_warning">Az MI-kamera funkció kísérleti, és hibákat vagy váratlan viselkedést mutathat.</string>
+    <string name="accept">Elfogadás</string>
+
+    <!-- Rejtett MI-feloldás -->
+    <string name="ai_unlocked">MI-funkciók feloldva!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Még %1$d megnyomás az MI-funkciók feloldásához</item>
+        <item quantity="other">Még %1$d megnyomás az MI-funkciók feloldásához</item>
+    </plurals>
+</resources>
