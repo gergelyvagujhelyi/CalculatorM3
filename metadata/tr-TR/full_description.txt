@@ -1,0 +1,76 @@
+Yaptığınız her hesaplama sizi ilgilendirir — teknoloji devlerini değil. Hesap Makinesi M3, günlük matematik için tamamen çevrimdışı çalışan, Material 3 ile özenle tasarlanmış bir hesap makinesidir; sıfır veri toplama, sıfır analiz ve sıfır takip.
+
+Diğer hesap makinelerinin aksine bu uygulama gizlice veri göndermez. Kullanım takibi yok, telemetri yok, kodun içine gömülmüş reklam çerçeveleri yok. Sadece matematik yapar — ve isteğe bağlı, tamamen cihazda çalışan bir yapay zeka matematik çözücüsü sunar — başka bir şey değil.
+
+✓ Tam ifade değerlendirmesi
+✓ Anlık sonuç önizlemesi
+✓ Bilimsel fonksiyonlar
+✓ Hesaplama geçmişi
+✓ Dinamik Material 3 teması
+✓ Çevrimdışı çalışır (isteğe bağlı, cihazda çalışan yapay zeka matematik çözücüsüyle)
+
+🔢 TAM İFADE DEĞERLENDİRMESİ
+
+Doğru işlem önceliğiyle ve 20 seviyeye kadar iç içe parantezlerle tam matematiksel ifadeler yazın. Yazarken sonucun gerçek zamanlı olarak güncellenmesini izleyin.
+
+- Tam işlem önceliği
+- 20 seviyeye kadar iç içe parantez
+- Yazarken anlık sonuç önizlemesi
+- Düzenlemek için ifadenin herhangi bir yerine dokunun
+- Yüksek hassasiyetli aritmetik (BigDecimal)
+- Büyük sayılar için mühendislik gösterimi
+
+🔬 BİLİMSEL FONKSİYONLAR
+
+- Karekök (√)
+- Pi (π) sabiti
+- Üs (^)
+- 0-99 değerleri için faktöriyel (!)
+- Günlük hesap makinesi tarzında yüzde (%)
+- Örtük çarpma (2π, 3√2 vb.)
+
+📜 HESAPLAMA GEÇMİŞİ
+
+- Son 100 hesaplamaya kadar saklar
+- Uygulama yeniden başlatıldığında korunur
+- Yeniden yüklemek için girişlere dokunun
+- Gerektiğinde geçmişi temizleyin
+
+📷 YAPAY ZEKA MATEMATİK ÇÖZÜCÜ (İSTEĞE BAĞLI, DENEYSEL)
+
+Daha fazla RAM'e sahip cihazlar için deneysel bir ek: elle yazılmış bir matematik ifadesinin fotoğrafını çekin ve cihazdaki bir yapay zeka modelinin onu okuyup çözmesine izin verin — tamamen cihazınızda, hiçbir sunucuya hiçbir şey gönderilmeden.
+
+➡️ NASIL AÇILIR: yapay zeka özellikleri, kilidini açana kadar gizlidir. Hesap makinesinde "AC" (tümünü temizle) düğmesine art arda 7 kez dokunun — bir geri sayım son dokunuşlarda size yol gösterir. Ardından sol üst köşede bir kamera simgesi belirir ve kilit açma hatırlanır.
+
+- 6 GB+ bir cihaz ve görüntü modelinin tek seferlik indirilmesini gerektirir (2,6–4,9 GB)
+- Sistem kameranızla bir fotoğraf çekin veya galerinizden birini seçin
+- Birkaç açık görüntü modeli arasından seçim yapın (Gemma 4, Gemma 3n)
+- Modeller tamamen cihazda çalışır, desteklenen yerlerde GPU hızlandırmalı
+- Çözüm, düzgün biçimlendirilmiş matematikle gösterilir — kesirler, kökler ve üsler
+- İnternet yalnızca bir kez, seçtiğiniz modeli indirmek için kullanılır
+- Hiçbir fotoğraf, hesaplama veya kullanım verisi cihazınızdan asla çıkmaz
+
+🎨 MATERIAL 3 TASARIMI
+
+- Dinamik Material You renkleri (Android 12+)
+- Otomatik açık ve koyu mod
+- Akıcı düğme basma animasyonları
+- Dokunsal geri bildirim
+- Dikey, yatay ve katlanabilir cihazlar için uyarlanabilir düzen
+- Uzun ifadeler için otomatik boyutlanan ekran
+
+🛡️ GİZLİLİK VE AÇIK KAYNAK
+
+- %100 açık kaynak (GPL v3)
+- Takip, analiz veya reklam yok
+- Hiçbir türde veri toplama yok
+- Hesap makinesinin kendisi hiçbir ağa ihtiyaç duymaz
+- İnternet yalnızca bir yapay zeka modeli indirmeyi tercih ederseniz kullanılır — asla verilerinizi göndermek için değil
+- Hesaplamalarınız ve fotoğraflarınız cihazınızda kalır, nokta
+
+📱 TÜM CİHAZLARDA ÇALIŞIR
+
+- Dikey ve yatay modda telefonlar
+- Katlanabilir cihazlar (Pixel Fold, Galaxy Z Fold)
+- Tabletler
+- Duyarlı düğme boyutu ve düzeni

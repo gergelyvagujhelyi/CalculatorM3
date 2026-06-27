@@ -1,0 +1,76 @@
+Jede Berechnung, die du machst, geht nur dich etwas an — nicht die Tech-Giganten. Rechner M3 ist ein durchdacht gestalteter Rechner auf Basis von Material 3, der für alltägliche Mathematik vollständig offline funktioniert — ohne jede Datenerfassung, ohne Analyse und ohne Tracking.
+
+Anders als andere Rechner funkt diese App nicht nach Hause. Keine Nutzungsverfolgung, keine Telemetrie, keine im Code versteckten Werbe-Frameworks. Sie rechnet — und bietet einen optionalen, vollständig auf dem Gerät laufenden KI-Mathelöser — und sonst nichts.
+
+✓ Vollständige Auswertung von Ausdrücken
+✓ Live-Vorschau des Ergebnisses
+✓ Wissenschaftliche Funktionen
+✓ Berechnungsverlauf
+✓ Dynamisches Material-3-Design
+✓ Funktioniert offline (mit optionalem KI-Mathelöser auf dem Gerät)
+
+🔢 VOLLSTÄNDIGE AUSWERTUNG VON AUSDRÜCKEN
+
+Gib vollständige mathematische Ausdrücke mit korrekter Operatorrangfolge (Punkt-vor-Strich) und bis zu 20 Ebenen verschachtelten Klammern ein. Sieh zu, wie sich das Ergebnis in Echtzeit aktualisiert, während du tippst.
+
+- Vollständige Operatorrangfolge (Punkt-vor-Strich)
+- Klammern mit bis zu 20 Verschachtelungsebenen
+- Live-Vorschau des Ergebnisses beim Tippen
+- Tippe an eine beliebige Stelle im Ausdruck, um ihn zu bearbeiten
+- Hochpräzise BigDecimal-Arithmetik
+- Technische Notation für große Zahlen
+
+🔬 WISSENSCHAFTLICHE FUNKTIONEN
+
+- Quadratwurzel (√)
+- Konstante Pi (π)
+- Potenz (^)
+- Fakultät (!) für Werte von 0 bis 99
+- Prozent (%) im Stil von Alltagsrechnern
+- Implizite Multiplikation (2π, 3√2 usw.)
+
+📜 BERECHNUNGSVERLAUF
+
+- Speichert bis zu 100 aktuelle Berechnungen
+- Bleibt über Neustarts der App hinweg erhalten
+- Tippe auf Einträge, um sie erneut zu laden
+- Lösche den Verlauf bei Bedarf
+
+📷 KI-MATHELÖSER (OPTIONAL, EXPERIMENTELL)
+
+Ein experimentelles Extra für Geräte mit mehr RAM: Fotografiere einen handgeschriebenen mathematischen Ausdruck und lass ein KI-Modell auf dem Gerät ihn lesen und lösen — vollständig auf deinem Gerät, ohne dass etwas an einen Server gesendet wird.
+
+➡️ SO AKTIVIERST DU IHN: Die KI-Funktionen sind ausgeblendet, bis du sie freischaltest. Tippe im Rechner 7-mal schnell hintereinander auf die Taste „AC" (Alles löschen) — ein Countdown führt dich durch die letzten Tipps. Anschließend erscheint oben links ein Kamerasymbol, und die Freischaltung wird gemerkt.
+
+- Erfordert ein Gerät mit 6 GB+ und einen einmaligen Download des Vision-Modells (2,6–4,9 GB)
+- Mache ein Foto mit deiner System-Kamera oder wähle eines aus deiner Galerie
+- Wähle aus mehreren offenen Vision-Modellen (Gemma 4, Gemma 3n)
+- Modelle laufen vollständig auf dem Gerät, GPU-beschleunigt, wo unterstützt
+- Die Lösung wird mit sauber formatierter Mathematik angezeigt — Brüche, Wurzeln und Exponenten
+- Das Internet wird nur einmal genutzt, um das von dir gewählte Modell herunterzuladen
+- Keine Fotos, Berechnungen oder Nutzungsdaten verlassen jemals dein Gerät
+
+🎨 MATERIAL-3-DESIGN
+
+- Dynamische Material-You-Farben (Android 12+)
+- Automatischer Hell- und Dunkelmodus
+- Flüssige Animationen beim Tastendruck
+- Haptisches Feedback
+- Adaptives Layout für Hochformat, Querformat und faltbare Geräte
+- Automatisch skalierende Anzeige für lange Ausdrücke
+
+🛡️ DATENSCHUTZ & OPEN SOURCE
+
+- 100 % Open Source (GPL v3)
+- Kein Tracking, keine Analyse, keine Werbung
+- Keinerlei Datenerfassung
+- Der Rechner selbst benötigt überhaupt kein Netzwerk
+- Das Internet wird nur genutzt, wenn du dich für den Download eines KI-Modells entscheidest — niemals, um deine Daten zu senden
+- Deine Berechnungen und Fotos bleiben auf deinem Gerät. Punkt.
+
+📱 FUNKTIONIERT AUF ALLEN GERÄTEN
+
+- Smartphones im Hoch- und Querformat
+- Faltbare Geräte (Pixel Fold, Galaxy Z Fold)
+- Tablets
+- Responsive Tastengröße und Layout

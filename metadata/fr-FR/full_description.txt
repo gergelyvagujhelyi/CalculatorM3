@@ -1,0 +1,76 @@
+Chaque calcul que vous faites ne regarde que vous — pas les géants de la tech. Calculatrice M3 est une calculatrice au design soigné, conçue avec Material 3, qui fonctionne entièrement hors ligne pour les maths du quotidien, sans aucune collecte de données, aucune analyse et aucun pistage.
+
+Contrairement à d'autres calculatrices, cette application ne communique rien en douce. Aucun suivi d'utilisation, aucune télémétrie, aucun framework publicitaire caché dans le code. Elle fait des maths — et propose un résolveur de maths par IA optionnel, entièrement sur l'appareil — et rien d'autre.
+
+✓ Évaluation complète des expressions
+✓ Aperçu du résultat en direct
+✓ Fonctions scientifiques
+✓ Historique des calculs
+✓ Thème dynamique Material 3
+✓ Fonctionne hors ligne (avec un résolveur de maths par IA optionnel sur l'appareil)
+
+🔢 ÉVALUATION COMPLÈTE DES EXPRESSIONS
+
+Saisissez des expressions mathématiques complètes avec la priorité des opérations et des parenthèses imbriquées jusqu'à 20 niveaux. Voyez le résultat se mettre à jour en temps réel pendant que vous tapez.
+
+- Priorité des opérations complète
+- Parenthèses imbriquées jusqu'à 20 niveaux
+- Aperçu du résultat en direct pendant la saisie
+- Touchez n'importe où dans l'expression pour la modifier
+- Arithmétique de haute précision (BigDecimal)
+- Notation scientifique pour les grands nombres
+
+🔬 FONCTIONS SCIENTIFIQUES
+
+- Racine carrée (√)
+- Constante Pi (π)
+- Puissance (^)
+- Factorielle (!) pour les valeurs de 0 à 99
+- Pourcentage (%) à la manière des calculatrices grand public
+- Multiplication implicite (2π, 3√2, etc.)
+
+📜 HISTORIQUE DES CALCULS
+
+- Conserve jusqu'à 100 calculs récents
+- Persiste après le redémarrage de l'application
+- Touchez une entrée pour la recharger
+- Effacez l'historique quand vous le souhaitez
+
+📷 RÉSOLVEUR DE MATHS IA (OPTIONNEL, EXPÉRIMENTAL)
+
+Un extra expérimental pour les appareils disposant de plus de RAM : photographiez une expression mathématique manuscrite et laissez un modèle d'IA sur l'appareil la lire et la résoudre — entièrement sur votre appareil, sans rien envoyer à un serveur.
+
+➡️ COMMENT L'ACTIVER : les fonctions IA sont masquées jusqu'à ce que vous les débloquiez. Dans la calculatrice, touchez le bouton « AC » (tout effacer) 7 fois de suite — un compte à rebours guide les derniers appuis. Une icône d'appareil photo apparaît alors en haut à gauche, et le déblocage est mémorisé.
+
+- Nécessite un appareil de 6 Go+ et un téléchargement unique du modèle de vision (2,6–4,9 Go)
+- Prenez une photo avec l'appareil photo du système, ou choisissez-en une dans votre galerie
+- Choisissez parmi plusieurs modèles de vision ouverts (Gemma 4, Gemma 3n)
+- Les modèles s'exécutent entièrement sur l'appareil, accélérés par le GPU lorsque c'est pris en charge
+- La solution est affichée avec des maths proprement formatées — fractions, racines et exposants
+- Internet n'est utilisé qu'une seule fois, pour télécharger le modèle que vous choisissez
+- Aucune photo, aucun calcul ni aucune donnée d'utilisation ne quitte jamais votre appareil
+
+🎨 DESIGN MATERIAL 3
+
+- Couleurs dynamiques Material You (Android 12+)
+- Mode clair et sombre automatique
+- Animations fluides à l'appui des boutons
+- Retour haptique
+- Mise en page adaptative pour les modes portrait, paysage et les appareils pliables
+- Affichage à taille automatique pour les longues expressions
+
+🛡️ CONFIDENTIALITÉ ET OPEN SOURCE
+
+- 100 % open source (GPL v3)
+- Aucun pistage, aucune analyse, aucune publicité
+- Aucune collecte de données, quelle qu'elle soit
+- La calculatrice elle-même n'a besoin d'aucun réseau
+- Internet n'est utilisé que si vous choisissez de télécharger un modèle d'IA — jamais pour envoyer vos données
+- Vos calculs et vos photos restent sur votre appareil, point final
+
+📱 FONCTIONNE SUR TOUS LES APPAREILS
+
+- Téléphones en portrait et paysage
+- Appareils pliables (Pixel Fold, Galaxy Z Fold)
+- Tablettes
+- Taille et disposition des boutons adaptatives

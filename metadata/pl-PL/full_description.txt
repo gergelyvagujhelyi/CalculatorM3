@@ -1,0 +1,76 @@
+Każde obliczenie, które wykonujesz, to Twoja sprawa — a nie wielkich firm technologicznych. Kalkulator M3 to pięknie zaprojektowany kalkulator oparty na Material 3, który działa całkowicie offline w codziennej matematyce, bez zbierania danych, bez analityki i bez śledzenia.
+
+W przeciwieństwie do innych kalkulatorów, ta aplikacja nie wysyła danych po cichu. Brak śledzenia użycia, brak telemetrii, brak ukrytych w kodzie frameworków reklamowych. Liczy — i oferuje opcjonalny, działający w całości na urządzeniu solver matematyczny AI — i nic więcej.
+
+✓ Pełne obliczanie wyrażeń
+✓ Podgląd wyniku na żywo
+✓ Funkcje naukowe
+✓ Historia obliczeń
+✓ Dynamiczny motyw Material 3
+✓ Działa offline (z opcjonalnym solverem matematycznym AI na urządzeniu)
+
+🔢 PEŁNE OBLICZANIE WYRAŻEŃ
+
+Wpisuj pełne wyrażenia matematyczne z poprawną kolejnością działań i nawiasami zagnieżdżonymi do 20 poziomów. Obserwuj, jak wynik aktualizuje się na bieżąco podczas pisania.
+
+- Pełna kolejność działań
+- Nawiasy z 20 poziomami zagnieżdżenia
+- Podgląd wyniku podczas pisania
+- Dotknij dowolnego miejsca w wyrażeniu, aby je edytować
+- Arytmetyka wysokiej precyzji (BigDecimal)
+- Notacja inżynierska dla dużych liczb
+
+🔬 FUNKCJE NAUKOWE
+
+- Pierwiastek kwadratowy (√)
+- Stała Pi (π)
+- Potęga (^)
+- Silnia (!) dla wartości od 0 do 99
+- Procent (%) w stylu zwykłych kalkulatorów
+- Mnożenie niejawne (2π, 3√2 itp.)
+
+📜 HISTORIA OBLICZEŃ
+
+- Przechowuje do 100 ostatnich obliczeń
+- Zachowuje się po ponownym uruchomieniu aplikacji
+- Dotknij wpisu, aby go ponownie wczytać
+- Wyczyść historię, gdy zajdzie potrzeba
+
+📷 SOLVER MATEMATYCZNY AI (OPCJONALNY, EKSPERYMENTALNY)
+
+Eksperymentalny dodatek dla urządzeń z większą ilością RAM: sfotografuj odręczne wyrażenie matematyczne i pozwól modelowi AI na urządzeniu odczytać je i rozwiązać — w całości na Twoim urządzeniu, bez wysyłania czegokolwiek na serwer.
+
+➡️ JAK WŁĄCZYĆ: funkcje AI są ukryte, dopóki ich nie odblokujesz. W kalkulatorze dotknij przycisku "AC" (wyczyść wszystko) 7 razy pod rząd — odliczanie poprowadzi Cię przez ostatnie dotknięcia. Następnie w lewym górnym rogu pojawi się ikona aparatu, a odblokowanie zostanie zapamiętane.
+
+- Wymaga urządzenia z 6 GB+ i jednorazowego pobrania modelu wizyjnego (2,6–4,9 GB)
+- Zrób zdjęcie aparatem systemowym lub wybierz je z galerii
+- Wybieraj spośród kilku otwartych modeli wizyjnych (Gemma 4, Gemma 3n)
+- Modele działają w całości na urządzeniu, z akceleracją GPU tam, gdzie jest obsługiwana
+- Rozwiązanie jest pokazywane z ładnie sformatowaną matematyką — ułamki, pierwiastki i wykładniki
+- Internet jest używany tylko raz, do pobrania wybranego modelu
+- Żadne zdjęcie, obliczenie ani dane o użyciu nigdy nie opuszczają Twojego urządzenia
+
+🎨 PROJEKT MATERIAL 3
+
+- Dynamiczne kolory Material You (Android 12+)
+- Automatyczny tryb jasny i ciemny
+- Płynne animacje naciśnięć przycisków
+- Wibracje dotykowe
+- Adaptacyjny układ dla pionu, poziomu i urządzeń składanych
+- Automatyczny rozmiar wyświetlacza dla długich wyrażeń
+
+🛡️ PRYWATNOŚĆ I OTWARTY KOD
+
+- 100% otwarty kod (GPL v3)
+- Bez śledzenia, analityki i reklam
+- Bez zbierania jakichkolwiek danych
+- Sam kalkulator w ogóle nie potrzebuje sieci
+- Internet jest używany tylko wtedy, gdy zdecydujesz się pobrać model AI — nigdy do wysyłania Twoich danych
+- Twoje obliczenia i zdjęcia pozostają na Twoim urządzeniu, kropka
+
+📱 DZIAŁA NA WSZYSTKICH URZĄDZENIACH
+
+- Telefony w pionie i poziomie
+- Urządzenia składane (Pixel Fold, Galaxy Z Fold)
+- Tablety
+- Responsywny rozmiar i układ przycisków
