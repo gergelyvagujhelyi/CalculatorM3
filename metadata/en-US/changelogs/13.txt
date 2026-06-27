@@ -1,0 +1,2 @@
+- AI Math Solver: your scan and result are now kept when you rotate the screen
+- AI Math Solver: the Stop button stays on screen while solving in landscape
