@@ -845,7 +845,13 @@ fun DisplaySection(
             exit = fadeOut(animationSpec = tween(150))
         ) {
             Text(
-                text = if (result.startsWith("Error")) result else "= ${formatResultNumber(result)}",
+                text = if (result.startsWith("Error")) {
+                    when (result) {
+                        CalculatorViewModel.ERROR_DIVISION_BY_ZERO -> stringResource(R.string.error_division_by_zero)
+                        CalculatorViewModel.ERROR_OVERFLOW -> stringResource(R.string.error_overflow)
+                        else -> stringResource(R.string.error_invalid_operation)
+                    }
+                } else "= ${formatResultNumber(result)}",
                 style = MaterialTheme.typography.headlineSmall,
                 color = colorScheme.primary.copy(alpha = 0.65f),
                 fontWeight = FontWeight.Medium,
