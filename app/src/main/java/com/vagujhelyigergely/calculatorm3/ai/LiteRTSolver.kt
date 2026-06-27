@@ -101,17 +101,43 @@ class LiteRTSolver : MathSolver {
     ): Result<RecognitionResult> {
         val conv = createConversation()
         val rawBuilder = StringBuilder()
-        conv.sendMessageAsync(
-            Contents.of(
-                Content.ImageFile(imagePath),
-                Content.Text(SolverPrompts.USER_PROMPT)
+        var tokenCount = 0
+        try {
+            conv.sendMessageAsync(
+                Contents.of(
+                    Content.ImageFile(imagePath),
+                    Content.Text(SolverPrompts.USER_PROMPT)
+                )
+            ).collect { message ->
+                val text = message.contents.contents
+                    .filterIsInstance<Content.Text>()
+                    .joinToString("") { it.text }
+                rawBuilder.append(text)
+                onToken(rawBuilder.toString())
+                // Hard output cap: a runaway generation that never emits a stop would otherwise
+                // stream forever (and pin the GPU). Interrupt the native side AND break out of the
+                // collection: cancelProcess() alone does NOT complete the flow, so collect() would
+                // keep suspending and the scan would hang on "Processing" — throwing unwinds it
+                // immediately so we finish with the text gathered so far.
+                if (++tokenCount >= MAX_OUTPUT_TOKENS) {
+                    Log.w(TAG, "Output cap reached ($tokenCount tokens) — stopping generation")
+                    try { conv.cancelProcess() } catch (_: Exception) {}
+                    throw OutputCapReached()
+                }
+            }
+        } catch (e: OutputCapReached) {
+            // The cap fired: the model never stopped on its own, so the output is incomplete and
+            // any number parsed from it would be unreliable. Surface a clear FAILURE (not a Success
+            // with a half-parsed answer) so the user sees it was cut off, not actually solved. The
+            // partial text is attached as the raw response for the "show raw" toggle. Real errors
+            // and genuine cancellation are not caught here, so they keep their existing behavior.
+            return Result.failure(
+                RecognitionException(
+                    "The answer was cut off before the model finished — it ran past the length " +
+                        "limit. Please try again.",
+                    rawBuilder.toString()
+                )
             )
-        ).collect { message ->
-            val text = message.contents.contents
-                .filterIsInstance<Content.Text>()
-                .joinToString("") { it.text }
-            rawBuilder.append(text)
-            onToken(rawBuilder.toString())
         }
         val raw = rawBuilder.toString()
         val answer = SolverPrompts.extractAnswer(raw)
@@ -185,6 +211,20 @@ class LiteRTSolver : MathSolver {
 
     companion object {
         private const val TAG = "LiteRTSolver"
+
+        /** Internal signal thrown to unwind token streaming the moment the output cap is hit. */
+        private class OutputCapReached : Exception()
+
+        /**
+         * Hard ceiling on generated chunks (≈ tokens) per scan — a safety net against a runaway
+         * generation that never emits a stop (it would otherwise stream forever and pin the GPU).
+         * Deliberately set well ABOVE any legitimate answer so it never truncates a hard question:
+         * a math solution with steps is a few hundred tokens at most, and this is near the model's
+         * own KV-cache ceiling. Because it's a token (not time) cap, it cuts off at the same amount
+         * of content regardless of device speed — a fast phone just reaches it sooner in wall-time.
+         * Tune here if answers ever get truncated.
+         */
+        private const val MAX_OUTPUT_TOKENS = 2048
 
         /** Wrap [Throwable] in an [Exception] so callers expecting Exception types are satisfied. */
         private fun Throwable.asException(): Exception =
