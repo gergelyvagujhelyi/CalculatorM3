@@ -846,12 +846,11 @@ fun DisplaySection(
         ) {
             Text(
                 text = if (result.startsWith("Error")) {
-                    val errorRes = when (result) {
-                        CalculatorViewModel.ERROR_DIVISION_BY_ZERO -> R.string.error_division_by_zero
-                        CalculatorViewModel.ERROR_OVERFLOW -> R.string.error_overflow
-                        else -> R.string.error_invalid_operation
+                    when (result) {
+                        CalculatorViewModel.ERROR_DIVISION_BY_ZERO -> stringResource(R.string.error_division_by_zero)
+                        CalculatorViewModel.ERROR_OVERFLOW -> stringResource(R.string.error_overflow)
+                        else -> stringResource(R.string.error_invalid_operation)
                     }
-                    stringResource(errorRes)
                 } else "= ${formatResultNumber(result)}",
                 style = MaterialTheme.typography.headlineSmall,
                 color = colorScheme.primary.copy(alpha = 0.65f),
