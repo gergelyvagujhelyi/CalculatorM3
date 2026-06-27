@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Rechner</string>
+
+    <!-- Fehlermeldungen des Rechners -->
+    <string name="error_division_by_zero">Division durch null</string>
+    <string name="error_invalid_operation">Ungültige Operation</string>
+    <string name="error_overflow">Zahl zu groß</string>
+
+    <!-- Verlauf -->
+    <string name="history">Verlauf</string>
+    <string name="clear_history">Verlauf löschen</string>
+    <string name="no_history_yet">Noch kein Verlauf</string>
+
+    <!-- Barrierefreiheit der Tasten -->
+    <string name="btn_backspace">Rücktaste</string>
+    <string name="btn_all_clear">Alles löschen</string>
+    <string name="btn_percent">Prozent</string>
+    <string name="btn_divide">Dividieren</string>
+    <string name="btn_multiply">Multiplizieren</string>
+    <string name="btn_subtract">Subtrahieren</string>
+    <string name="btn_add">Addieren</string>
+    <string name="btn_equals">Gleich</string>
+    <string name="btn_decimal">Dezimaltrennzeichen</string>
+    <string name="btn_toggle_sign">Vorzeichen wechseln</string>
+    <string name="btn_square_root">Quadratwurzel</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Potenz</string>
+    <string name="btn_factorial">Fakultät</string>
+
+    <!-- Kamera / KI-Scan -->
+    <string name="scan_expression">Ausdruck scannen</string>
+    <string name="scan_hint">Mache oder wähle ein Foto eines handgeschriebenen mathematischen Ausdrucks</string>
+    <string name="take_photo">Foto aufnehmen</string>
+    <string name="choose_from_gallery">Aus Galerie wählen</string>
+    <string name="camera_processing_image">Bild wird verarbeitet…</string>
+    <string name="processing_image_hint">Das Vision-Modell analysiert dein Foto. Das kann 1–2 Minuten dauern.</string>
+    <string name="camera_generating">Wird gelöst…</string>
+    <string name="initializing">Wird initialisiert…</string>
+    <string name="model_loading">KI-Modell wird geladen…</string>
+    <string name="model_loading_hint">Das Vision-Modell wird in den Speicher geladen. Bei der ersten Nutzung kann das bis zu einer Minute dauern.</string>
+    <string name="answer_found">Antwort</string>
+    <string name="recognized_in">Gelöst in %1$s</string>
+    <string name="use_expression">Verwenden</string>
+    <string name="use_answer">%1$s verwenden</string>
+    <string name="retry">Erneut versuchen</string>
+    <string name="stop">Stoppen</string>
+    <string name="close">Schließen</string>
+    <string name="recognition_error">Erkennung fehlgeschlagen</string>
+    <string name="choose_model">KI-Modell wählen</string>
+    <string name="choose_model_description">Dein Gerät hat %1$d GB RAM. Größere Modelle sind genauer, aber langsamer. Alle Modelle laufen vollständig auf deinem Gerät.</string>
+    <string name="model_too_large">Benötigt %1$d GB RAM — dein Gerät hat %2$d GB</string>
+    <string name="download_model">Herunterladen</string>
+    <string name="downloaded">Heruntergeladen</string>
+    <string name="downloading_model">KI-Modell wird heruntergeladen</string>
+    <string name="download_complete">Download abgeschlossen</string>
+    <string name="download_file_progress">Datei %1$d von %2$d</string>
+    <string name="download_warning">Dies ist ein großer Download. Verwende nach Möglichkeit WLAN.</string>
+    <string name="notif_permission_title">Benachrichtigungen zulassen?</string>
+    <string name="notif_permission_rationale">Lass Benachrichtigungen zu, damit der Download des KI-Modells im Hintergrund laufen und seinen Fortschritt anzeigen kann.</string>
+    <string name="notif_permission_allow">Zulassen</string>
+    <string name="not_now">Nicht jetzt</string>
+    <string name="raw_model_output">Rohausgabe des Modells</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace-Anmeldung erforderlich</string>
+    <string name="mobile_data_title">Keine WLAN-Verbindung</string>
+    <string name="mobile_data_description">Du bist dabei, %1$s über mobile Daten herunterzuladen. Dabei können Kosten deines Mobilfunkanbieters entstehen.</string>
+    <string name="download_anyway">Trotzdem herunterladen</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="ai_feature_low_ram">Du benötigst mehr RAM, um diese KI-Funktion zu nutzen.</string>
+    <string name="ai_feature_title">KI-Mathelöser</string>
+    <string name="ai_feature_description">Diese Funktion nutzt ein großes KI-Modell, das vollständig auf deinem Gerät läuft, um handgeschriebene Mathematik aus Fotos zu lösen.\n\nBitte beachte:\n\n• Ein Modell-Download von 4–6 GB ist erforderlich\n• Wir empfehlen WLAN für den Download\n• Das Ausführen des KI-Modells verbraucht viel Akku\n• Es werden keine Daten in die Cloud gesendet</string>
+    <string name="ai_feature_continue">Modell wählen</string>
+    <string name="license_required_title">Lizenzannahme erforderlich</string>
+    <string name="license_required_description">%1$s erfordert, dass du die Lizenz auf HuggingFace akzeptierst, bevor du herunterlädst. Tippe auf die Schaltfläche unten, um die Modellseite zu öffnen, und klicke dann auf \"Agree and access repository\".</string>
+    <string name="accept_license">Lizenz auf HuggingFace akzeptieren</string>
+    <string name="token_invalid_title">Sitzung abgelaufen</string>
+    <string name="token_invalid_description">Deine HuggingFace-Sitzung ist abgelaufen. Melde dich erneut an, um den Download fortzusetzen.</string>
+    <string name="hf_token_title">Bei HuggingFace anmelden</string>
+    <string name="hf_token_description">%1$s ist ein zugangsbeschränktes Modell. Melde dich mit deinem kostenlosen HuggingFace-Konto an, um es herunterzuladen. Möglicherweise musst du auch die Lizenz des Modells auf seiner Seite akzeptieren.</string>
+    <string name="sign_in_huggingface">Mit Hugging Face anmelden</string>
+    <string name="sign_in_again">Erneut anmelden</string>
+    <string name="signing_in">Anmeldung…</string>
+    <string name="experimental_feature_title">Experimentelle Funktion</string>
+    <string name="experimental_feature_warning">Die KI-Kamerafunktion ist experimentell und kann Fehler oder unerwartetes Verhalten aufweisen.</string>
+    <string name="accept">Akzeptieren</string>
+
+    <!-- Verstecktes KI-Freischalten -->
+    <string name="ai_unlocked">KI-Funktionen freigeschaltet!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Noch %1$d Tastendruck, um die KI-Funktionen freizuschalten</item>
+        <item quantity="other">Noch %1$d Tastendrücke, um die KI-Funktionen freizuschalten</item>
+    </plurals>
+</resources>

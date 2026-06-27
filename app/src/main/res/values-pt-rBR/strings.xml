@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Calculadora</string>
+
+    <!-- Mensagens de erro da calculadora -->
+    <string name="error_division_by_zero">Não é possível dividir por zero</string>
+    <string name="error_invalid_operation">Operação inválida</string>
+    <string name="error_overflow">Número muito grande</string>
+
+    <!-- Histórico -->
+    <string name="history">Histórico</string>
+    <string name="clear_history">Limpar histórico</string>
+    <string name="no_history_yet">Nenhum histórico ainda</string>
+
+    <!-- Acessibilidade dos botões -->
+    <string name="btn_backspace">Apagar</string>
+    <string name="btn_all_clear">Limpar tudo</string>
+    <string name="btn_percent">Porcentagem</string>
+    <string name="btn_divide">Dividir</string>
+    <string name="btn_multiply">Multiplicar</string>
+    <string name="btn_subtract">Subtrair</string>
+    <string name="btn_add">Somar</string>
+    <string name="btn_equals">Igual</string>
+    <string name="btn_decimal">Vírgula decimal</string>
+    <string name="btn_toggle_sign">Alternar sinal</string>
+    <string name="btn_square_root">Raiz quadrada</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Potência</string>
+    <string name="btn_factorial">Fatorial</string>
+
+    <!-- Câmera / Digitalização com IA -->
+    <string name="scan_expression">Escanear expressão</string>
+    <string name="scan_hint">Tire ou escolha uma foto de uma expressão matemática manuscrita</string>
+    <string name="take_photo">Tirar foto</string>
+    <string name="choose_from_gallery">Escolher da galeria</string>
+    <string name="camera_processing_image">Processando imagem…</string>
+    <string name="processing_image_hint">O modelo de visão está analisando sua foto. Isso pode levar de 1 a 2 minutos.</string>
+    <string name="camera_generating">Resolvendo…</string>
+    <string name="initializing">Inicializando…</string>
+    <string name="model_loading">Carregando modelo de IA…</string>
+    <string name="model_loading_hint">Carregando o modelo de visão na memória. Isso pode levar até um minuto no primeiro uso.</string>
+    <string name="answer_found">Resposta</string>
+    <string name="recognized_in">Resolvido em %1$s</string>
+    <string name="use_expression">Usar</string>
+    <string name="use_answer">Usar %1$s</string>
+    <string name="retry">Tentar novamente</string>
+    <string name="stop">Parar</string>
+    <string name="close">Fechar</string>
+    <string name="recognition_error">Falha no reconhecimento</string>
+    <string name="choose_model">Escolher modelo de IA</string>
+    <string name="choose_model_description">Seu dispositivo tem %1$d GB de RAM. Modelos maiores são mais precisos, mas mais lentos. Todos os modelos rodam inteiramente no seu dispositivo.</string>
+    <string name="model_too_large">Precisa de %1$d GB de RAM — seu dispositivo tem %2$d GB</string>
+    <string name="download_model">Baixar</string>
+    <string name="downloaded">Baixado</string>
+    <string name="downloading_model">Baixando modelo de IA</string>
+    <string name="download_complete">Download concluído</string>
+    <string name="download_file_progress">Arquivo %1$d de %2$d</string>
+    <string name="download_warning">Este é um download grande. Use Wi-Fi se possível.</string>
+    <string name="notif_permission_title">Permitir notificações?</string>
+    <string name="notif_permission_rationale">Permita as notificações para que o download do modelo de IA possa rodar em segundo plano e mostrar seu progresso.</string>
+    <string name="notif_permission_allow">Permitir</string>
+    <string name="not_now">Agora não</string>
+    <string name="raw_model_output">Saída bruta do modelo</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Requer login no HuggingFace</string>
+    <string name="mobile_data_title">Sem conexão Wi-Fi</string>
+    <string name="mobile_data_description">Você está prestes a baixar %1$s usando dados móveis. Isso pode gerar cobranças da sua operadora.</string>
+    <string name="download_anyway">Baixar mesmo assim</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ai_feature_low_ram">Você precisa de mais RAM para usar este recurso de IA.</string>
+    <string name="ai_feature_title">Solucionador de Matemática IA</string>
+    <string name="ai_feature_description">Este recurso usa um grande modelo de IA rodando inteiramente no seu dispositivo para resolver matemática manuscrita a partir de fotos.\n\nObservações:\n\n• É necessário baixar um modelo de 4–6 GB\n• Recomendamos usar Wi-Fi para o download\n• Executar o modelo de IA consome bastante bateria\n• Nenhum dado é enviado para a nuvem</string>
+    <string name="ai_feature_continue">Escolher um modelo</string>
+    <string name="license_required_title">Aceitação da licença necessária</string>
+    <string name="license_required_description">%1$s exige que você aceite a licença no HuggingFace antes de baixar. Toque no botão abaixo para abrir a página do modelo e clique em \"Agree and access repository\".</string>
+    <string name="accept_license">Aceitar licença no HuggingFace</string>
+    <string name="token_invalid_title">Sessão expirada</string>
+    <string name="token_invalid_description">Sua sessão do HuggingFace expirou. Entre novamente para continuar o download.</string>
+    <string name="hf_token_title">Entrar no HuggingFace</string>
+    <string name="hf_token_description">%1$s é um modelo restrito. Entre com sua conta gratuita do HuggingFace para baixá-lo. Talvez você também precise aceitar a licença do modelo na página dele.</string>
+    <string name="sign_in_huggingface">Entrar com Hugging Face</string>
+    <string name="sign_in_again">Entrar novamente</string>
+    <string name="signing_in">Entrando…</string>
+    <string name="experimental_feature_title">Recurso experimental</string>
+    <string name="experimental_feature_warning">O recurso de Câmera IA é experimental e pode apresentar erros ou comportamentos inesperados.</string>
+    <string name="accept">Aceitar</string>
+
+    <!-- Desbloqueio oculto da IA -->
+    <string name="ai_unlocked">Recursos de IA desbloqueados!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Falta %1$d toque para desbloquear os recursos de IA</item>
+        <item quantity="other">Faltam %1$d toques para desbloquear os recursos de IA</item>
+    </plurals>
+</resources>

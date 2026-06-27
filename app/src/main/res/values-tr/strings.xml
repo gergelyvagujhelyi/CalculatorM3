@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Hesap Makinesi</string>
+
+    <!-- Hesap makinesi hata mesajları -->
+    <string name="error_division_by_zero">Sıfıra bölünemez</string>
+    <string name="error_invalid_operation">Geçersiz işlem</string>
+    <string name="error_overflow">Sayı çok büyük</string>
+
+    <!-- Geçmiş -->
+    <string name="history">Geçmiş</string>
+    <string name="clear_history">Geçmişi temizle</string>
+    <string name="no_history_yet">Henüz geçmiş yok</string>
+
+    <!-- Düğme erişilebilirliği -->
+    <string name="btn_backspace">Geri sil</string>
+    <string name="btn_all_clear">Tümünü temizle</string>
+    <string name="btn_percent">Yüzde</string>
+    <string name="btn_divide">Böl</string>
+    <string name="btn_multiply">Çarp</string>
+    <string name="btn_subtract">Çıkar</string>
+    <string name="btn_add">Topla</string>
+    <string name="btn_equals">Eşittir</string>
+    <string name="btn_decimal">Ondalık ayırıcı</string>
+    <string name="btn_toggle_sign">İşareti değiştir</string>
+    <string name="btn_square_root">Karekök</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Üs</string>
+    <string name="btn_factorial">Faktöriyel</string>
+
+    <!-- Kamera / Yapay zeka taraması -->
+    <string name="scan_expression">İfadeyi tara</string>
+    <string name="scan_hint">Elle yazılmış bir matematik ifadesinin fotoğrafını çekin veya seçin</string>
+    <string name="take_photo">Fotoğraf çek</string>
+    <string name="choose_from_gallery">Galeriden seç</string>
+    <string name="camera_processing_image">Görüntü işleniyor…</string>
+    <string name="processing_image_hint">Görüntü modeli fotoğrafınızı analiz ediyor. Bu 1–2 dakika sürebilir.</string>
+    <string name="camera_generating">Çözülüyor…</string>
+    <string name="initializing">Başlatılıyor…</string>
+    <string name="model_loading">Yapay zeka modeli yükleniyor…</string>
+    <string name="model_loading_hint">Görüntü modeli belleğe yükleniyor. İlk kullanımda bu bir dakika kadar sürebilir.</string>
+    <string name="answer_found">Yanıt</string>
+    <string name="recognized_in">%1$s içinde çözüldü</string>
+    <string name="use_expression">Kullan</string>
+    <string name="use_answer">%1$s kullan</string>
+    <string name="retry">Yeniden dene</string>
+    <string name="stop">Durdur</string>
+    <string name="close">Kapat</string>
+    <string name="recognition_error">Tanıma başarısız oldu</string>
+    <string name="choose_model">Yapay zeka modelini seç</string>
+    <string name="choose_model_description">Cihazınızda %1$d GB RAM var. Daha büyük modeller daha doğru ama daha yavaştır. Tüm modeller tamamen cihazınızda çalışır.</string>
+    <string name="model_too_large">%1$d GB RAM gerekir — cihazınızda %2$d GB var</string>
+    <string name="download_model">İndir</string>
+    <string name="downloaded">İndirildi</string>
+    <string name="downloading_model">Yapay zeka modeli indiriliyor</string>
+    <string name="download_complete">İndirme tamamlandı</string>
+    <string name="download_file_progress">%1$d / %2$d dosya</string>
+    <string name="download_warning">Bu büyük bir indirme. Mümkünse Wi-Fi kullanın.</string>
+    <string name="notif_permission_title">Bildirimlere izin verilsin mi?</string>
+    <string name="notif_permission_rationale">Yapay zeka modeli indirmesinin arka planda çalışabilmesi ve ilerlemesini gösterebilmesi için bildirimlere izin verin.</string>
+    <string name="notif_permission_allow">İzin ver</string>
+    <string name="not_now">Şimdi değil</string>
+    <string name="raw_model_output">Ham model çıktısı</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace girişi gerekir</string>
+    <string name="mobile_data_title">Wi-Fi bağlantısı yok</string>
+    <string name="mobile_data_description">%1$s öğesini mobil veri kullanarak indirmek üzeresiniz. Bu, operatörünüzden ücret alınmasına neden olabilir.</string>
+    <string name="download_anyway">Yine de indir</string>
+    <string name="cancel">İptal</string>
+    <string name="ai_feature_low_ram">Bu yapay zeka özelliğini kullanmak için daha fazla RAM gerekiyor.</string>
+    <string name="ai_feature_title">Yapay Zeka Matematik Çözücü</string>
+    <string name="ai_feature_description">Bu özellik, fotoğraflardan elle yazılmış matematiği çözmek için tamamen cihazınızda çalışan büyük bir yapay zeka modeli kullanır.\n\nLütfen dikkat:\n\n• 4–6 GB boyutunda bir model indirilmesi gerekir\n• İndirme için Wi-Fi kullanmanızı öneririz\n• Yapay zeka modelini çalıştırmak çok fazla pil tüketir\n• Hiçbir veri buluta gönderilmez</string>
+    <string name="ai_feature_continue">Bir model seç</string>
+    <string name="license_required_title">Lisans kabulü gerekli</string>
+    <string name="license_required_description">%1$s, indirmeden önce HuggingFace üzerinde lisansı kabul etmenizi gerektirir. Model sayfasını açmak için aşağıdaki düğmeye dokunun, ardından \"Agree and access repository\" seçeneğine tıklayın.</string>
+    <string name="accept_license">HuggingFace\'te lisansı kabul et</string>
+    <string name="token_invalid_title">Oturum süresi doldu</string>
+    <string name="token_invalid_description">HuggingFace oturumunuzun süresi doldu. İndirmeye devam etmek için tekrar giriş yapın.</string>
+    <string name="hf_token_title">HuggingFace\'te oturum aç</string>
+    <string name="hf_token_description">%1$s, erişimi kısıtlı bir modeldir. İndirmek için ücretsiz HuggingFace hesabınızla giriş yapın. Ayrıca modelin lisansını kendi sayfasında kabul etmeniz gerekebilir.</string>
+    <string name="sign_in_huggingface">Hugging Face ile oturum aç</string>
+    <string name="sign_in_again">Tekrar giriş yap</string>
+    <string name="signing_in">Giriş yapılıyor…</string>
+    <string name="experimental_feature_title">Deneysel özellik</string>
+    <string name="experimental_feature_warning">Yapay Zeka Kamera özelliği deneyseldir ve hatalar veya beklenmedik davranışlar gösterebilir.</string>
+    <string name="accept">Kabul et</string>
+
+    <!-- Gizli yapay zeka kilidi açma -->
+    <string name="ai_unlocked">Yapay zeka özelliklerinin kilidi açıldı!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
+        <item quantity="other">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
+    </plurals>
+</resources>
