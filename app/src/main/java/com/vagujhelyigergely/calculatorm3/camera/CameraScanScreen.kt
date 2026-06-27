@@ -122,8 +122,18 @@ fun CameraScanScreen(
         ActivityResultContracts.StartActivityForResult()
     ) { result -> viewModel.onSignInResult(result.data) }
 
+    // Initialize on a genuine screen entry only — NOT on every rotation. The ScanViewModel is
+    // Activity-scoped, so a config change recreates this Composable while the ViewModel keeps its
+    // in-flight Processing/Success state; re-running initialize() then would reset the screen back
+    // to the capture chooser. rememberSaveable survives rotation but is dropped when the screen
+    // leaves composition, so a real reopen still re-initializes. The extra Idle check covers process
+    // death, which restores the saved flag but recreates the ViewModel fresh (uiState == Idle).
+    var didInitialize by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        viewModel.initialize()
+        if (!didInitialize || viewModel.uiState is ScanUiState.Idle) {
+            didInitialize = true
+            viewModel.initialize()
+        }
     }
 
     if (showNotifRationale) {
