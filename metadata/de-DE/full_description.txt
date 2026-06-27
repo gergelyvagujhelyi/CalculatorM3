@@ -40,7 +40,7 @@ Gib vollständige mathematische Ausdrücke mit korrekter Operatorrangfolge (Punk
 
 Ein experimentelles Extra für Geräte mit mehr RAM: Fotografiere einen handgeschriebenen mathematischen Ausdruck und lass ein KI-Modell auf dem Gerät ihn lesen und lösen — vollständig auf deinem Gerät, ohne dass etwas an einen Server gesendet wird.
 
-➡️ SO AKTIVIERST DU IHN: Die KI-Funktionen sind ausgeblendet, bis du sie freischaltest. Tippe im Rechner 7-mal schnell hintereinander auf die Taste „AC" (Alles löschen) — ein Countdown führt dich durch die letzten Tipps. Anschließend erscheint oben links ein Kamerasymbol, und die Freischaltung wird gemerkt.
+➡️ SO AKTIVIERST DU IHN: Die KI-Funktionen sind ausgeblendet, bis du sie freischaltest. Tippe im Rechner 7-mal schnell hintereinander auf die Taste „AC" (Alles löschen) — ein Countdown führt dich durch die letzten Tastendrücke. Anschließend erscheint oben links ein Kamerasymbol, und die Freischaltung wird gemerkt.
 
 - Erfordert ein Gerät mit 6 GB+ und einen einmaligen Download des Vision-Modells (2,6–4,9 GB)
 - Mache ein Foto mit deiner System-Kamera oder wähle eines aus deiner Galerie
