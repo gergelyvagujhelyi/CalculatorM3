@@ -5,6 +5,7 @@ package com.vagujhelyigergely.calculatorm3.camera
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.widget.TextView
@@ -13,6 +14,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -122,8 +124,18 @@ fun CameraScanScreen(
         ActivityResultContracts.StartActivityForResult()
     ) { result -> viewModel.onSignInResult(result.data) }
 
+    // Initialize on a genuine screen entry only — NOT on every rotation. The ScanViewModel is
+    // Activity-scoped, so a config change recreates this Composable while the ViewModel keeps its
+    // in-flight Processing/Success state; re-running initialize() then would reset the screen back
+    // to the capture chooser. rememberSaveable survives rotation but is dropped when the screen
+    // leaves composition, so a real reopen still re-initializes. The extra Idle check covers process
+    // death, which restores the saved flag but recreates the ViewModel fresh (uiState == Idle).
+    var didInitialize by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        viewModel.initialize()
+        if (!didInitialize || viewModel.uiState is ScanUiState.Idle) {
+            didInitialize = true
+            viewModel.initialize()
+        }
     }
 
     if (showNotifRationale) {
@@ -397,6 +409,12 @@ private fun ProcessingContent(
     onDismiss: () -> Unit
 ) {
     val isGenerating = partialRaw.isNotEmpty()
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    // Landscape has a short viewport, and the streaming card grows as tokens arrive. Cap it to a
+    // fraction of the available height (instead of a fixed 300dp) and drop the hero, so the HUD and
+    // Stop button always stay on screen — otherwise the growing card pushes Stop off in landscape.
+    val cardMaxHeight = if (isLandscape) (configuration.screenHeightDp * 0.45f).dp else 300.dp
 
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
@@ -405,17 +423,19 @@ private fun ProcessingContent(
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(if (isLandscape) 12.dp else 20.dp)
         ) {
-            AiHero(
-                title = if (isGenerating)
-                    stringResource(R.string.camera_generating)
-                else
-                    stringResource(R.string.camera_processing_image),
-                subtitle = if (isGenerating) null else stringResource(R.string.processing_image_hint),
-                icon = Icons.Default.Psychology,
-                pulsing = true
-            )
+            if (!isLandscape) {
+                AiHero(
+                    title = if (isGenerating)
+                        stringResource(R.string.camera_generating)
+                    else
+                        stringResource(R.string.camera_processing_image),
+                    subtitle = if (isGenerating) null else stringResource(R.string.processing_image_hint),
+                    icon = Icons.Default.Psychology,
+                    pulsing = true
+                )
+            }
 
             // One card spans the whole "answer" lifecycle: a shimmering skeleton while the
             // model prefills the image (no tokens yet), then the live streaming text. Tagged
@@ -427,7 +447,7 @@ private fun ProcessingContent(
             AiCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 300.dp)
+                    .heightIn(max = cardMaxHeight)
                     .aiSharedBounds("answer-card")
                     .animateContentSize()
             ) {
