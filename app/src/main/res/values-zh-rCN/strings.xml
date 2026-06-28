@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">计算器</string>
+
+    <!-- 计算器错误消息 -->
+    <string name="error_division_by_zero">不能除以零</string>
+    <string name="error_invalid_operation">无效运算</string>
+    <string name="error_overflow">数字过大</string>
+
+    <!-- 历史记录 -->
+    <string name="history">历史记录</string>
+    <string name="clear_history">清除历史记录</string>
+    <string name="no_history_yet">暂无历史记录</string>
+
+    <!-- 按钮无障碍 -->
+    <string name="btn_backspace">退格</string>
+    <string name="btn_all_clear">全部清除</string>
+    <string name="btn_percent">百分比</string>
+    <string name="btn_divide">除</string>
+    <string name="btn_multiply">乘</string>
+    <string name="btn_subtract">减</string>
+    <string name="btn_add">加</string>
+    <string name="btn_equals">等于</string>
+    <string name="btn_decimal">小数点</string>
+    <string name="btn_toggle_sign">正负号</string>
+    <string name="btn_square_root">平方根</string>
+    <string name="btn_pi">圆周率</string>
+    <string name="btn_power">幂</string>
+    <string name="btn_factorial">阶乘</string>
+
+    <!-- 相机 / AI 扫描 -->
+    <string name="scan_expression">扫描算式</string>
+    <string name="scan_hint">拍摄或选择一张手写数学算式的照片</string>
+    <string name="take_photo">拍照</string>
+    <string name="choose_from_gallery">从相册选择</string>
+    <string name="camera_processing_image">正在处理图片…</string>
+    <string name="processing_image_hint">视觉模型正在分析你的照片。这可能需要 1–2 分钟。</string>
+    <string name="camera_generating">正在求解…</string>
+    <string name="initializing">正在初始化…</string>
+    <string name="model_loading">正在加载 AI 模型…</string>
+    <string name="model_loading_hint">正在将视觉模型加载到内存中。首次使用时可能需要最多一分钟。</string>
+    <string name="answer_found">答案</string>
+    <string name="recognized_in">用时 %1$s 求解</string>
+    <string name="use_expression">使用</string>
+    <string name="use_answer">使用 %1$s</string>
+    <string name="retry">重试</string>
+    <string name="stop">停止</string>
+    <string name="close">关闭</string>
+    <string name="recognition_error">识别失败</string>
+    <string name="choose_model">选择 AI 模型</string>
+    <string name="choose_model_description">你的设备有 %1$d GB 内存。更大的模型更准确但更慢。所有模型都完全在你的设备上运行。</string>
+    <string name="model_too_large">需要 %1$d GB 内存 — 你的设备有 %2$d GB</string>
+    <string name="download_model">下载</string>
+    <string name="downloaded">已下载</string>
+    <string name="downloading_model">正在下载 AI 模型</string>
+    <string name="download_complete">下载完成</string>
+    <string name="download_file_progress">第 %1$d 个文件，共 %2$d 个</string>
+    <string name="download_warning">这是一个大文件下载。如有可能请使用 Wi-Fi。</string>
+    <string name="notif_permission_title">允许通知？</string>
+    <string name="notif_permission_rationale">允许通知，以便 AI 模型下载可以在后台运行并显示进度。</string>
+    <string name="notif_permission_allow">允许</string>
+    <string name="not_now">暂不</string>
+    <string name="raw_model_output">模型原始输出</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">需要登录 HuggingFace</string>
+    <string name="mobile_data_title">无 Wi-Fi 连接</string>
+    <string name="mobile_data_description">你即将使用移动数据下载 %1$s。这可能会产生运营商的费用。</string>
+    <string name="download_anyway">仍然下载</string>
+    <string name="cancel">取消</string>
+    <string name="ai_feature_low_ram">你需要更多内存才能使用此 AI 功能。</string>
+    <string name="ai_feature_title">AI 数学求解器</string>
+    <string name="ai_feature_description">此功能使用完全在你的设备上运行的大型 AI 模型，从照片中求解手写数学题。\n\n请注意：\n\n• 需要下载 4–6 GB 的模型\n• 建议使用 Wi-Fi 下载\n• 运行 AI 模型会消耗大量电量\n• 不会向云端发送任何数据</string>
+    <string name="ai_feature_continue">选择模型</string>
+    <string name="license_required_title">需要接受许可</string>
+    <string name="license_required_description">%1$s 要求你在下载前接受 HuggingFace 上的许可。点按下方按钮打开模型页面，然后点击 \"Agree and access repository\"。</string>
+    <string name="accept_license">在 HuggingFace 上接受许可</string>
+    <string name="token_invalid_title">会话已过期</string>
+    <string name="token_invalid_description">你的 HuggingFace 会话已过期。请重新登录以继续下载。</string>
+    <string name="hf_token_title">登录 HuggingFace</string>
+    <string name="hf_token_description">%1$s 是受限模型。请使用你的免费 HuggingFace 账户登录以下载它。你可能还需要在模型页面上接受其许可。</string>
+    <string name="sign_in_huggingface">使用 Hugging Face 登录</string>
+    <string name="sign_in_again">重新登录</string>
+    <string name="signing_in">正在登录…</string>
+    <string name="experimental_feature_title">实验性功能</string>
+    <string name="experimental_feature_warning">AI 相机功能为实验性功能，可能存在错误或意外行为。</string>
+    <string name="accept">接受</string>
+
+    <!-- 隐藏的 AI 解锁 -->
+    <string name="ai_unlocked">AI 功能已解锁！</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="other">还需按 %1$d 次即可解锁 AI 功能</item>
+    </plurals>
+</resources>

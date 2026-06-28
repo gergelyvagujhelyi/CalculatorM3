@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">Rekenmachine</string>
+
+    <!-- Foutmeldingen van de rekenmachine -->
+    <string name="error_division_by_zero">Kan niet door nul delen</string>
+    <string name="error_invalid_operation">Ongeldige bewerking</string>
+    <string name="error_overflow">Getal te groot</string>
+
+    <!-- Geschiedenis -->
+    <string name="history">Geschiedenis</string>
+    <string name="clear_history">Geschiedenis wissen</string>
+    <string name="no_history_yet">Nog geen geschiedenis</string>
+
+    <!-- Toegankelijkheid van knoppen -->
+    <string name="btn_backspace">Backspace</string>
+    <string name="btn_all_clear">Alles wissen</string>
+    <string name="btn_percent">Procent</string>
+    <string name="btn_divide">Delen</string>
+    <string name="btn_multiply">Vermenigvuldigen</string>
+    <string name="btn_subtract">Aftrekken</string>
+    <string name="btn_add">Optellen</string>
+    <string name="btn_equals">Is gelijk aan</string>
+    <string name="btn_decimal">Decimaalteken</string>
+    <string name="btn_toggle_sign">Teken omwisselen</string>
+    <string name="btn_square_root">Vierkantswortel</string>
+    <string name="btn_pi">Pi</string>
+    <string name="btn_power">Macht</string>
+    <string name="btn_factorial">Faculteit</string>
+
+    <!-- Camera / AI-scan -->
+    <string name="scan_expression">Uitdrukking scannen</string>
+    <string name="scan_hint">Maak of kies een foto van een handgeschreven wiskundige uitdrukking</string>
+    <string name="take_photo">Foto maken</string>
+    <string name="choose_from_gallery">Kies uit galerij</string>
+    <string name="camera_processing_image">Afbeelding verwerken…</string>
+    <string name="processing_image_hint">Het visiemodel analyseert je foto. Dit kan 1–2 minuten duren.</string>
+    <string name="camera_generating">Oplossen…</string>
+    <string name="initializing">Initialiseren…</string>
+    <string name="model_loading">AI-model laden…</string>
+    <string name="model_loading_hint">Het visiemodel wordt in het geheugen geladen. Bij het eerste gebruik kan dit tot een minuut duren.</string>
+    <string name="answer_found">Antwoord</string>
+    <string name="recognized_in">Opgelost in %1$s</string>
+    <string name="use_expression">Gebruiken</string>
+    <string name="use_answer">%1$s gebruiken</string>
+    <string name="retry">Opnieuw proberen</string>
+    <string name="stop">Stoppen</string>
+    <string name="close">Sluiten</string>
+    <string name="recognition_error">Herkenning mislukt</string>
+    <string name="choose_model">AI-model kiezen</string>
+    <string name="choose_model_description">Je apparaat heeft %1$d GB RAM. Grotere modellen zijn nauwkeuriger maar trager. Alle modellen draaien volledig op je apparaat.</string>
+    <string name="model_too_large">Vereist %1$d GB RAM — je apparaat heeft %2$d GB</string>
+    <string name="download_model">Downloaden</string>
+    <string name="downloaded">Gedownload</string>
+    <string name="downloading_model">AI-model downloaden</string>
+    <string name="download_complete">Download voltooid</string>
+    <string name="download_file_progress">Bestand %1$d van %2$d</string>
+    <string name="download_warning">Dit is een grote download. Gebruik indien mogelijk wifi.</string>
+    <string name="notif_permission_title">Meldingen toestaan?</string>
+    <string name="notif_permission_rationale">Sta meldingen toe zodat het downloaden van het AI-model op de achtergrond kan draaien en de voortgang kan tonen.</string>
+    <string name="notif_permission_allow">Toestaan</string>
+    <string name="not_now">Niet nu</string>
+    <string name="raw_model_output">Ruwe modeluitvoer</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace-login vereist</string>
+    <string name="mobile_data_title">Geen wifiverbinding</string>
+    <string name="mobile_data_description">Je staat op het punt %1$s te downloaden via mobiele data. Dit kan kosten van je provider met zich meebrengen.</string>
+    <string name="download_anyway">Toch downloaden</string>
+    <string name="cancel">Annuleren</string>
+    <string name="ai_feature_low_ram">Je hebt meer RAM nodig om deze AI-functie te gebruiken.</string>
+    <string name="ai_feature_title">AI-wiskundeoplosser</string>
+    <string name="ai_feature_description">Deze functie gebruikt een groot AI-model dat volledig op je apparaat draait om handgeschreven wiskunde uit foto\'s op te lossen.\n\nLet op:\n\n• Een modeldownload van 4–6 GB is vereist\n• We raden wifi aan voor de download\n• Het draaien van het AI-model verbruikt veel batterij\n• Er worden geen gegevens naar de cloud verzonden</string>
+    <string name="ai_feature_continue">Een model kiezen</string>
+    <string name="license_required_title">Licentieacceptatie vereist</string>
+    <string name="license_required_description">%1$s vereist dat je de licentie op HuggingFace accepteert voordat je downloadt. Tik op de knop hieronder om de modelpagina te openen en klik vervolgens op \"Agree and access repository\".</string>
+    <string name="accept_license">Licentie accepteren op HuggingFace</string>
+    <string name="token_invalid_title">Sessie verlopen</string>
+    <string name="token_invalid_description">Je HuggingFace-sessie is verlopen. Meld je opnieuw aan om de download voort te zetten.</string>
+    <string name="hf_token_title">Aanmelden bij HuggingFace</string>
+    <string name="hf_token_description">%1$s is een model met beperkte toegang. Meld je aan met je gratis HuggingFace-account om het te downloaden. Mogelijk moet je ook de licentie van het model op de bijbehorende pagina accepteren.</string>
+    <string name="sign_in_huggingface">Aanmelden met Hugging Face</string>
+    <string name="sign_in_again">Opnieuw aanmelden</string>
+    <string name="signing_in">Aanmelden…</string>
+    <string name="experimental_feature_title">Experimentele functie</string>
+    <string name="experimental_feature_warning">De AI-camerafunctie is experimenteel en kan bugs of onverwacht gedrag vertonen.</string>
+    <string name="accept">Accepteren</string>
+
+    <!-- Verborgen AI-ontgrendeling -->
+    <string name="ai_unlocked">AI-functies ontgrendeld!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">Nog %1$d druk om de AI-functies te ontgrendelen</item>
+        <item quantity="other">Nog %1$d drukken om de AI-functies te ontgrendelen</item>
+    </plurals>
+</resources>
