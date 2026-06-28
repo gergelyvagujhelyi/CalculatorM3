@@ -87,7 +87,7 @@
     <!-- छिपा हुआ AI अनलॉक -->
     <string name="ai_unlocked">AI सुविधाएँ अनलॉक हो गईं!</string>
     <plurals name="ai_unlock_countdown">
-        <item quantity="one">AI सुविधाएँ अनलॉक होने में अभी %1$d बार और</item>
-        <item quantity="other">AI सुविधाएँ अनलॉक होने में अभी %1$d बार और</item>
+        <item quantity="one">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
+        <item quantity="other">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
     </plurals>
 </resources>

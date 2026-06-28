@@ -87,7 +87,7 @@
     <!-- Verborgen AI-ontgrendeling -->
     <string name="ai_unlocked">AI-functies ontgrendeld!</string>
     <plurals name="ai_unlock_countdown">
-        <item quantity="one">Nog %1$d druk om de AI-functies te ontgrendelen</item>
-        <item quantity="other">Nog %1$d drukken om de AI-functies te ontgrendelen</item>
+        <item quantity="one">Nog %1$d tik om de AI-functies te ontgrendelen</item>
+        <item quantity="other">Nog %1$d tikken om de AI-functies te ontgrendelen</item>
     </plurals>
 </resources>
