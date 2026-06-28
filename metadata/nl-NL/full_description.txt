@@ -1,0 +1,76 @@
+Elke berekening die je maakt, is jouw zaak — niet die van de techreuzen. Rekenmachine M3 is een fraai vormgegeven rekenmachine op basis van Material 3, die voor alledaagse wiskunde volledig offline werkt, met nul gegevensverzameling, nul analyse en nul tracking.
+
+Anders dan andere rekenmachines belt deze app niet stiekem naar huis. Geen gebruikstracking, geen telemetrie, geen advertentieframeworks verstopt in de code. Hij rekent — en biedt een optionele, volledig op het apparaat draaiende AI-wiskundeoplosser — en verder niets.
+
+✓ Volledige evaluatie van uitdrukkingen
+✓ Realtime resultaatvoorbeeld
+✓ Wetenschappelijke functies
+✓ Berekeningsgeschiedenis
+✓ Dynamisch Material 3-thema
+✓ Werkt offline (met een optionele AI-wiskundeoplosser op het apparaat)
+
+🔢 VOLLEDIGE EVALUATIE VAN UITDRUKKINGEN
+
+Typ volledige wiskundige uitdrukkingen met de juiste bewerkingsvolgorde en haakjes tot 20 niveaus diep genest. Zie het resultaat in realtime bijwerken terwijl je typt.
+
+- Volledige bewerkingsvolgorde
+- Haakjes met 20 niveaus nesting
+- Realtime resultaatvoorbeeld tijdens het typen
+- Tik ergens in de uitdrukking om te bewerken
+- BigDecimal-rekenkunde met hoge precisie
+- Technische notatie voor grote getallen
+
+🔬 WETENSCHAPPELIJKE FUNCTIES
+
+- Vierkantswortel (√)
+- Constante pi (π)
+- Macht (^)
+- Faculteit (!) voor waarden van 0 tot 99
+- Procent (%) zoals bij gewone rekenmachines
+- Impliciete vermenigvuldiging (2π, 3√2, enz.)
+
+📜 BEREKENINGSGESCHIEDENIS
+
+- Bewaart tot 100 recente berekeningen
+- Blijft behouden na herstart van de app
+- Tik op items om ze opnieuw te laden
+- Wis de geschiedenis wanneer nodig
+
+📷 AI-WISKUNDEOPLOSSER (OPTIONEEL, EXPERIMENTEEL)
+
+Een experimentele extra voor apparaten met meer RAM: fotografeer een handgeschreven wiskundige uitdrukking en laat een AI-model op het apparaat deze lezen en oplossen — volledig op je apparaat, zonder iets naar een server te sturen.
+
+➡️ ZO SCHAKEL JE HET IN: de AI-functies zijn verborgen totdat je ze ontgrendelt. Tik in de rekenmachine 7 keer snel achter elkaar op de knop "AC" (alles wissen) — een aftelling begeleidt de laatste tikken. Daarna verschijnt er linksboven een camerapictogram en wordt de ontgrendeling onthouden.
+
+- Vereist een apparaat met 6 GB+ en een eenmalige download van het visiemodel (2,6–4,9 GB)
+- Maak een foto met je systeemcamera of kies er een uit je galerij
+- Kies uit meerdere open visiemodellen (Gemma 4, Gemma 3n)
+- Modellen draaien volledig op het apparaat, met GPU-versnelling waar ondersteund
+- De oplossing wordt getoond met netjes opgemaakte wiskunde — breuken, wortels en exponenten
+- Internet wordt slechts één keer gebruikt, om het door jou gekozen model te downloaden
+- Geen foto, berekening of gebruiksgegeven verlaat ooit je apparaat
+
+🎨 MATERIAL 3-ONTWERP
+
+- Dynamische Material You-kleuren (Android 12+)
+- Automatische lichte en donkere modus
+- Vloeiende animaties bij het indrukken van knoppen
+- Haptische feedback
+- Aanpasbare lay-out voor staand, liggend en opvouwbare apparaten
+- Automatisch schalend display voor lange uitdrukkingen
+
+🛡️ PRIVACY & OPEN SOURCE
+
+- 100% open source (GPL v3)
+- Geen tracking, analyse of advertenties
+- Geen enkele vorm van gegevensverzameling
+- De rekenmachine zelf heeft helemaal geen netwerk nodig
+- Internet wordt alleen gebruikt als je ervoor kiest een AI-model te downloaden — nooit om je gegevens te verzenden
+- Je berekeningen en foto's blijven op je apparaat
+
+📱 WERKT OP ALLE APPARATEN
+
+- Telefoons in staande en liggende stand
+- Opvouwbare apparaten (Pixel Fold, Galaxy Z Fold)
+- Tablets
+- Responsieve knopgrootte en lay-out

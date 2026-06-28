@@ -1,0 +1,76 @@
+Mọi phép tính bạn thực hiện là việc của bạn — không phải của các ông lớn công nghệ. Máy tính M3 là một máy tính được thiết kế đẹp mắt trên nền Material 3, hoạt động hoàn toàn ngoại tuyến cho toán học hằng ngày, với việc không thu thập dữ liệu, không phân tích và không theo dõi.
+
+Khác với các máy tính khác, ứng dụng này không âm thầm gửi dữ liệu. Không theo dõi việc sử dụng, không đo từ xa, không có khung quảng cáo ẩn trong mã. Nó làm toán — và cung cấp một trình giải toán AI tùy chọn, chạy hoàn toàn trên thiết bị — và không gì khác.
+
+✓ Tính toán biểu thức đầy đủ
+✓ Xem trước kết quả theo thời gian thực
+✓ Hàm khoa học
+✓ Lịch sử tính toán
+✓ Giao diện động Material 3
+✓ Hoạt động ngoại tuyến (với trình giải toán AI tùy chọn trên thiết bị)
+
+🔢 TÍNH TOÁN BIỂU THỨC ĐẦY ĐỦ
+
+Nhập các biểu thức toán học đầy đủ với thứ tự ưu tiên phép toán đúng và dấu ngoặc lồng nhau đến 20 cấp. Xem kết quả cập nhật theo thời gian thực khi bạn nhập.
+
+- Thứ tự ưu tiên phép toán đầy đủ
+- Dấu ngoặc lồng nhau đến 20 cấp
+- Xem trước kết quả theo thời gian thực khi nhập
+- Chạm vào bất kỳ vị trí nào trong biểu thức để chỉnh sửa
+- Số học BigDecimal độ chính xác cao
+- Ký hiệu kỹ thuật cho các số lớn
+
+🔬 HÀM KHOA HỌC
+
+- Căn bậc hai (√)
+- Hằng số Pi (π)
+- Lũy thừa (^)
+- Giai thừa (!) cho các giá trị từ 0 đến 99
+- Phần trăm (%) kiểu máy tính thông thường
+- Phép nhân ngầm (2π, 3√2, v.v.)
+
+📜 LỊCH SỬ TÍNH TOÁN
+
+- Lưu tối đa 100 phép tính gần đây
+- Vẫn còn sau khi khởi động lại ứng dụng
+- Chạm vào các mục để tải lại
+- Xóa lịch sử khi cần
+
+📷 TRÌNH GIẢI TOÁN AI (TÙY CHỌN, THỬ NGHIỆM)
+
+Một tính năng bổ sung thử nghiệm cho các thiết bị có nhiều RAM hơn: chụp ảnh một biểu thức toán học viết tay và để mô hình AI trên thiết bị đọc và giải nó — hoàn toàn trên thiết bị của bạn, không gửi bất cứ thứ gì đến bất kỳ máy chủ nào.
+
+➡️ CÁCH BẬT: các tính năng AI bị ẩn cho đến khi bạn mở khóa. Trong máy tính, chạm nút "AC" (xóa tất cả) 7 lần liên tiếp thật nhanh — một bộ đếm ngược sẽ hướng dẫn những lần chạm cuối. Sau đó một biểu tượng máy ảnh xuất hiện ở góc trên bên trái, và việc mở khóa được ghi nhớ.
+
+- Cần thiết bị 6 GB+ và tải mô hình thị giác một lần (2,6–4,9 GB)
+- Chụp ảnh bằng camera hệ thống, hoặc chọn một ảnh từ thư viện
+- Chọn từ nhiều mô hình thị giác mở (Gemma 4, Gemma 3n)
+- Các mô hình chạy hoàn toàn trên thiết bị, có tăng tốc GPU ở nơi được hỗ trợ
+- Lời giải được hiển thị với toán học được định dạng gọn gàng — phân số, căn và lũy thừa
+- Internet chỉ được dùng một lần, để tải mô hình bạn chọn
+- Không có ảnh, phép tính hay dữ liệu sử dụng nào rời khỏi thiết bị của bạn
+
+🎨 THIẾT KẾ MATERIAL 3
+
+- Màu động Material You (Android 12+)
+- Chế độ sáng và tối tự động
+- Hoạt ảnh nhấn nút mượt mà
+- Phản hồi rung
+- Bố cục thích ứng cho dọc, ngang và thiết bị gập
+- Màn hình tự điều chỉnh kích thước cho các biểu thức dài
+
+🛡️ QUYỀN RIÊNG TƯ & MÃ NGUỒN MỞ
+
+- 100% mã nguồn mở (GPL v3)
+- Không theo dõi, phân tích hay quảng cáo
+- Không thu thập bất kỳ loại dữ liệu nào
+- Bản thân máy tính hoàn toàn không cần mạng
+- Internet chỉ được dùng nếu bạn chọn tải mô hình AI — không bao giờ để gửi dữ liệu của bạn
+- Các phép tính và ảnh của bạn vẫn ở trên thiết bị của bạn
+
+📱 HOẠT ĐỘNG TRÊN MỌI THIẾT BỊ
+
+- Điện thoại ở chế độ dọc và ngang
+- Thiết bị gập (Pixel Fold, Galaxy Z Fold)
+- Máy tính bảng
+- Kích thước và bố cục nút thích ứng
