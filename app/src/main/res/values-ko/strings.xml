@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">계산기</string>
+
+    <!-- 계산기 오류 메시지 -->
+    <string name="error_division_by_zero">0으로 나눌 수 없습니다</string>
+    <string name="error_invalid_operation">잘못된 연산</string>
+    <string name="error_overflow">숫자가 너무 큽니다</string>
+
+    <!-- 기록 -->
+    <string name="history">기록</string>
+    <string name="clear_history">기록 지우기</string>
+    <string name="no_history_yet">아직 기록이 없습니다</string>
+
+    <!-- 버튼 접근성 -->
+    <string name="btn_backspace">백스페이스</string>
+    <string name="btn_all_clear">전체 지우기</string>
+    <string name="btn_percent">백분율</string>
+    <string name="btn_divide">나누기</string>
+    <string name="btn_multiply">곱하기</string>
+    <string name="btn_subtract">빼기</string>
+    <string name="btn_add">더하기</string>
+    <string name="btn_equals">등호</string>
+    <string name="btn_decimal">소수점</string>
+    <string name="btn_toggle_sign">부호 바꾸기</string>
+    <string name="btn_square_root">제곱근</string>
+    <string name="btn_pi">원주율</string>
+    <string name="btn_power">거듭제곱</string>
+    <string name="btn_factorial">계승</string>
+
+    <!-- 카메라 / AI 스캔 -->
+    <string name="scan_expression">수식 스캔</string>
+    <string name="scan_hint">손으로 쓴 수식의 사진을 찍거나 선택하세요</string>
+    <string name="take_photo">사진 촬영</string>
+    <string name="choose_from_gallery">갤러리에서 선택</string>
+    <string name="camera_processing_image">이미지 처리 중…</string>
+    <string name="processing_image_hint">비전 모델이 사진을 분석하고 있습니다. 1~2분 정도 걸릴 수 있습니다.</string>
+    <string name="camera_generating">풀이 중…</string>
+    <string name="initializing">초기화 중…</string>
+    <string name="model_loading">AI 모델 로드 중…</string>
+    <string name="model_loading_hint">비전 모델을 메모리에 로드하고 있습니다. 처음 사용할 때는 최대 1분 정도 걸릴 수 있습니다.</string>
+    <string name="answer_found">답</string>
+    <string name="recognized_in">%1$s 만에 풀이함</string>
+    <string name="use_expression">사용</string>
+    <string name="use_answer">%1$s 사용</string>
+    <string name="retry">다시 시도</string>
+    <string name="stop">중지</string>
+    <string name="close">닫기</string>
+    <string name="recognition_error">인식 실패</string>
+    <string name="choose_model">AI 모델 선택</string>
+    <string name="choose_model_description">기기의 RAM은 %1$d GB입니다. 더 큰 모델은 더 정확하지만 느립니다. 모든 모델은 전적으로 기기에서 실행됩니다.</string>
+    <string name="model_too_large">%1$d GB RAM이 필요합니다 — 기기에는 %2$d GB가 있습니다</string>
+    <string name="download_model">다운로드</string>
+    <string name="downloaded">다운로드됨</string>
+    <string name="downloading_model">AI 모델 다운로드 중</string>
+    <string name="download_complete">다운로드 완료</string>
+    <string name="download_file_progress">%2$d개 중 %1$d번째 파일</string>
+    <string name="download_warning">용량이 큰 다운로드입니다. 가능하면 Wi-Fi를 사용하세요.</string>
+    <string name="notif_permission_title">알림을 허용하시겠습니까?</string>
+    <string name="notif_permission_rationale">AI 모델 다운로드가 백그라운드에서 실행되고 진행 상황을 표시할 수 있도록 알림을 허용하세요.</string>
+    <string name="notif_permission_allow">허용</string>
+    <string name="not_now">나중에</string>
+    <string name="raw_model_output">모델 원시 출력</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace 로그인 필요</string>
+    <string name="mobile_data_title">Wi-Fi 연결 없음</string>
+    <string name="mobile_data_description">모바일 데이터를 사용하여 %1$s을(를) 다운로드하려고 합니다. 통신사 요금이 부과될 수 있습니다.</string>
+    <string name="download_anyway">그래도 다운로드</string>
+    <string name="cancel">취소</string>
+    <string name="ai_feature_low_ram">이 AI 기능을 사용하려면 더 많은 RAM이 필요합니다.</string>
+    <string name="ai_feature_title">AI 수학 풀이기</string>
+    <string name="ai_feature_description">이 기능은 전적으로 기기에서 실행되는 대형 AI 모델을 사용하여 사진에서 손으로 쓴 수학을 풀어줍니다.\n\n유의 사항:\n\n• 4~6 GB 모델 다운로드가 필요합니다\n• 다운로드 시 Wi-Fi 사용을 권장합니다\n• AI 모델 실행은 배터리를 많이 소모합니다\n• 어떤 데이터도 클라우드로 전송되지 않습니다</string>
+    <string name="ai_feature_continue">모델 선택</string>
+    <string name="license_required_title">라이선스 동의 필요</string>
+    <string name="license_required_description">%1$s을(를) 다운로드하려면 먼저 HuggingFace에서 라이선스에 동의해야 합니다. 아래 버튼을 눌러 모델 페이지를 연 다음 \"Agree and access repository\"를 클릭하세요.</string>
+    <string name="accept_license">HuggingFace에서 라이선스 동의</string>
+    <string name="token_invalid_title">세션 만료됨</string>
+    <string name="token_invalid_description">HuggingFace 세션이 만료되었습니다. 다운로드를 계속하려면 다시 로그인하세요.</string>
+    <string name="hf_token_title">HuggingFace에 로그인</string>
+    <string name="hf_token_description">%1$s은(는) 제한된 모델입니다. 다운로드하려면 무료 HuggingFace 계정으로 로그인하세요. 모델 페이지에서 라이선스에 동의해야 할 수도 있습니다.</string>
+    <string name="sign_in_huggingface">Hugging Face로 로그인</string>
+    <string name="sign_in_again">다시 로그인</string>
+    <string name="signing_in">로그인 중…</string>
+    <string name="experimental_feature_title">실험적 기능</string>
+    <string name="experimental_feature_warning">AI 카메라 기능은 실험적이며 버그나 예기치 않은 동작이 있을 수 있습니다.</string>
+    <string name="accept">동의</string>
+
+    <!-- 숨겨진 AI 잠금 해제 -->
+    <string name="ai_unlocked">AI 기능이 잠금 해제되었습니다!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="other">AI 기능 잠금 해제까지 %1$d번 남았습니다</item>
+    </plurals>
+</resources>

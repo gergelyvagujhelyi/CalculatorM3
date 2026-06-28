@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">Máy tính</string>
+
+    <!-- Thông báo lỗi của máy tính -->
+    <string name="error_division_by_zero">Không thể chia cho không</string>
+    <string name="error_invalid_operation">Phép toán không hợp lệ</string>
+    <string name="error_overflow">Số quá lớn</string>
+
+    <!-- Lịch sử -->
+    <string name="history">Lịch sử</string>
+    <string name="clear_history">Xóa lịch sử</string>
+    <string name="no_history_yet">Chưa có lịch sử</string>
+
+    <!-- Trợ năng nút -->
+    <string name="btn_backspace">Xóa lùi</string>
+    <string name="btn_all_clear">Xóa tất cả</string>
+    <string name="btn_percent">Phần trăm</string>
+    <string name="btn_divide">Chia</string>
+    <string name="btn_multiply">Nhân</string>
+    <string name="btn_subtract">Trừ</string>
+    <string name="btn_add">Cộng</string>
+    <string name="btn_equals">Bằng</string>
+    <string name="btn_decimal">Dấu thập phân</string>
+    <string name="btn_toggle_sign">Đổi dấu</string>
+    <string name="btn_square_root">Căn bậc hai</string>
+    <string name="btn_pi">Số pi</string>
+    <string name="btn_power">Lũy thừa</string>
+    <string name="btn_factorial">Giai thừa</string>
+
+    <!-- Máy ảnh / Quét AI -->
+    <string name="scan_expression">Quét biểu thức</string>
+    <string name="scan_hint">Chụp hoặc chọn ảnh một biểu thức toán học viết tay</string>
+    <string name="take_photo">Chụp ảnh</string>
+    <string name="choose_from_gallery">Chọn từ thư viện</string>
+    <string name="camera_processing_image">Đang xử lý ảnh…</string>
+    <string name="processing_image_hint">Mô hình thị giác đang phân tích ảnh của bạn. Quá trình này có thể mất 1–2 phút.</string>
+    <string name="camera_generating">Đang giải…</string>
+    <string name="initializing">Đang khởi tạo…</string>
+    <string name="model_loading">Đang tải mô hình AI…</string>
+    <string name="model_loading_hint">Đang tải mô hình thị giác vào bộ nhớ. Lần đầu sử dụng có thể mất đến một phút.</string>
+    <string name="answer_found">Đáp án</string>
+    <string name="recognized_in">Đã giải trong %1$s</string>
+    <string name="use_expression">Dùng</string>
+    <string name="use_answer">Dùng %1$s</string>
+    <string name="retry">Thử lại</string>
+    <string name="stop">Dừng</string>
+    <string name="close">Đóng</string>
+    <string name="recognition_error">Nhận dạng thất bại</string>
+    <string name="choose_model">Chọn mô hình AI</string>
+    <string name="choose_model_description">Thiết bị của bạn có %1$d GB RAM. Mô hình lớn hơn chính xác hơn nhưng chậm hơn. Tất cả mô hình chạy hoàn toàn trên thiết bị của bạn.</string>
+    <string name="model_too_large">Cần %1$d GB RAM — thiết bị của bạn có %2$d GB</string>
+    <string name="download_model">Tải xuống</string>
+    <string name="downloaded">Đã tải xuống</string>
+    <string name="downloading_model">Đang tải mô hình AI</string>
+    <string name="download_complete">Tải xuống hoàn tất</string>
+    <string name="download_file_progress">Tệp %1$d trên %2$d</string>
+    <string name="download_warning">Đây là một tệp tải xuống lớn. Hãy dùng Wi-Fi nếu có thể.</string>
+    <string name="notif_permission_title">Cho phép thông báo?</string>
+    <string name="notif_permission_rationale">Cho phép thông báo để việc tải mô hình AI có thể chạy ở chế độ nền và hiển thị tiến trình.</string>
+    <string name="notif_permission_allow">Cho phép</string>
+    <string name="not_now">Để sau</string>
+    <string name="raw_model_output">Đầu ra thô của mô hình</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">Cần đăng nhập HuggingFace</string>
+    <string name="mobile_data_title">Không có kết nối Wi-Fi</string>
+    <string name="mobile_data_description">Bạn sắp tải %1$s bằng dữ liệu di động. Việc này có thể phát sinh phí từ nhà mạng của bạn.</string>
+    <string name="download_anyway">Vẫn tải xuống</string>
+    <string name="cancel">Hủy</string>
+    <string name="ai_feature_low_ram">Bạn cần nhiều RAM hơn để dùng tính năng AI này.</string>
+    <string name="ai_feature_title">Trình giải toán AI</string>
+    <string name="ai_feature_description">Tính năng này dùng một mô hình AI lớn chạy hoàn toàn trên thiết bị của bạn để giải toán viết tay từ ảnh.\n\nLưu ý:\n\n• Cần tải mô hình dung lượng 4–6 GB\n• Nên dùng Wi-Fi để tải\n• Chạy mô hình AI tiêu tốn nhiều pin\n• Không có dữ liệu nào được gửi lên đám mây</string>
+    <string name="ai_feature_continue">Chọn một mô hình</string>
+    <string name="license_required_title">Cần chấp nhận giấy phép</string>
+    <string name="license_required_description">%1$s yêu cầu bạn chấp nhận giấy phép trên HuggingFace trước khi tải. Nhấn nút bên dưới để mở trang mô hình, rồi nhấp \"Agree and access repository\".</string>
+    <string name="accept_license">Chấp nhận giấy phép trên HuggingFace</string>
+    <string name="token_invalid_title">Phiên đã hết hạn</string>
+    <string name="token_invalid_description">Phiên HuggingFace của bạn đã hết hạn. Đăng nhập lại để tiếp tục tải xuống.</string>
+    <string name="hf_token_title">Đăng nhập HuggingFace</string>
+    <string name="hf_token_description">%1$s là mô hình hạn chế truy cập. Đăng nhập bằng tài khoản HuggingFace miễn phí của bạn để tải về. Bạn cũng có thể cần chấp nhận giấy phép của mô hình trên trang của nó.</string>
+    <string name="sign_in_huggingface">Đăng nhập bằng Hugging Face</string>
+    <string name="sign_in_again">Đăng nhập lại</string>
+    <string name="signing_in">Đang đăng nhập…</string>
+    <string name="experimental_feature_title">Tính năng thử nghiệm</string>
+    <string name="experimental_feature_warning">Tính năng Camera AI là thử nghiệm và có thể có lỗi hoặc hành vi không mong muốn.</string>
+    <string name="accept">Chấp nhận</string>
+
+    <!-- Mở khóa AI ẩn -->
+    <string name="ai_unlocked">Đã mở khóa tính năng AI!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="other">Còn %1$d lần nhấn nữa để mở khóa tính năng AI</item>
+    </plurals>
+</resources>

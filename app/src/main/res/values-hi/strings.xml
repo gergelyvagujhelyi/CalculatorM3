@@ -1,0 +1,93 @@
+<resources>
+    <string name="app_name">कैलकुलेटर</string>
+
+    <!-- कैलकुलेटर त्रुटि संदेश -->
+    <string name="error_division_by_zero">शून्य से भाग नहीं दे सकते</string>
+    <string name="error_invalid_operation">अमान्य संक्रिया</string>
+    <string name="error_overflow">संख्या बहुत बड़ी है</string>
+
+    <!-- इतिहास -->
+    <string name="history">इतिहास</string>
+    <string name="clear_history">इतिहास साफ़ करें</string>
+    <string name="no_history_yet">अभी तक कोई इतिहास नहीं</string>
+
+    <!-- बटन सुगम्यता -->
+    <string name="btn_backspace">बैकस्पेस</string>
+    <string name="btn_all_clear">सब साफ़ करें</string>
+    <string name="btn_percent">प्रतिशत</string>
+    <string name="btn_divide">भाग</string>
+    <string name="btn_multiply">गुणा</string>
+    <string name="btn_subtract">घटाव</string>
+    <string name="btn_add">जोड़</string>
+    <string name="btn_equals">बराबर</string>
+    <string name="btn_decimal">दशमलव बिंदु</string>
+    <string name="btn_toggle_sign">चिह्न बदलें</string>
+    <string name="btn_square_root">वर्गमूल</string>
+    <string name="btn_pi">पाई</string>
+    <string name="btn_power">घात</string>
+    <string name="btn_factorial">क्रमगुणन</string>
+
+    <!-- कैमरा / AI स्कैन -->
+    <string name="scan_expression">व्यंजक स्कैन करें</string>
+    <string name="scan_hint">हाथ से लिखे गणितीय व्यंजक की फ़ोटो लें या चुनें</string>
+    <string name="take_photo">फ़ोटो लें</string>
+    <string name="choose_from_gallery">गैलरी से चुनें</string>
+    <string name="camera_processing_image">छवि संसाधित हो रही है…</string>
+    <string name="processing_image_hint">विज़न मॉडल आपकी फ़ोटो का विश्लेषण कर रहा है। इसमें 1–2 मिनट लग सकते हैं।</string>
+    <string name="camera_generating">हल किया जा रहा है…</string>
+    <string name="initializing">आरंभ हो रहा है…</string>
+    <string name="model_loading">AI मॉडल लोड हो रहा है…</string>
+    <string name="model_loading_hint">विज़न मॉडल को मेमोरी में लोड किया जा रहा है। पहली बार उपयोग में इसमें एक मिनट तक लग सकता है।</string>
+    <string name="answer_found">उत्तर</string>
+    <string name="recognized_in">%1$s में हल किया गया</string>
+    <string name="use_expression">उपयोग करें</string>
+    <string name="use_answer">%1$s उपयोग करें</string>
+    <string name="retry">पुनः प्रयास करें</string>
+    <string name="stop">रोकें</string>
+    <string name="close">बंद करें</string>
+    <string name="recognition_error">पहचान विफल रही</string>
+    <string name="choose_model">AI मॉडल चुनें</string>
+    <string name="choose_model_description">आपके डिवाइस में %1$d GB RAM है। बड़े मॉडल अधिक सटीक होते हैं लेकिन धीमे होते हैं। सभी मॉडल पूरी तरह आपके डिवाइस पर चलते हैं।</string>
+    <string name="model_too_large">%1$d GB RAM चाहिए — आपके डिवाइस में %2$d GB है</string>
+    <string name="download_model">डाउनलोड करें</string>
+    <string name="downloaded">डाउनलोड हो गया</string>
+    <string name="downloading_model">AI मॉडल डाउनलोड हो रहा है</string>
+    <string name="download_complete">डाउनलोड पूर्ण</string>
+    <string name="download_file_progress">%2$d में से %1$d फ़ाइल</string>
+    <string name="download_warning">यह एक बड़ा डाउनलोड है। यदि संभव हो तो Wi-Fi का उपयोग करें।</string>
+    <string name="notif_permission_title">सूचनाओं की अनुमति दें?</string>
+    <string name="notif_permission_rationale">सूचनाओं की अनुमति दें ताकि AI मॉडल डाउनलोड पृष्ठभूमि में चल सके और अपनी प्रगति दिखा सके।</string>
+    <string name="notif_permission_allow">अनुमति दें</string>
+    <string name="not_now">अभी नहीं</string>
+    <string name="raw_model_output">मॉडल का कच्चा आउटपुट</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFace लॉगिन आवश्यक</string>
+    <string name="mobile_data_title">कोई Wi-Fi कनेक्शन नहीं</string>
+    <string name="mobile_data_description">आप मोबाइल डेटा का उपयोग करके %1$s डाउनलोड करने वाले हैं। इससे आपके वाहक से शुल्क लग सकता है।</string>
+    <string name="download_anyway">फिर भी डाउनलोड करें</string>
+    <string name="cancel">रद्द करें</string>
+    <string name="ai_feature_low_ram">इस AI सुविधा का उपयोग करने के लिए आपको अधिक RAM चाहिए।</string>
+    <string name="ai_feature_title">AI गणित समाधानकर्ता</string>
+    <string name="ai_feature_description">यह सुविधा पूरी तरह आपके डिवाइस पर चलने वाले एक बड़े AI मॉडल का उपयोग करके फ़ोटो से हाथ से लिखे गणित को हल करती है।\n\nकृपया ध्यान दें:\n\n• 4–6 GB मॉडल डाउनलोड आवश्यक है\n• डाउनलोड के लिए Wi-Fi का उपयोग करने की सलाह दी जाती है\n• AI मॉडल चलाने से बैटरी काफ़ी खर्च होती है\n• कोई डेटा क्लाउड पर नहीं भेजा जाता</string>
+    <string name="ai_feature_continue">मॉडल चुनें</string>
+    <string name="license_required_title">लाइसेंस स्वीकृति आवश्यक</string>
+    <string name="license_required_description">%1$s को डाउनलोड करने से पहले आपको HuggingFace पर लाइसेंस स्वीकार करना होगा। मॉडल पेज खोलने के लिए नीचे दिए गए बटन पर टैप करें, फिर \"Agree and access repository\" पर क्लिक करें।</string>
+    <string name="accept_license">HuggingFace पर लाइसेंस स्वीकार करें</string>
+    <string name="token_invalid_title">सत्र समाप्त हो गया</string>
+    <string name="token_invalid_description">आपका HuggingFace सत्र समाप्त हो गया है। डाउनलोड जारी रखने के लिए फिर से साइन इन करें।</string>
+    <string name="hf_token_title">HuggingFace में साइन इन करें</string>
+    <string name="hf_token_description">%1$s एक प्रतिबंधित मॉडल है। इसे डाउनलोड करने के लिए अपने निःशुल्क HuggingFace खाते से साइन इन करें। आपको मॉडल पेज पर इसका लाइसेंस भी स्वीकार करना पड़ सकता है।</string>
+    <string name="sign_in_huggingface">Hugging Face से साइन इन करें</string>
+    <string name="sign_in_again">फिर से साइन इन करें</string>
+    <string name="signing_in">साइन इन हो रहा है…</string>
+    <string name="experimental_feature_title">प्रायोगिक सुविधा</string>
+    <string name="experimental_feature_warning">AI कैमरा सुविधा प्रायोगिक है और इसमें बग या अप्रत्याशित व्यवहार हो सकता है।</string>
+    <string name="accept">स्वीकार करें</string>
+
+    <!-- छिपा हुआ AI अनलॉक -->
+    <string name="ai_unlocked">AI सुविधाएँ अनलॉक हो गईं!</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="one">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
+        <item quantity="other">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
+    </plurals>
+</resources>

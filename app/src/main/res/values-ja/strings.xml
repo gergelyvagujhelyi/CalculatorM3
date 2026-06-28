@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">電卓</string>
+
+    <!-- 電卓のエラーメッセージ -->
+    <string name="error_division_by_zero">ゼロで割ることはできません</string>
+    <string name="error_invalid_operation">無効な演算</string>
+    <string name="error_overflow">数値が大きすぎます</string>
+
+    <!-- 履歴 -->
+    <string name="history">履歴</string>
+    <string name="clear_history">履歴を消去</string>
+    <string name="no_history_yet">履歴はまだありません</string>
+
+    <!-- ボタンのアクセシビリティ -->
+    <string name="btn_backspace">バックスペース</string>
+    <string name="btn_all_clear">オールクリア</string>
+    <string name="btn_percent">パーセント</string>
+    <string name="btn_divide">除算</string>
+    <string name="btn_multiply">乗算</string>
+    <string name="btn_subtract">減算</string>
+    <string name="btn_add">加算</string>
+    <string name="btn_equals">等号</string>
+    <string name="btn_decimal">小数点</string>
+    <string name="btn_toggle_sign">符号を切り替え</string>
+    <string name="btn_square_root">平方根</string>
+    <string name="btn_pi">円周率</string>
+    <string name="btn_power">べき乗</string>
+    <string name="btn_factorial">階乗</string>
+
+    <!-- カメラ / AIスキャン -->
+    <string name="scan_expression">数式をスキャン</string>
+    <string name="scan_hint">手書きの数式の写真を撮影または選択してください</string>
+    <string name="take_photo">写真を撮る</string>
+    <string name="choose_from_gallery">ギャラリーから選択</string>
+    <string name="camera_processing_image">画像を処理中…</string>
+    <string name="processing_image_hint">ビジョンモデルが写真を解析しています。1～2分かかる場合があります。</string>
+    <string name="camera_generating">計算中…</string>
+    <string name="initializing">初期化中…</string>
+    <string name="model_loading">AIモデルを読み込み中…</string>
+    <string name="model_loading_hint">ビジョンモデルをメモリに読み込んでいます。初回利用時は最大1分ほどかかる場合があります。</string>
+    <string name="answer_found">答え</string>
+    <string name="recognized_in">%1$s で解きました</string>
+    <string name="use_expression">使用</string>
+    <string name="use_answer">%1$s を使用</string>
+    <string name="retry">再試行</string>
+    <string name="stop">停止</string>
+    <string name="close">閉じる</string>
+    <string name="recognition_error">認識に失敗しました</string>
+    <string name="choose_model">AIモデルを選択</string>
+    <string name="choose_model_description">お使いのデバイスのRAMは %1$d GB です。大きいモデルほど精度は高くなりますが遅くなります。すべてのモデルは完全にデバイス上で動作します。</string>
+    <string name="model_too_large">%1$d GB のRAMが必要です — お使いのデバイスは %2$d GB です</string>
+    <string name="download_model">ダウンロード</string>
+    <string name="downloaded">ダウンロード済み</string>
+    <string name="downloading_model">AIモデルをダウンロード中</string>
+    <string name="download_complete">ダウンロード完了</string>
+    <string name="download_file_progress">%2$d 個中 %1$d 個目のファイル</string>
+    <string name="download_warning">これは大きなダウンロードです。可能であればWi-Fiを使用してください。</string>
+    <string name="notif_permission_title">通知を許可しますか？</string>
+    <string name="notif_permission_rationale">AIモデルのダウンロードがバックグラウンドで実行され進捗を表示できるよう、通知を許可してください。</string>
+    <string name="notif_permission_allow">許可</string>
+    <string name="not_now">後で</string>
+    <string name="raw_model_output">モデルの生出力</string>
+    <string name="models_group_gemma4">Gemma 4</string>
+    <string name="models_group_login">HuggingFaceへのログインが必要</string>
+    <string name="mobile_data_title">Wi-Fi接続がありません</string>
+    <string name="mobile_data_description">モバイルデータを使用して %1$s をダウンロードしようとしています。通信事業者から料金が発生する場合があります。</string>
+    <string name="download_anyway">それでもダウンロード</string>
+    <string name="cancel">キャンセル</string>
+    <string name="ai_feature_low_ram">このAI機能を使用するにはより多くのRAMが必要です。</string>
+    <string name="ai_feature_title">AI数式ソルバー</string>
+    <string name="ai_feature_description">この機能は、完全にデバイス上で動作する大規模なAIモデルを使用して、写真から手書きの数式を解きます。\n\nご注意：\n\n• 4～6 GB のモデルのダウンロードが必要です\n• ダウンロードにはWi-Fiの使用をおすすめします\n• AIモデルの実行はバッテリーを大量に消費します\n• データはクラウドに送信されません</string>
+    <string name="ai_feature_continue">モデルを選択</string>
+    <string name="license_required_title">ライセンスへの同意が必要です</string>
+    <string name="license_required_description">%1$s をダウンロードする前に、HuggingFaceでライセンスに同意する必要があります。下のボタンをタップしてモデルページを開き、\"Agree and access repository\" をクリックしてください。</string>
+    <string name="accept_license">HuggingFaceでライセンスに同意</string>
+    <string name="token_invalid_title">セッションの有効期限が切れました</string>
+    <string name="token_invalid_description">HuggingFaceのセッションの有効期限が切れました。ダウンロードを続けるには再度ログインしてください。</string>
+    <string name="hf_token_title">HuggingFaceにログイン</string>
+    <string name="hf_token_description">%1$s は制限付きモデルです。ダウンロードするには無料のHuggingFaceアカウントでログインしてください。モデルページでライセンスへの同意が必要な場合もあります。</string>
+    <string name="sign_in_huggingface">Hugging Faceでログイン</string>
+    <string name="sign_in_again">再度ログイン</string>
+    <string name="signing_in">ログイン中…</string>
+    <string name="experimental_feature_title">実験的機能</string>
+    <string name="experimental_feature_warning">AIカメラ機能は実験的機能であり、バグや予期しない動作が発生する可能性があります。</string>
+    <string name="accept">同意する</string>
+
+    <!-- 隠しAIロック解除 -->
+    <string name="ai_unlocked">AI機能のロックが解除されました！</string>
+    <plurals name="ai_unlock_countdown">
+        <item quantity="other">AI機能のロック解除まであと %1$d 回</item>
+    </plurals>
+</resources>
