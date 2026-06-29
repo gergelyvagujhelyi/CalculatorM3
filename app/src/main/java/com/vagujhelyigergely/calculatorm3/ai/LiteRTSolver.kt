@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import android.os.SystemClock
 import android.util.Log
 import com.vagujhelyigergely.calculatorm3.R
 import com.google.ai.edge.litertlm.Backend
@@ -11,10 +12,16 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * MathSolver backend using Google LiteRT-LM for .litertlm models.
@@ -98,40 +105,87 @@ class LiteRTSolver : MathSolver {
     private suspend fun runInference(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
-    ): Result<RecognitionResult> {
+    ): Result<RecognitionResult> = coroutineScope {
         val conv = createConversation()
         val rawBuilder = StringBuilder()
         var tokenCount = 0
-        try {
-            conv.sendMessageAsync(
-                Contents.of(
-                    Content.ImageFile(imagePath),
-                    Content.Text(SolverPrompts.USER_PROMPT)
-                )
-            ).collect { message ->
-                val text = message.contents.contents
-                    .filterIsInstance<Content.Text>()
-                    .joinToString("") { it.text }
-                rawBuilder.append(text)
-                onToken(rawBuilder.toString())
-                // Hard output cap: a runaway generation that never emits a stop would otherwise
-                // stream forever (and pin the GPU). Interrupt the native side AND break out of the
-                // collection: cancelProcess() alone does NOT complete the flow, so collect() would
-                // keep suspending and the scan would hang on "Processing" — throwing unwinds it
-                // immediately so we finish with the text gathered so far.
-                if (++tokenCount >= MAX_OUTPUT_TOKENS) {
-                    Log.w(TAG, "Output cap reached ($tokenCount tokens) — stopping generation")
+        var capReached = false
+        // Safeguard state, shared with the watchdog. elapsedRealtime() is monotonic (immune to
+        // wall-clock changes). Atomics because the watchdog reads them from another thread.
+        val startMs = SystemClock.elapsedRealtime()
+        val lastActivityMs = AtomicLong(startMs)
+        val firstTokenSeen = AtomicBoolean(false)
+        val timeoutKind = AtomicReference<TimeoutKind?>(null)
+
+        // The token stream is collected in a CHILD job so the watchdog can cancel it on a stall.
+        // cancelProcess() alone does NOT complete the litertlm flow (verified: the scan hangs on
+        // "Processing"), so a stuck collect can only be unwound by cancelling its coroutine.
+        val collectJob = launch {
+            try {
+                conv.sendMessageAsync(
+                    Contents.of(
+                        Content.ImageFile(imagePath),
+                        Content.Text(SolverPrompts.USER_PROMPT)
+                    )
+                ).collect { message ->
+                    val text = message.contents.contents
+                        .filterIsInstance<Content.Text>()
+                        .joinToString("") { it.text }
+                    rawBuilder.append(text)
+                    lastActivityMs.set(SystemClock.elapsedRealtime())
+                    firstTokenSeen.set(true)
+                    onToken(rawBuilder.toString())
+                    // Hard output cap (length): a runaway that never emits a stop would stream
+                    // forever. Interrupt native generation and throw to unwind the collect now.
+                    if (++tokenCount >= MAX_OUTPUT_TOKENS) {
+                        capReached = true
+                        Log.w(TAG, "Output cap reached ($tokenCount tokens) — stopping generation")
+                        try { conv.cancelProcess() } catch (_: Exception) {}
+                        throw OutputCapReached()
+                    }
+                }
+            } catch (e: OutputCapReached) {
+                // Cap hit — collectJob completes normally; capReached drives the failure below.
+            }
+        }
+
+        // Watchdog (time): trips on a too-long prefill (no first token yet), an inter-token stall,
+        // or the absolute wall-clock ceiling. It records WHY, signals native to stop, and cancels
+        // the collect. Runs on Default so a busy IO thread can't starve the deadline checks.
+        val watchdog = launch(Dispatchers.Default) {
+            while (isActive) {
+                delay(WATCHDOG_TICK_MS)
+                val now = SystemClock.elapsedRealtime()
+                val started = firstTokenSeen.get()
+                val tripped = when {
+                    now - startMs >= TOTAL_BUDGET_MS -> TimeoutKind.TOTAL
+                    now - lastActivityMs.get() >=
+                        (if (started) INACTIVITY_BUDGET_MS else PREFILL_BUDGET_MS) ->
+                        if (started) TimeoutKind.STALL else TimeoutKind.PREFILL
+                    else -> null
+                }
+                if (tripped != null) {
+                    timeoutKind.set(tripped)
+                    Log.w(TAG, "watchdog: $tripped budget exceeded — stopping generation")
                     try { conv.cancelProcess() } catch (_: Exception) {}
-                    throw OutputCapReached()
+                    collectJob.cancel()
+                    break
                 }
             }
-        } catch (e: OutputCapReached) {
-            // The cap fired: the model never stopped on its own, so the output is incomplete and
-            // any number parsed from it would be unreliable. Surface a clear FAILURE (not a Success
-            // with a half-parsed answer) so the user sees it was cut off, not actually solved. The
-            // partial text is attached as the raw response for the "show raw" toggle. Real errors
-            // and genuine cancellation are not caught here, so they keep their existing behavior.
-            return Result.failure(
+        }
+
+        // join() returns whether the collect finished normally, hit the cap, or was cancelled by
+        // the watchdog (a cancelled child does not fail the scope). Genuine user/background
+        // cancellation cancels this whole coroutineScope instead, propagating a CancellationException
+        // out of runInference — handled as before by solveFromImageStreaming.
+        collectJob.join()
+        watchdog.cancel()
+
+        timeoutKind.get()?.let { kind ->
+            return@coroutineScope Result.failure(RecognitionException(kind.message, rawBuilder.toString()))
+        }
+        if (capReached) {
+            return@coroutineScope Result.failure(
                 RecognitionException(
                     "The answer was cut off before the model finished — it ran past the length " +
                         "limit. Please try again.",
@@ -141,7 +195,7 @@ class LiteRTSolver : MathSolver {
         }
         val raw = rawBuilder.toString()
         val answer = SolverPrompts.extractAnswer(raw)
-        return if (answer.isBlank()) {
+        if (answer.isBlank()) {
             Result.failure(RecognitionException(
                 "Could not extract a numerical answer", raw, R.string.error_no_numerical_answer))
         } else {
@@ -225,6 +279,30 @@ class LiteRTSolver : MathSolver {
          * Tune here if answers ever get truncated.
          */
         private const val MAX_OUTPUT_TOKENS = 2048
+
+        /** Why the watchdog aborted a generation, with the (English) message shown to the user.
+         *  The app's other AI-scan errors are also hardcoded English; localizing these is a
+         *  separate cross-layer change (the solver has no Context). */
+        private enum class TimeoutKind(val message: String) {
+            PREFILL("The model got stuck before producing an answer. Please try again."),
+            STALL("The answer stopped midway through. Please try again."),
+            TOTAL("The scan took too long and was stopped. Please try again with a clearer photo."),
+        }
+
+        /** First-token (prefill) budget. Vision prefill is long — ~25s+ on a Galaxy Note 9 — so it
+         *  gets its own generous allowance, separate from inter-token stalls. */
+        private const val PREFILL_BUDGET_MS = 60_000L
+
+        /** Max gap between two decoded tokens once decoding has started. Decode runs ~2–10 tok/s
+         *  (gaps of 100–500ms), so 20s only trips on a genuine native stall, not slow-but-alive. */
+        private const val INACTIVITY_BUDGET_MS = 20_000L
+
+        /** Absolute wall-clock ceiling for one generation (prefill + decode). Bounds the
+         *  pathological case; a healthy math answer finishes well inside this. */
+        private const val TOTAL_BUDGET_MS = 120_000L
+
+        /** How often the watchdog re-evaluates the deadlines. */
+        private const val WATCHDOG_TICK_MS = 1_000L
 
         /** Wrap [Throwable] in an [Exception] so callers expecting Exception types are satisfied. */
         private fun Throwable.asException(): Exception =
