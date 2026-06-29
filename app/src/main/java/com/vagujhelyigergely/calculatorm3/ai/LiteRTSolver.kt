@@ -1,6 +1,7 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
 import android.util.Log
+import com.vagujhelyigergely.calculatorm3.R
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
 import com.google.ai.edge.litertlm.Contents
@@ -115,7 +116,8 @@ class LiteRTSolver : MathSolver {
         val raw = rawBuilder.toString()
         val answer = SolverPrompts.extractAnswer(raw)
         return if (answer.isBlank()) {
-            Result.failure(RecognitionException("Could not extract a numerical answer", raw))
+            Result.failure(RecognitionException(
+                "Could not extract a numerical answer", raw, R.string.error_no_numerical_answer))
         } else {
             Result.success(RecognitionResult(raw = raw, answer = answer))
         }

@@ -90,4 +90,12 @@
         <item quantity="one">Még %1$d megnyomás az MI-funkciók feloldásához</item>
         <item quantity="other">Még %1$d megnyomás az MI-funkciók feloldásához</item>
     </plurals>
+    <string name="error_no_numerical_answer">Nem sikerült számszerű választ kinyerni</string>
+    <string name="error_model_load">Nem sikerült betölteni az MI-modellt: %1$s</string>
+    <string name="error_signin_failed">A bejelentkezés sikertelen: %1$s</string>
+    <string name="please_try_again">kérjük, próbáld újra</string>
+    <string name="error_download_failed">A letöltés sikertelen: %1$s</string>
+    <string name="error_image_process">Nem sikerült feldolgozni a képet. Próbálj meg egy másik fotót.</string>
+    <string name="error_inference_failed">A következtetés sikertelen: %1$s</string>
+    <string name="error_capture_failed">A rögzítés sikertelen: %1$s</string>
 </resources>

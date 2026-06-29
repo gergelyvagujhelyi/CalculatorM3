@@ -90,4 +90,12 @@
         <item quantity="one">Noch %1$d Tastendruck, um die KI-Funktionen freizuschalten</item>
         <item quantity="other">Noch %1$d Tastendrücke, um die KI-Funktionen freizuschalten</item>
     </plurals>
+    <string name="error_no_numerical_answer">Es konnte keine Zahl als Ergebnis erkannt werden</string>
+    <string name="error_model_load">KI-Modell konnte nicht geladen werden: %1$s</string>
+    <string name="error_signin_failed">Anmeldung fehlgeschlagen: %1$s</string>
+    <string name="please_try_again">bitte erneut versuchen</string>
+    <string name="error_download_failed">Download fehlgeschlagen: %1$s</string>
+    <string name="error_image_process">Dieses Bild konnte nicht verarbeitet werden. Bitte versuche ein anderes Foto.</string>
+    <string name="error_inference_failed">Inferenz fehlgeschlagen: %1$s</string>
+    <string name="error_capture_failed">Aufnahme fehlgeschlagen: %1$s</string>
 </resources>

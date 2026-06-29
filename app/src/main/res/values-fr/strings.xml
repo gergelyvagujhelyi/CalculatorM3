@@ -90,4 +90,12 @@
         <item quantity="one">Encore %1$d appui pour débloquer les fonctions IA</item>
         <item quantity="other">Encore %1$d appuis pour débloquer les fonctions IA</item>
     </plurals>
+    <string name="error_no_numerical_answer">Impossible d\'extraire une réponse numérique</string>
+    <string name="error_model_load">Échec du chargement du modèle d\'IA : %1$s</string>
+    <string name="error_signin_failed">Échec de la connexion : %1$s</string>
+    <string name="please_try_again">veuillez réessayer</string>
+    <string name="error_download_failed">Échec du téléchargement : %1$s</string>
+    <string name="error_image_process">Impossible de traiter cette image. Veuillez essayer une autre photo.</string>
+    <string name="error_inference_failed">Échec de l\'inférence : %1$s</string>
+    <string name="error_capture_failed">Échec de la capture : %1$s</string>
 </resources>

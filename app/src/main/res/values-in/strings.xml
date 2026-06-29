@@ -89,4 +89,12 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="other">%1$d ketukan lagi untuk membuka fitur AI</item>
     </plurals>
+    <string name="error_no_numerical_answer">Tidak dapat menemukan jawaban berupa angka</string>
+    <string name="error_model_load">Gagal memuat model AI: %1$s</string>
+    <string name="error_signin_failed">Gagal masuk: %1$s</string>
+    <string name="please_try_again">silakan coba lagi</string>
+    <string name="error_download_failed">Gagal mengunduh: %1$s</string>
+    <string name="error_image_process">Tidak dapat memproses gambar itu. Coba foto lain.</string>
+    <string name="error_inference_failed">Inferensi gagal: %1$s</string>
+    <string name="error_capture_failed">Gagal mengambil gambar: %1$s</string>
 </resources>

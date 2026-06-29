@@ -62,6 +62,6 @@ class ScanViewModelFactory(
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
-        return ScanViewModel(LiteRTSolver(), modelManager, HuggingFaceAuthManager(appContext)) as T
+        return ScanViewModel(LiteRTSolver(), modelManager, HuggingFaceAuthManager(appContext), appContext) as T
     }
 }

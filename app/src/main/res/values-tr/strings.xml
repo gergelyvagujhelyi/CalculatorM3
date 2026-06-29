@@ -90,4 +90,12 @@
         <item quantity="one">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
         <item quantity="other">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
     </plurals>
+    <string name="error_no_numerical_answer">Sayısal bir yanıt çıkarılamadı</string>
+    <string name="error_model_load">Yapay zekâ modeli yüklenemedi: %1$s</string>
+    <string name="error_signin_failed">Oturum açılamadı: %1$s</string>
+    <string name="please_try_again">lütfen tekrar deneyin</string>
+    <string name="error_download_failed">İndirme başarısız: %1$s</string>
+    <string name="error_image_process">Bu görüntü işlenemedi. Lütfen başka bir fotoğraf deneyin.</string>
+    <string name="error_inference_failed">Çıkarım başarısız: %1$s</string>
+    <string name="error_capture_failed">Yakalama başarısız: %1$s</string>
 </resources>

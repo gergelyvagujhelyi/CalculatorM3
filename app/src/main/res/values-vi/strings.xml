@@ -89,4 +89,12 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="other">Còn %1$d lần nhấn nữa để mở khóa tính năng AI</item>
     </plurals>
+    <string name="error_no_numerical_answer">Không thể trích xuất câu trả lời dạng số</string>
+    <string name="error_model_load">Không tải được mô hình AI: %1$s</string>
+    <string name="error_signin_failed">Đăng nhập thất bại: %1$s</string>
+    <string name="please_try_again">vui lòng thử lại</string>
+    <string name="error_download_failed">Tải xuống thất bại: %1$s</string>
+    <string name="error_image_process">Không thể xử lý ảnh đó. Vui lòng thử ảnh khác.</string>
+    <string name="error_inference_failed">Suy luận thất bại: %1$s</string>
+    <string name="error_capture_failed">Chụp thất bại: %1$s</string>
 </resources>

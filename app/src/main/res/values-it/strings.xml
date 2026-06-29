@@ -90,4 +90,12 @@
         <item quantity="one">Manca %1$d pressione per sbloccare le funzioni IA</item>
         <item quantity="other">Mancano %1$d pressioni per sbloccare le funzioni IA</item>
     </plurals>
+    <string name="error_no_numerical_answer">Impossibile estrarre una risposta numerica</string>
+    <string name="error_model_load">Impossibile caricare il modello IA: %1$s</string>
+    <string name="error_signin_failed">Accesso non riuscito: %1$s</string>
+    <string name="please_try_again">riprova</string>
+    <string name="error_download_failed">Download non riuscito: %1$s</string>
+    <string name="error_image_process">Impossibile elaborare l\'immagine. Prova un\'altra foto.</string>
+    <string name="error_inference_failed">Inferenza non riuscita: %1$s</string>
+    <string name="error_capture_failed">Acquisizione non riuscita: %1$s</string>
 </resources>

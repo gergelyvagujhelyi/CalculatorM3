@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
+import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
@@ -68,7 +70,8 @@ sealed interface ScanUiState {
 class ScanViewModel(
     private val solver: MathSolver,
     private val modelManager: ModelManager,
-    private val authManager: HuggingFaceAuthManager
+    private val authManager: HuggingFaceAuthManager,
+    private val appContext: Context
 ) : ViewModel() {
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
@@ -125,7 +128,7 @@ class ScanViewModel(
             // finally releases the engine) instead of surfacing it as a load error.
             if (e is kotlinx.coroutines.CancellationException) throw e
             loadedModelId = null
-            uiState = ScanUiState.Error("Failed to load AI model: ${e.message}")
+            uiState = ScanUiState.Error(appContext.getString(R.string.error_model_load, e.message ?: ""))
             false
         }
     }
@@ -176,7 +179,8 @@ class ScanViewModel(
                 startDownload(model)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                uiState = ScanUiState.Error("Sign-in failed: ${e.message ?: "please try again"}")
+                uiState = ScanUiState.Error(appContext.getString(
+                    R.string.error_signin_failed, e.message ?: appContext.getString(R.string.please_try_again)))
             }
         }
     }
@@ -267,9 +271,10 @@ class ScanViewModel(
                                 model = m
                             )
                         } else {
-                            uiState = ScanUiState.Error(
-                                "Download failed: ${out.getString(ModelDownloadWorker.KEY_MESSAGE) ?: ""}"
-                            )
+                            uiState = ScanUiState.Error(appContext.getString(
+                                R.string.error_download_failed,
+                                out.getString(ModelDownloadWorker.KEY_MESSAGE) ?: ""
+                            ))
                         }
                     }
                     WorkInfo.State.CANCELLED, null -> { /* nothing to show */ }
@@ -305,7 +310,7 @@ class ScanViewModel(
                 if (processPath == null) {
                     // Preprocessing failed — do NOT fall back to the original full-resolution
                     // photo, which can OOM the vision pipeline. Surface an error instead.
-                    uiState = ScanUiState.Error("Couldn't process that image. Please try another photo.")
+                    uiState = ScanUiState.Error(appContext.getString(R.string.error_image_process))
                     return@launch
                 }
                 var tokenCount = 0
@@ -359,14 +364,17 @@ class ScanViewModel(
                     },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
-                        ScanUiState.Error(it.message ?: "Recognition failed", raw)
+                        val res = (it as? RecognitionException)?.messageRes ?: 0
+                        val msg = if (res != 0) appContext.getString(res)
+                            else it.message ?: appContext.getString(R.string.recognition_error)
+                        ScanUiState.Error(msg, raw)
                     }
                 )
             } catch (e: Throwable) {
                 // Let cancellation (e.g. user closed the screen) propagate instead
                 // of showing it as an inference error.
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                uiState = ScanUiState.Error("Inference failed: ${e.message}")
+                uiState = ScanUiState.Error(appContext.getString(R.string.error_inference_failed, e.message ?: ""))
             } finally {
                 // Free the engine as soon as inference is done: it must NOT stay resident while
                 // the system camera launches for the next scan (large models OOM-kill the app —
@@ -468,7 +476,7 @@ class ScanViewModel(
     }
 
     fun onCaptureError(message: String) {
-        uiState = ScanUiState.Error("Capture failed: $message")
+        uiState = ScanUiState.Error(appContext.getString(R.string.error_capture_failed, message))
     }
 
     fun retry() {
