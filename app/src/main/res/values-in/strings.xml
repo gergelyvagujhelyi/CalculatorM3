@@ -97,4 +97,8 @@
     <string name="error_image_process">Tidak dapat memproses gambar itu. Coba foto lain.</string>
     <string name="error_inference_failed">Inferensi gagal: %1$s</string>
     <string name="error_capture_failed">Gagal mengambil gambar: %1$s</string>
+    <string name="error_output_cut_off">Jawaban terpotong sebelum model selesai — melebihi batas panjang. Silakan coba lagi.</string>
+    <string name="error_prefill_timeout">Model macet sebelum menghasilkan jawaban. Silakan coba lagi.</string>
+    <string name="error_stall_timeout">Jawaban berhenti di tengah jalan. Silakan coba lagi.</string>
+    <string name="error_total_timeout">Pemindaian terlalu lama dan dihentikan. Coba foto yang lebih jelas.</string>
 </resources>

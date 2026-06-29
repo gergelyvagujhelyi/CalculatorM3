@@ -97,4 +97,8 @@
     <string name="error_image_process">无法处理该图片。请尝试其他照片。</string>
     <string name="error_inference_failed">推理失败：%1$s</string>
     <string name="error_capture_failed">拍摄失败：%1$s</string>
+    <string name="error_output_cut_off">回答在模型完成前被截断——超出了长度限制。请重试。</string>
+    <string name="error_prefill_timeout">模型在给出回答前卡住了。请重试。</string>
+    <string name="error_stall_timeout">回答中途停止了。请重试。</string>
+    <string name="error_total_timeout">扫描耗时过长，已停止。请尝试更清晰的照片。</string>
 </resources>

@@ -100,4 +100,8 @@
     <string name="error_image_process">Не вдалося обробити це зображення. Спробуйте інше фото.</string>
     <string name="error_inference_failed">Помилка висновку: %1$s</string>
     <string name="error_capture_failed">Не вдалося зробити знімок: %1$s</string>
+    <string name="error_output_cut_off">Відповідь обірвалася до завершення моделі — перевищено обмеження довжини. Повторіть спробу.</string>
+    <string name="error_prefill_timeout">Модель зависла, не встигнувши дати відповідь. Повторіть спробу.</string>
+    <string name="error_stall_timeout">Відповідь зупинилася на середині. Повторіть спробу.</string>
+    <string name="error_total_timeout">Сканування тривало надто довго й було зупинено. Спробуйте чіткіше фото.</string>
 </resources>

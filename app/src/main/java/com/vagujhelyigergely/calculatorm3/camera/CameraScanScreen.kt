@@ -3,6 +3,8 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -188,7 +190,14 @@ fun CameraScanScreen(
     // by isChangingConfigurations: a rotation also fires ON_STOP, and stopping there would undo the
     // rotation state-preservation. Inference only starts once the Activity is RESUMED again, so an
     // ON_STOP during a scan is always a real background, never the camera/gallery round-trip.
-    val lifecycleActivity = context as? ComponentActivity
+    // Unwrap the context to find the hosting ComponentActivity. A direct cast can be null when the
+    // Compose context is a ContextWrapper (e.g. ContextThemeWrapper), which would silently disable
+    // this safeguard, so walk the wrapper chain instead.
+    val lifecycleActivity = remember(context) {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper && ctx !is ComponentActivity) ctx = ctx.baseContext
+        ctx as? ComponentActivity
+    }
     DisposableEffect(lifecycleActivity) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP && lifecycleActivity?.isChangingConfigurations == false) {

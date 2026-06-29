@@ -2,6 +2,7 @@ package com.vagujhelyigergely.calculatorm3.ai
 
 import android.os.SystemClock
 import android.util.Log
+import androidx.annotation.StringRes
 import com.vagujhelyigergely.calculatorm3.R
 import com.google.ai.edge.litertlm.Backend
 import com.google.ai.edge.litertlm.Content
@@ -181,15 +182,21 @@ class LiteRTSolver : MathSolver {
         collectJob.join()
         watchdog.cancel()
 
-        timeoutKind.get()?.let { kind ->
-            return@coroutineScope Result.failure(RecognitionException(kind.message, rawBuilder.toString()))
+        // Only a watchdog-cancelled collect is a real timeout. Guarding on isCancelled avoids a race
+        // where the watchdog trips in the sliver between a NORMAL completion and watchdog.cancel(),
+        // which would otherwise flip a successful (but slow, >TOTAL_BUDGET) scan into a failure.
+        if (collectJob.isCancelled) {
+            val kind = timeoutKind.get() ?: TimeoutKind.TOTAL
+            return@coroutineScope Result.failure(
+                RecognitionException(kind.message, rawBuilder.toString(), kind.messageRes))
         }
         if (capReached) {
             return@coroutineScope Result.failure(
                 RecognitionException(
                     "The answer was cut off before the model finished — it ran past the length " +
                         "limit. Please try again.",
-                    rawBuilder.toString()
+                    rawBuilder.toString(),
+                    R.string.error_output_cut_off
                 )
             )
         }
@@ -280,13 +287,15 @@ class LiteRTSolver : MathSolver {
          */
         private const val MAX_OUTPUT_TOKENS = 2048
 
-        /** Why the watchdog aborted a generation, with the (English) message shown to the user.
-         *  The app's other AI-scan errors are also hardcoded English; localizing these is a
-         *  separate cross-layer change (the solver has no Context). */
-        private enum class TimeoutKind(val message: String) {
-            PREFILL("The model got stuck before producing an answer. Please try again."),
-            STALL("The answer stopped midway through. Please try again."),
-            TOTAL("The scan took too long and was stopped. Please try again with a clearer photo."),
+        /** Why the watchdog aborted a generation. [message] is the English fallback; [messageRes]
+         *  is the localized string the UI resolves (the solver has no Context). */
+        private enum class TimeoutKind(val message: String, @StringRes val messageRes: Int) {
+            PREFILL("The model got stuck before producing an answer. Please try again.",
+                R.string.error_prefill_timeout),
+            STALL("The answer stopped midway through. Please try again.",
+                R.string.error_stall_timeout),
+            TOTAL("The scan took too long and was stopped. Please try again with a clearer photo.",
+                R.string.error_total_timeout),
         }
 
         /** First-token (prefill) budget. Vision prefill is long — ~25s+ on a Galaxy Note 9 — so it

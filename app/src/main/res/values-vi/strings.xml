@@ -97,4 +97,8 @@
     <string name="error_image_process">Không thể xử lý ảnh đó. Vui lòng thử ảnh khác.</string>
     <string name="error_inference_failed">Suy luận thất bại: %1$s</string>
     <string name="error_capture_failed">Chụp thất bại: %1$s</string>
+    <string name="error_output_cut_off">Câu trả lời bị cắt trước khi mô hình hoàn tất — đã vượt quá giới hạn độ dài. Vui lòng thử lại.</string>
+    <string name="error_prefill_timeout">Mô hình bị kẹt trước khi đưa ra câu trả lời. Vui lòng thử lại.</string>
+    <string name="error_stall_timeout">Câu trả lời dừng lại giữa chừng. Vui lòng thử lại.</string>
+    <string name="error_total_timeout">Quá trình quét mất quá nhiều thời gian và đã dừng. Vui lòng thử ảnh rõ hơn.</string>
 </resources>

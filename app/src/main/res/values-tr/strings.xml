@@ -98,4 +98,8 @@
     <string name="error_image_process">Bu görüntü işlenemedi. Lütfen başka bir fotoğraf deneyin.</string>
     <string name="error_inference_failed">Çıkarım başarısız: %1$s</string>
     <string name="error_capture_failed">Yakalama başarısız: %1$s</string>
+    <string name="error_output_cut_off">Yanıt, model bitirmeden kesildi — uzunluk sınırını aştı. Lütfen tekrar deneyin.</string>
+    <string name="error_prefill_timeout">Model, yanıt üretmeden takıldı. Lütfen tekrar deneyin.</string>
+    <string name="error_stall_timeout">Yanıt yarıda durdu. Lütfen tekrar deneyin.</string>
+    <string name="error_total_timeout">Tarama çok uzun sürdü ve durduruldu. Lütfen daha net bir fotoğraf deneyin.</string>
 </resources>
