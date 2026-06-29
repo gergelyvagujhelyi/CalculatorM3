@@ -98,4 +98,8 @@
     <string name="error_image_process">Nem sikerült feldolgozni a képet. Próbálj meg egy másik fotót.</string>
     <string name="error_inference_failed">A következtetés sikertelen: %1$s</string>
     <string name="error_capture_failed">A rögzítés sikertelen: %1$s</string>
+    <string name="error_output_cut_off">A válasz megszakadt, mielőtt a modell befejezte volna — túllépte a hosszúsági korlátot. Kérjük, próbáld újra.</string>
+    <string name="error_prefill_timeout">A modell elakadt, mielőtt választ adott volna. Kérjük, próbáld újra.</string>
+    <string name="error_stall_timeout">A válasz félúton megszakadt. Kérjük, próbáld újra.</string>
+    <string name="error_total_timeout">A beolvasás túl sokáig tartott, ezért leállt. Próbálj meg egy élesebb fotót.</string>
 </resources>

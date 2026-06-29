@@ -98,4 +98,8 @@
     <string name="error_image_process">Não foi possível processar essa imagem. Tente outra foto.</string>
     <string name="error_inference_failed">Falha na inferência: %1$s</string>
     <string name="error_capture_failed">Falha na captura: %1$s</string>
+    <string name="error_output_cut_off">A resposta foi cortada antes de o modelo terminar — ultrapassou o limite de comprimento. Tente novamente.</string>
+    <string name="error_prefill_timeout">O modelo travou antes de produzir uma resposta. Tente novamente.</string>
+    <string name="error_stall_timeout">A resposta parou no meio. Tente novamente.</string>
+    <string name="error_total_timeout">A leitura demorou muito e foi interrompida. Tente uma foto mais nítida.</string>
 </resources>

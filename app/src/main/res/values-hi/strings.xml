@@ -98,4 +98,8 @@
     <string name="error_image_process">वह छवि संसाधित नहीं हो सकी। कृपया कोई दूसरी फ़ोटो आज़माएँ।</string>
     <string name="error_inference_failed">अनुमान विफल: %1$s</string>
     <string name="error_capture_failed">कैप्चर विफल: %1$s</string>
+    <string name="error_output_cut_off">मॉडल के पूरा होने से पहले उत्तर कट गया — यह लंबाई सीमा से आगे चला गया। कृपया पुनः प्रयास करें।</string>
+    <string name="error_prefill_timeout">उत्तर देने से पहले मॉडल अटक गया। कृपया पुनः प्रयास करें।</string>
+    <string name="error_stall_timeout">उत्तर बीच में ही रुक गया। कृपया पुनः प्रयास करें।</string>
+    <string name="error_total_timeout">स्कैन में बहुत अधिक समय लगा और रोक दिया गया। कृपया अधिक स्पष्ट फ़ोटो आज़माएँ।</string>
 </resources>

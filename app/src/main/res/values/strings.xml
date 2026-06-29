@@ -54,6 +54,10 @@
     <string name="error_image_process">Couldn\'t process that image. Please try another photo.</string>
     <string name="error_inference_failed">Inference failed: %1$s</string>
     <string name="error_capture_failed">Capture failed: %1$s</string>
+    <string name="error_output_cut_off">The answer was cut off before the model finished — it ran past the length limit. Please try again.</string>
+    <string name="error_prefill_timeout">The model got stuck before producing an answer. Please try again.</string>
+    <string name="error_stall_timeout">The answer stopped midway through. Please try again.</string>
+    <string name="error_total_timeout">The scan took too long and was stopped. Please try again with a clearer photo.</string>
     <string name="choose_model">Choose AI model</string>
     <string name="choose_model_description">Your device has %1$d GB RAM. Larger models are more accurate but slower. All models run entirely on your device.</string>
     <string name="model_too_large">Needs %1$d GB RAM — your device has %2$d GB</string>

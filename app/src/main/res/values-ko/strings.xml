@@ -97,4 +97,8 @@
     <string name="error_image_process">이미지를 처리할 수 없습니다. 다른 사진을 사용해 보세요.</string>
     <string name="error_inference_failed">추론 실패: %1$s</string>
     <string name="error_capture_failed">촬영 실패: %1$s</string>
+    <string name="error_output_cut_off">모델이 완료되기 전에 답변이 잘렸습니다. 길이 제한을 초과했습니다. 다시 시도해 주세요.</string>
+    <string name="error_prefill_timeout">답변을 생성하기 전에 모델이 멈췄습니다. 다시 시도해 주세요.</string>
+    <string name="error_stall_timeout">답변이 중간에 멈췄습니다. 다시 시도해 주세요.</string>
+    <string name="error_total_timeout">스캔이 너무 오래 걸려 중지되었습니다. 더 선명한 사진으로 다시 시도해 주세요.</string>
 </resources>
