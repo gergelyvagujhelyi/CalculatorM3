@@ -98,4 +98,8 @@
     <string name="error_image_process">Impossibile elaborare l\'immagine. Prova un\'altra foto.</string>
     <string name="error_inference_failed">Inferenza non riuscita: %1$s</string>
     <string name="error_capture_failed">Acquisizione non riuscita: %1$s</string>
+    <string name="error_output_cut_off">La risposta è stata interrotta prima che il modello finisse: ha superato il limite di lunghezza. Riprova.</string>
+    <string name="error_prefill_timeout">Il modello si è bloccato prima di produrre una risposta. Riprova.</string>
+    <string name="error_stall_timeout">La risposta si è interrotta a metà. Riprova.</string>
+    <string name="error_total_timeout">La scansione ha richiesto troppo tempo ed è stata interrotta. Prova con una foto più nitida.</string>
 </resources>
