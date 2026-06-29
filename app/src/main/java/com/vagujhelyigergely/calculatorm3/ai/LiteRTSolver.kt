@@ -141,7 +141,9 @@ class LiteRTSolver : MathSolver {
                     if (++tokenCount >= MAX_OUTPUT_TOKENS) {
                         capReached = true
                         Log.w(TAG, "Output cap reached ($tokenCount tokens) — stopping generation")
-                        try { conv.cancelProcess() } catch (_: Exception) {}
+                        // catch Throwable, not Exception: cancelProcess() is a native JNI call and
+                        // could surface an Error (e.g. linkage); this best-effort signal must never crash.
+                        try { conv.cancelProcess() } catch (_: Throwable) {}
                         throw OutputCapReached()
                     }
                 }
@@ -168,7 +170,9 @@ class LiteRTSolver : MathSolver {
                 if (tripped != null) {
                     timeoutKind.set(tripped)
                     Log.w(TAG, "watchdog: $tripped budget exceeded — stopping generation")
-                    try { conv.cancelProcess() } catch (_: Exception) {}
+                    // catch Throwable, not Exception: cancelProcess() is a native JNI call and could
+                    // surface an Error (e.g. linkage); this best-effort signal must never crash.
+                    try { conv.cancelProcess() } catch (_: Throwable) {}
                     collectJob.cancel()
                     break
                 }
