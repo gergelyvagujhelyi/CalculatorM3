@@ -89,4 +89,12 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="other">AI機能のロック解除まであと %1$d 回</item>
     </plurals>
+    <string name="error_no_numerical_answer">数値の答えを読み取れませんでした</string>
+    <string name="error_model_load">AIモデルの読み込みに失敗しました: %1$s</string>
+    <string name="error_signin_failed">サインインに失敗しました: %1$s</string>
+    <string name="please_try_again">もう一度お試しください</string>
+    <string name="error_download_failed">ダウンロードに失敗しました: %1$s</string>
+    <string name="error_image_process">その画像を処理できませんでした。別の写真でお試しください。</string>
+    <string name="error_inference_failed">推論に失敗しました: %1$s</string>
+    <string name="error_capture_failed">撮影に失敗しました: %1$s</string>
 </resources>

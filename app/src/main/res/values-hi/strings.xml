@@ -90,4 +90,12 @@
         <item quantity="one">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
         <item quantity="other">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
     </plurals>
+    <string name="error_no_numerical_answer">कोई संख्यात्मक उत्तर नहीं निकाला जा सका</string>
+    <string name="error_model_load">AI मॉडल लोड नहीं हो सका: %1$s</string>
+    <string name="error_signin_failed">साइन-इन विफल: %1$s</string>
+    <string name="please_try_again">कृपया पुनः प्रयास करें</string>
+    <string name="error_download_failed">डाउनलोड विफल: %1$s</string>
+    <string name="error_image_process">वह छवि संसाधित नहीं हो सकी। कृपया कोई दूसरी फ़ोटो आज़माएँ।</string>
+    <string name="error_inference_failed">अनुमान विफल: %1$s</string>
+    <string name="error_capture_failed">कैप्चर विफल: %1$s</string>
 </resources>

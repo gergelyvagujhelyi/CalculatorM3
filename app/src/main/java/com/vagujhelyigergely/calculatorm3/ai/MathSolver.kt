@@ -1,8 +1,18 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import androidx.annotation.StringRes
+
 data class RecognitionResult(val raw: String, val answer: String)
 
-class RecognitionException(message: String, val rawResponse: String) : Exception(message)
+/**
+ * [messageRes], when non-zero, is a localized string resource the UI resolves (the solver has no
+ * Context). [message] is the English fallback for callers that don't carry a resource id.
+ */
+class RecognitionException(
+    message: String,
+    val rawResponse: String,
+    @StringRes val messageRes: Int = 0,
+) : Exception(message)
 
 /**
  * Common interface for AI backends that solve handwritten math from images.

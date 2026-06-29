@@ -89,4 +89,12 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="other">还需按 %1$d 次即可解锁 AI 功能</item>
     </plurals>
+    <string name="error_no_numerical_answer">无法识别出数字答案</string>
+    <string name="error_model_load">无法加载 AI 模型：%1$s</string>
+    <string name="error_signin_failed">登录失败：%1$s</string>
+    <string name="please_try_again">请重试</string>
+    <string name="error_download_failed">下载失败：%1$s</string>
+    <string name="error_image_process">无法处理该图片。请尝试其他照片。</string>
+    <string name="error_inference_failed">推理失败：%1$s</string>
+    <string name="error_capture_failed">拍摄失败：%1$s</string>
 </resources>

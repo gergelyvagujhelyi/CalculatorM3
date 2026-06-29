@@ -92,4 +92,12 @@
         <item quantity="many">Pozostało %1$d naciśnięć do odblokowania funkcji AI</item>
         <item quantity="other">Pozostało %1$d naciśnięć do odblokowania funkcji AI</item>
     </plurals>
+    <string name="error_no_numerical_answer">Nie udało się odczytać odpowiedzi liczbowej</string>
+    <string name="error_model_load">Nie udało się załadować modelu AI: %1$s</string>
+    <string name="error_signin_failed">Logowanie nie powiodło się: %1$s</string>
+    <string name="please_try_again">spróbuj ponownie</string>
+    <string name="error_download_failed">Pobieranie nie powiodło się: %1$s</string>
+    <string name="error_image_process">Nie udało się przetworzyć tego zdjęcia. Spróbuj innego.</string>
+    <string name="error_inference_failed">Wnioskowanie nie powiodło się: %1$s</string>
+    <string name="error_capture_failed">Przechwytywanie nie powiodło się: %1$s</string>
 </resources>

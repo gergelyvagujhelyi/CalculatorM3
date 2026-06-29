@@ -92,4 +92,12 @@
         <item quantity="many">Залишилося %1$d натискань до розблокування функцій ШІ</item>
         <item quantity="other">Залишилося %1$d натискань до розблокування функцій ШІ</item>
     </plurals>
+    <string name="error_no_numerical_answer">Не вдалося розпізнати числову відповідь</string>
+    <string name="error_model_load">Не вдалося завантажити модель ШІ: %1$s</string>
+    <string name="error_signin_failed">Не вдалося ввійти: %1$s</string>
+    <string name="please_try_again">повторіть спробу</string>
+    <string name="error_download_failed">Не вдалося завантажити: %1$s</string>
+    <string name="error_image_process">Не вдалося обробити це зображення. Спробуйте інше фото.</string>
+    <string name="error_inference_failed">Помилка висновку: %1$s</string>
+    <string name="error_capture_failed">Не вдалося зробити знімок: %1$s</string>
 </resources>

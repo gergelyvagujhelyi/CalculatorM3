@@ -89,4 +89,12 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="other">AI 기능 잠금 해제까지 %1$d번 남았습니다</item>
     </plurals>
+    <string name="error_no_numerical_answer">숫자 답을 추출할 수 없습니다</string>
+    <string name="error_model_load">AI 모델을 불러오지 못했습니다: %1$s</string>
+    <string name="error_signin_failed">로그인 실패: %1$s</string>
+    <string name="please_try_again">다시 시도해 주세요</string>
+    <string name="error_download_failed">다운로드 실패: %1$s</string>
+    <string name="error_image_process">이미지를 처리할 수 없습니다. 다른 사진을 사용해 보세요.</string>
+    <string name="error_inference_failed">추론 실패: %1$s</string>
+    <string name="error_capture_failed">촬영 실패: %1$s</string>
 </resources>

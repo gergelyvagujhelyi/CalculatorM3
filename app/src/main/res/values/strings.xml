@@ -46,6 +46,14 @@
     <string name="stop">Stop</string>
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
+    <string name="error_no_numerical_answer">Could not extract a numerical answer</string>
+    <string name="error_model_load">Failed to load AI model: %1$s</string>
+    <string name="error_signin_failed">Sign-in failed: %1$s</string>
+    <string name="please_try_again">please try again</string>
+    <string name="error_download_failed">Download failed: %1$s</string>
+    <string name="error_image_process">Couldn\'t process that image. Please try another photo.</string>
+    <string name="error_inference_failed">Inference failed: %1$s</string>
+    <string name="error_capture_failed">Capture failed: %1$s</string>
     <string name="choose_model">Choose AI model</string>
     <string name="choose_model_description">Your device has %1$d GB RAM. Larger models are more accurate but slower. All models run entirely on your device.</string>
     <string name="model_too_large">Needs %1$d GB RAM — your device has %2$d GB</string>
