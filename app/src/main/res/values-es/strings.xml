@@ -98,4 +98,8 @@
     <string name="error_image_process">No se pudo procesar esa imagen. Prueba con otra foto.</string>
     <string name="error_inference_failed">Error de inferencia: %1$s</string>
     <string name="error_capture_failed">Error al capturar: %1$s</string>
+    <string name="error_output_cut_off">La respuesta se cortó antes de que el modelo terminara: superó el límite de longitud. Inténtalo de nuevo.</string>
+    <string name="error_prefill_timeout">El modelo se quedó atascado antes de producir una respuesta. Inténtalo de nuevo.</string>
+    <string name="error_stall_timeout">La respuesta se detuvo a mitad. Inténtalo de nuevo.</string>
+    <string name="error_total_timeout">El escaneo tardó demasiado y se detuvo. Prueba con una foto más nítida.</string>
 </resources>

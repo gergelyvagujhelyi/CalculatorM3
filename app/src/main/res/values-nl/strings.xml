@@ -98,4 +98,8 @@
     <string name="error_image_process">Kan die afbeelding niet verwerken. Probeer een andere foto.</string>
     <string name="error_inference_failed">Inferentie mislukt: %1$s</string>
     <string name="error_capture_failed">Vastleggen mislukt: %1$s</string>
+    <string name="error_output_cut_off">Het antwoord werd afgebroken voordat het model klaar was — het overschreed de lengtelimiet. Probeer het opnieuw.</string>
+    <string name="error_prefill_timeout">Het model liep vast voordat het een antwoord gaf. Probeer het opnieuw.</string>
+    <string name="error_stall_timeout">Het antwoord stopte halverwege. Probeer het opnieuw.</string>
+    <string name="error_total_timeout">Het scannen duurde te lang en is gestopt. Probeer een scherpere foto.</string>
 </resources>

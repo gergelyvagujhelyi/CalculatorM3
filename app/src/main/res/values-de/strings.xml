@@ -98,4 +98,8 @@
     <string name="error_image_process">Dieses Bild konnte nicht verarbeitet werden. Bitte versuche ein anderes Foto.</string>
     <string name="error_inference_failed">Inferenz fehlgeschlagen: %1$s</string>
     <string name="error_capture_failed">Aufnahme fehlgeschlagen: %1$s</string>
+    <string name="error_output_cut_off">Die Antwort wurde abgeschnitten, bevor das Modell fertig war — sie hat die Längengrenze überschritten. Bitte versuche es erneut.</string>
+    <string name="error_prefill_timeout">Das Modell ist hängengeblieben, bevor es eine Antwort erzeugt hat. Bitte versuche es erneut.</string>
+    <string name="error_stall_timeout">Die Antwort wurde mittendrin abgebrochen. Bitte versuche es erneut.</string>
+    <string name="error_total_timeout">Der Scan hat zu lange gedauert und wurde gestoppt. Bitte versuche es mit einem schärferen Foto.</string>
 </resources>

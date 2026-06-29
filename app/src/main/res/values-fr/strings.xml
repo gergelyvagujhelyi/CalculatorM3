@@ -98,4 +98,8 @@
     <string name="error_image_process">Impossible de traiter cette image. Veuillez essayer une autre photo.</string>
     <string name="error_inference_failed">Échec de l\'inférence : %1$s</string>
     <string name="error_capture_failed">Échec de la capture : %1$s</string>
+    <string name="error_output_cut_off">La réponse a été coupée avant que le modèle ait terminé : elle a dépassé la limite de longueur. Veuillez réessayer.</string>
+    <string name="error_prefill_timeout">Le modèle s\'est bloqué avant de produire une réponse. Veuillez réessayer.</string>
+    <string name="error_stall_timeout">La réponse s\'est interrompue en cours. Veuillez réessayer.</string>
+    <string name="error_total_timeout">L\'analyse a pris trop de temps et a été arrêtée. Veuillez essayer une photo plus nette.</string>
 </resources>

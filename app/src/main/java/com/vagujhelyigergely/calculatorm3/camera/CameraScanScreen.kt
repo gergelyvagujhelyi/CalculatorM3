@@ -3,15 +3,20 @@
 package com.vagujhelyigergely.calculatorm3.camera
 
 import android.Manifest
+import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.compose.ui.platform.LocalConfiguration
@@ -57,6 +62,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import android.util.Log
 import android.view.WindowManager
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -177,6 +183,30 @@ fun CameraScanScreen(
         onDispose {
             activity?.window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+    }
+
+    // Stop inference when the app is genuinely backgrounded (Home / app-switch) so generation and
+    // the GPU engine don't keep running off-screen and drain the battery while forgotten. Guarded
+    // by isChangingConfigurations: a rotation also fires ON_STOP, and stopping there would undo the
+    // rotation state-preservation. Inference only starts once the Activity is RESUMED again, so an
+    // ON_STOP during a scan is always a real background, never the camera/gallery round-trip.
+    // Unwrap the context to find the hosting ComponentActivity. A direct cast can be null when the
+    // Compose context is a ContextWrapper (e.g. ContextThemeWrapper), which would silently disable
+    // this safeguard, so walk the wrapper chain instead.
+    val lifecycleActivity = remember(context) {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper && ctx !is ComponentActivity) ctx = ctx.baseContext
+        ctx as? ComponentActivity
+    }
+    DisposableEffect(lifecycleActivity) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP && lifecycleActivity?.isChangingConfigurations == false) {
+                Log.i("CameraScanScreen", "background ON_STOP -> stopInference")
+                viewModel.stopInference()
+            }
+        }
+        lifecycleActivity?.lifecycle?.addObserver(observer)
+        onDispose { lifecycleActivity?.lifecycle?.removeObserver(observer) }
     }
 
     Dialog(

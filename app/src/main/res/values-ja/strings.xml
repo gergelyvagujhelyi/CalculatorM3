@@ -97,4 +97,8 @@
     <string name="error_image_process">その画像を処理できませんでした。別の写真でお試しください。</string>
     <string name="error_inference_failed">推論に失敗しました: %1$s</string>
     <string name="error_capture_failed">撮影に失敗しました: %1$s</string>
+    <string name="error_output_cut_off">モデルが完了する前に回答が途切れました。文字数の上限を超えています。もう一度お試しください。</string>
+    <string name="error_prefill_timeout">回答を生成する前にモデルが停止しました。もう一度お試しください。</string>
+    <string name="error_stall_timeout">回答が途中で止まりました。もう一度お試しください。</string>
+    <string name="error_total_timeout">スキャンに時間がかかりすぎたため停止しました。より鮮明な写真でお試しください。</string>
 </resources>
