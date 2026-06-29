@@ -71,8 +71,12 @@ class ScanViewModel(
     private val solver: MathSolver,
     private val modelManager: ModelManager,
     private val authManager: HuggingFaceAuthManager,
-    private val appContext: Context
+    context: Context
 ) : ViewModel() {
+
+    // Store the *application* context so the ViewModel can outlive an Activity without leaking it.
+    // The factory already passes applicationContext; this makes it safe regardless of caller.
+    private val appContext = context.applicationContext
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
         private set
