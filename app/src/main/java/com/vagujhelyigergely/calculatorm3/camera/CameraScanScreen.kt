@@ -99,9 +99,11 @@ fun CameraScanScreen(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    // Model whose download is queued behind the notification-permission flow.
-    var pendingDownloadModel by remember { mutableStateOf<AiModel?>(null) }
-    var showNotifRationale by remember { mutableStateOf(false) }
+    // Model whose download is queued behind the notification-permission flow. Saveable (an enum is
+    // Serializable) so rotating while the system permission prompt is open doesn't drop it — the
+    // launcher callback is redelivered to the recreated screen and must still find the model.
+    var pendingDownloadModel by rememberSaveable { mutableStateOf<AiModel?>(null) }
+    var showNotifRationale by rememberSaveable { mutableStateOf(false) }
     val notifPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {

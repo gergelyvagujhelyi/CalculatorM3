@@ -39,6 +39,8 @@ class ModelDownloadWorker(
             android.util.Log.w("ModelDownloadWorker", "setForeground failed; continuing in background", e)
         }
 
+        // Whether this run downloaded anything; runs that make progress always retry.
+        var madeProgress = false
         return try {
             model.files.forEachIndexed { index, file ->
                 if (!modelManager.isFileDownloaded(model, file)) {
@@ -46,6 +48,7 @@ class ModelDownloadWorker(
                     var lastPct = -1
                     var lastTs = 0L
                     modelManager.downloadFile(model, file.url, file.filename) { downloaded, total ->
+                        madeProgress = true
                         val pct = if (total > 0) (downloaded * 100 / total).toInt() else -1
                         val now = System.currentTimeMillis()
                         if (pct != lastPct || now - lastTs > 500L) {
@@ -71,10 +74,19 @@ class ModelDownloadWorker(
                     KEY_MODEL_ID to modelId
                 )
             )
+        } catch (e: DownloadStorageException) {
+            // Disk full / write failure: retrying would only repeat it. The .tmp is kept, so
+            // starting the download again after freeing space resumes where it stopped.
+            failure(modelId, e.message ?: "Not enough free storage")
+        } catch (e: RetryableHttpException) {
+            // Throttled / server error: wait as long as the server asked (capped), then let
+            // WorkManager reschedule with its own backoff on top.
+            e.retryAfterMs?.let { kotlinx.coroutines.delay(it) }
+            retryOrGiveUp(modelId, madeProgress, e)
         } catch (e: java.io.IOException) {
             // Transient network error — let WorkManager reschedule; the partial
             // .tmp resumes via HTTP Range on the next run.
-            Result.retry()
+            retryOrGiveUp(modelId, madeProgress, e)
         } catch (e: Exception) {
             Result.failure(
                 workDataOf(
@@ -90,6 +102,21 @@ class ModelDownloadWorker(
             notificationManager.cancel(NOTIFICATION_ID)
         }
     }
+
+    private fun retryOrGiveUp(modelId: String, madeProgress: Boolean, e: Exception): Result =
+        if (DownloadPolicy.shouldGiveUp(runAttemptCount, madeProgress)) {
+            failure(modelId, "Download kept failing: ${e.message ?: "network error"}")
+        } else {
+            Result.retry()
+        }
+
+    private fun failure(modelId: String, message: String) = Result.failure(
+        workDataOf(
+            KEY_ERROR to ERROR_GENERIC,
+            KEY_MESSAGE to message,
+            KEY_MODEL_ID to modelId
+        )
+    )
 
     private fun progressData(modelId: String, index: Int, count: Int, downloaded: Long, total: Long) =
         workDataOf(
