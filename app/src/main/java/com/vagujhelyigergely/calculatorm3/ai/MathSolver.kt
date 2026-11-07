@@ -62,31 +62,66 @@ object SolverPrompts {
     // three digits that aren't themselves followed by another digit.
     private val thousandsSeparator = Regex("(?<=\\d),(?=\\d{3}(?:\\D|\$))")
 
+    // Dash-like characters models emit as a minus sign: U+2212 minus, en/em dash, hyphens, fullwidth.
+    private val minusVariants = Regex("[−–—‐‑﹣－]")
+    // Wrappers around an otherwise plain number: **42**, \boxed{42}, $42$, \(42\), \[42\].
+    private val boxed = Regex("\\\\boxed\\{([^{}]*)\\}")
+    private val latexDelimiters = Regex("\\\\[()\\[\\]]|\\*\\*|\\$")
+    // "a × 10^b" (also \times, \cdot, ·, *, x, and 10^{b}) → "aEb".
+    private val timesTenPower =
+        Regex("(-?(?:\\d+\\.?\\d*|\\.\\d+))\\s*(?:×|\\\\times|\\\\cdot|·|\\*|x)\\s*10\\^\\{?\\s*([+-]?\\d+)\\s*\\}?")
+    // A number touching one of these is an operand of unfinished math or LaTeX (1/2, 2^10,
+    // 12+5, 50%, \frac{1}{2}), not a complete answer.
+    private const val OPERAND_NEIGHBORS = "+-*/^×÷·%{}\\_"
+
     /**
-     * Extract the numerical answer from the LLM response. The model is prompted to put only
-     * the number on the last line, so that case is trusted first; the remaining steps degrade
-     * gracefully for messier output (an `= 42` tail, an aside like `17 (12+5)`, `1,234`)
-     * instead of blindly grabbing the last trailing token.
+     * Extract the final numerical answer from the LLM response, or "" if there isn't exactly one
+     * complete number to use. The model is prompted to end with a number-only line, but rather
+     * than grab whatever digits are nearby, this only accepts a number that stands on its own:
+     * a fragment of `1/2`, `2^10`, `12 + 5` or `\frac{1}{2}` is rejected instead of silently
+     * becoming a different value. Rejection surfaces the raw response to the user, which is
+     * safer than a wrong "Use answer".
+     *
+     * Supported: plain and E-notation numbers, Unicode minus signs, `a × 10^b`, English thousands
+     * separators, markdown/LaTeX wrappers, a trailing sentence period, a `= 42` tail and asides
+     * like `17 (that is 12 + 5)`.
      */
     fun extractAnswer(raw: String): String {
-        val cleaned = raw.replace(thousandsSeparator, "")
-        val lastLine = cleaned.trimEnd().lines().lastOrNull { it.isNotBlank() }?.trim() ?: ""
+        val normalized = raw
+            .replace(minusVariants, "-")
+            .replace(boxed, "$1")
+            .replace(latexDelimiters, "")
+            .replace(timesTenPower, "$1E$2")
+            .replace(thousandsSeparator, "")
 
-        // 1) Last line is exactly a number (what the system prompt asks for) — highest confidence.
-        numberPattern.matchEntire(lastLine)?.let { return it.value }
+        // The answer line is the last line with a digit, so a trailing sign-off ("Hope this
+        // helps!") is skipped. Earlier lines (the working) are never mined for a fallback.
+        val answerLine = normalized.lines().lastOrNull { line -> line.any { it.isDigit() } }?.trim()
+            ?: return ""
 
-        // 2) The number right after the last '=' ("x = 42", "= 17 (i.e. 12+5)").
-        val afterEquals = lastLine.substringAfterLast('=', "")
-        if (afterEquals.isNotEmpty() && afterEquals.length < lastLine.length) {
-            numberPattern.find(afterEquals)?.let { return it.value }
-        }
+        // With an '=', the answer is what follows the last one ("2 + 3 = 5", "x = 17 (12 + 5)").
+        val candidateText = answerLine.substringAfterLast('=')
 
-        // 3) A single number on the last line is unambiguous; with several, the stated result
-        //    usually leads and asides like "17 (12+5)" follow, so prefer the first.
-        val lastLineNumbers = numberPattern.findAll(lastLine).toList()
-        if (lastLineNumbers.isNotEmpty()) return lastLineNumbers.first().value
+        val standalone = numberPattern.findAll(candidateText)
+            .filter { isStandalone(candidateText, it.range) }
+            .toList()
+        // Exactly one complete number, or nothing: "4 or 5" and "1,5" are ambiguous.
+        val match = standalone.singleOrNull() ?: return ""
+        // "5." is the end of a sentence, not part of the number.
+        return match.value.removeSuffix(".")
+    }
 
-        // 4) Nothing on the last line — fall back to the last number anywhere.
-        return numberPattern.findAll(cleaned).lastOrNull()?.value ?: ""
+    /** True if the number at [range] isn't an operand of an operator or LaTeX group. */
+    private fun isStandalone(text: String, range: IntRange): Boolean {
+        val before = text.substring(0, range.first).trimEnd().lastOrNull()
+        val after = text.substring(range.last + 1).trimStart().firstOrNull()
+        if (before != null && before in OPERAND_NEIGHBORS) return false
+        if (after != null && after in OPERAND_NEIGHBORS) return false
+        // A leading '-' glued to a previous digit is a binary minus ("10-3"); the pattern
+        // includes it in this match, so look one character further back.
+        if (text[range.first] == '-' && before != null && (before.isDigit() || before == ')')) return false
+        // Digits glued to letters are identifiers or units without a space, not answers ("x2").
+        if (before != null && before.isLetter() && range.first > 0 && !text[range.first - 1].isWhitespace()) return false
+        return true
     }
 }

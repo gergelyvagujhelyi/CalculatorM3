@@ -133,4 +133,88 @@ class SolverPromptsTest {
         // Was '5' before (last number); the leading number is the stated answer.
         assertEquals("17", SolverPrompts.extractAnswer("The answer is 17 (i.e. 12+5)"))
     }
+
+    // ── Complete-answer validation: never return a fragment ─────────
+
+    @Test
+    fun `fraction is rejected rather than truncated to its numerator`() {
+        assertEquals("", SolverPrompts.extractAnswer("1/2"))
+        assertEquals("", SolverPrompts.extractAnswer("The answer is 3 / 4"))
+        assertEquals("", SolverPrompts.extractAnswer("x = 1/2"))
+    }
+
+    @Test
+    fun `latex fraction is rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("\\frac{1}{2}"))
+        assertEquals("", SolverPrompts.extractAnswer("\$\\dfrac{3}{4}\$"))
+    }
+
+    @Test
+    fun `unicode minus keeps the sign`() {
+        assertEquals("-7", SolverPrompts.extractAnswer("−7"))
+        assertEquals("-7", SolverPrompts.extractAnswer("Result:\n–7"))
+        assertEquals("-2.5", SolverPrompts.extractAnswer("x = −2.5"))
+    }
+
+    @Test
+    fun `times ten to the power becomes E notation`() {
+        assertEquals("2E3", SolverPrompts.extractAnswer("2 × 10^3"))
+        assertEquals("1.5E-4", SolverPrompts.extractAnswer("= 1.5 \\times 10^{-4}"))
+        assertEquals("-3E8", SolverPrompts.extractAnswer("−3·10^8"))
+    }
+
+    @Test
+    fun `bare power is rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("10^3"))
+        assertEquals("", SolverPrompts.extractAnswer("= 2^10"))
+    }
+
+    @Test
+    fun `explanation without an answer is rejected`() {
+        val response = "I see 1 / 0\nDivision by zero is undefined"
+        assertEquals("", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `unfinished arithmetic is rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("12 + 5"))
+        assertEquals("", SolverPrompts.extractAnswer("= 6 × 7"))
+        assertEquals("", SolverPrompts.extractAnswer("10-3"))
+    }
+
+    @Test
+    fun `several candidate numbers are ambiguous`() {
+        assertEquals("", SolverPrompts.extractAnswer("It is either 4 or 5"))
+        assertEquals("", SolverPrompts.extractAnswer("1,5")) // decimal comma, not a thousands separator
+    }
+
+    @Test
+    fun `percent answer is rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("50%"))
+    }
+
+    @Test
+    fun `answer wrapped in markdown or latex is accepted`() {
+        assertEquals("42", SolverPrompts.extractAnswer("**42**"))
+        assertEquals("42", SolverPrompts.extractAnswer("\\boxed{42}"))
+        assertEquals("42", SolverPrompts.extractAnswer("\$42\$"))
+        assertEquals("42", SolverPrompts.extractAnswer("\\(42\\)"))
+        assertEquals("-8", SolverPrompts.extractAnswer("**Answer:** (−8)"))
+    }
+
+    @Test
+    fun `trailing sentence period is dropped`() {
+        assertEquals("5", SolverPrompts.extractAnswer("The answer is 5."))
+        assertEquals("2.5", SolverPrompts.extractAnswer("The answer is 2.5."))
+    }
+
+    @Test
+    fun `answer line followed by a sign-off line`() {
+        assertEquals("15", SolverPrompts.extractAnswer("10 + 5 = 15\nHope this helps!"))
+    }
+
+    @Test
+    fun `unit after the answer is fine`() {
+        assertEquals("5", SolverPrompts.extractAnswer("The speed is 5 km/h"))
+    }
 }
