@@ -108,7 +108,9 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: |
             echo "Emulator ABIs: $(adb shell getprop ro.product.cpu.abilist)"
-            ./gradlew connectedDebugAndroidTest
+            # allowDataWrites: this emulator is throwaway, so tests that write the app's real
+            # settings (e.g. the AI unlock) may run here; on a personal phone they're skipped.
+            ./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.allowDataWrites=true
 
       - name: Upload UI test reports
         if: failure()

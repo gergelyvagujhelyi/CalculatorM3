@@ -714,7 +714,7 @@ private fun normalizeLatex(s: String): String {
 }
 
 @Composable
-private fun SuccessContent(
+internal fun SuccessContent(
     answer: String,
     rawResponse: String,
     elapsedMs: Long,
@@ -785,7 +785,7 @@ private fun SuccessContent(
 }
 
 @Composable
-private fun ErrorContent(
+internal fun ErrorContent(
     message: String,
     rawResponse: String?,
     onRetry: () -> Unit,
@@ -934,7 +934,7 @@ private fun ModelGroupHeader(text: String) {
 }
 
 @Composable
-private fun ModelCard(
+internal fun ModelCard(
     model: AiModel,
     isDownloaded: Boolean,
     isSelected: Boolean,
@@ -1038,7 +1038,7 @@ private fun ModelCard(
 }
 
 @Composable
-private fun MobileDataWarningContent(
+internal fun MobileDataWarningContent(
     model: AiModel,
     onContinue: () -> Unit,
     onCancel: () -> Unit,
@@ -1171,7 +1171,7 @@ private fun SignInContent(
 }
 
 @Composable
-private fun DownloadingContent(
+internal fun DownloadingContent(
     currentFile: String,
     downloadedBytes: Long,
     totalBytes: Long,
