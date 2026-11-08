@@ -2151,4 +2151,207 @@ class CalculatorViewModelTest {
     fun addingZeroToHugeScaleIsFine() {
         assertEquals("0", evalScan("0+0E-2000000000"))
     }
+
+    // ── Follow-ups: history precision, preview refresh, √, powers, long answers ──
+
+    @Test
+    fun historyStoresFullPrecisionResult() {
+        vm.maxDisplayLength = 12
+        tap("2", "^", "1", "0", "0")
+        tapEquals()
+        assertEquals("1267650600228229401496703205376", vm.historyList[0].result)
+    }
+
+    @Test
+    fun historyRecallRestoresExactValue() {
+        tap("2", "^", "1", "0", "0")
+        tapEquals()
+        val original = vm.expression
+        tap("AC")
+        vm.loadHistoryEntry(vm.historyList[0])
+        assertExpression(original)
+    }
+
+    @Test
+    fun historyStoredValueIndependentOfScreenWidth() {
+        vm.maxDisplayLength = 10
+        tap("1", "÷", "7")
+        tapEquals()
+        val narrow = vm.historyList[0].result
+        tap("AC")
+        vm.maxDisplayLength = 40
+        tap("1", "÷", "7")
+        tapEquals()
+        assertEquals(narrow, vm.historyList[0].result)
+        assertEquals("0.142857142857142857142857142857", narrow)
+    }
+
+    @Test
+    fun legacyDisplayFormattedHistoryEntryStillLoads() {
+        // Entries saved by older versions hold the display-rounded E-notation string.
+        vm.loadHistoryEntry(HistoryEntry("2^100", "1.267650600228229401E+30"))
+        assertExpression("1267650600228229401000000000000")
+    }
+
+    @Test
+    fun hugeHistoryResultIsStoredCompactly() {
+        vm.setExpressionFromScan("10^999")
+        tapEquals()
+        // 1000 plain digits would bloat saved state; the exact scientific form is stored.
+        assertEquals("1E+999", vm.historyList[0].result)
+        tap("AC")
+        vm.loadHistoryEntry(vm.historyList[0])
+        assertEquals(1000, vm.expression.length)
+    }
+
+    @Test
+    fun previewUpdatesWhenOperatorReplacedMidExpression() {
+        tap("6", "+", "2")
+        assertResult("8")
+        vm.moveCursorTo(2) // just after '+'
+        tap("×")
+        assertExpression("6×2")
+        assertResult("12")
+    }
+
+    @Test
+    fun previewClearedWhenExpressionDeletedToEmpty() {
+        tap("5")
+        assertResult("5")
+        tap("⌫")
+        assertExpression("")
+        assertResult("")
+    }
+
+    @Test
+    fun previewIgnoresTrailingOperatorLikeEquals() {
+        tap("5", "+", "3", "×")
+        assertResult("8")
+    }
+
+    @Test
+    fun previewUpdatesOnDecimalInsertedMidExpression() {
+        tap("2", "5", "+", "1")
+        assertResult("26")
+        vm.moveCursorTo(1)
+        tap(".")
+        assertExpression("2.5+1")
+        assertResult("3.5")
+    }
+
+    @Test
+    fun previewUpdatesWhenDeletingMidExpression() {
+        tap("1", "2", "+", "3")
+        assertResult("15")
+        vm.moveCursorTo(1)
+        tap("⌫")
+        assertExpression("2+3")
+        assertResult("5")
+    }
+
+    @Test
+    fun loneDecimalHasNoPreview() {
+        tap(".")
+        assertResult("")
+    }
+
+    @Test
+    fun sqrtOfValuesBeyondDoubleRange() {
+        // JVM tests run with Build.VERSION.SDK_INT == 0, i.e. the pre-API-33 Newton path.
+        vm.setExpressionFromScan("√(10^400)")
+        tapEquals()
+        assertExpression("1" + "0".repeat(200))
+        vm.setExpressionFromScan("√(10^-400)")
+        tapEquals()
+        assertExpression("0." + "0".repeat(199) + "1")
+    }
+
+    @Test
+    fun newtonSqrtMatchesReferencePrecision() {
+        val reference = java.math.BigDecimal(2).sqrt(java.math.MathContext.DECIMAL128)
+            .round(java.math.MathContext(30, java.math.RoundingMode.HALF_UP)).toPlainString()
+        vm.setExpressionFromScan("√(2)")
+        tapEquals()
+        assertExpression(reference)
+    }
+
+    @Test
+    fun tinyIntegerPowerIsNotZero() {
+        vm.setExpressionFromScan("10^-1000")
+        tapEquals()
+        assertExpression("0." + "0".repeat(999) + "1")
+    }
+
+    @Test
+    fun largeNegativeExponentOfTwo() {
+        vm.setExpressionFromScan("2^-1000")
+        tapEquals()
+        assertEquals(true, vm.expression.startsWith("0." + "0".repeat(301) + "9332636185"))
+    }
+
+    @Test
+    fun underflowingFractionalPowerReportsRangeError() {
+        vm.setExpressionFromScan("10^-1000.5")
+        tapEquals()
+        assertResult("Error: overflow")
+    }
+
+    @Test
+    fun zeroToNegativeLargePowerIsDivisionByZero() {
+        vm.setExpressionFromScan("0^-1000")
+        tapEquals()
+        assertResult("Error: divisionByZero")
+    }
+
+    @Test(timeout = 3000)
+    fun hugeResultReportsRangeErrorInsteadOfHanging() {
+        vm.setExpressionFromScan("(10^999)^999")
+        tapEquals()
+        assertResult("Error: overflow")
+        vm.setExpressionFromScan("2^999999999")
+        tapEquals()
+        assertResult("Error: overflow")
+    }
+
+    @Test
+    fun longAnswerStillAcceptsOperators() {
+        tap("1", "0", "^", "2", "0", "0")
+        tapEquals()
+        assertEquals(201, vm.expression.length)
+        tap("+", "1")
+        assertEquals("+1", vm.expression.takeLast(2))
+        tapEquals()
+        assertExpression("1" + "0".repeat(199) + "1")
+    }
+
+    @Test
+    fun longRecalledAnswerStillAcceptsOperators() {
+        vm.loadHistoryEntry(HistoryEntry("10^250", "1E+250"))
+        tap("−", "1")
+        assertEquals("−1", vm.expression.takeLast(2))
+    }
+
+    @Test
+    fun typedInputBudgetStillEnforced() {
+        repeat(250) { tap("1") }
+        assertEquals(200, vm.expression.length)
+    }
+
+    @Test
+    fun answerAllowanceResetByAc() {
+        tap("1", "0", "^", "2", "0", "0")
+        tapEquals()
+        tap("AC")
+        repeat(250) { tap("1") }
+        assertEquals(200, vm.expression.length)
+    }
+
+    @Test
+    fun cursorMoveIsSavedImmediately() {
+        val handle = SavedStateHandle()
+        val first = CalculatorViewModel(savedState = handle)
+        listOf("1", "2", "3").forEach { first.onButtonPress(it) }
+        first.moveCursorTo(1)
+        assertEquals(1, CalculatorViewModel(savedState = handle).cursorPosition)
+    }
 }

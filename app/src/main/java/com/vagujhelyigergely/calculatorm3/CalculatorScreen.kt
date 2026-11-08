@@ -264,6 +264,7 @@ fun CalculatorScreen(
         HistorySheet(
             sheetState = sheetState,
             historyList = viewModel.historyList,
+            formatHistoryResult = viewModel::formatForDisplay,
             onDismiss = { showHistory = false },
             onEntryClick = { entry ->
                 viewModel.loadHistoryEntry(entry)
@@ -366,6 +367,7 @@ private fun PortraitLayout(
             history = viewModel.history,
             inlineHistoryList = if (showInlineHistory) viewModel.historyList else emptyList(),
             onHistoryEntryClick = { entry -> viewModel.loadHistoryEntry(entry) },
+            formatHistoryResult = viewModel::formatForDisplay,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
@@ -449,6 +451,7 @@ private fun LandscapeLayout(
                 history = viewModel.history,
                 inlineHistoryList = if (viewModel.historyList.isNotEmpty()) viewModel.historyList else emptyList(),
                 onHistoryEntryClick = { entry -> viewModel.loadHistoryEntry(entry) },
+                formatHistoryResult = viewModel::formatForDisplay,
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
@@ -566,6 +569,8 @@ fun DisplaySection(
     history: String,
     inlineHistoryList: List<HistoryEntry> = emptyList(),
     onHistoryEntryClick: (HistoryEntry) -> Unit = {},
+    // History stores full-precision results; fit them to the screen only when drawn.
+    formatHistoryResult: (String) -> String = { it },
     modifier: Modifier = Modifier
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -621,7 +626,7 @@ fun DisplaySection(
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Text(
-                                text = "= ${formatResultNumber(entry.result)}",
+                                text = "= ${formatResultNumber(formatHistoryResult(entry.result))}",
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Medium,
                                 color = colorScheme.onSurfaceVariant,
@@ -982,6 +987,7 @@ fun CalcButtonView(
 fun HistorySheet(
     sheetState: SheetState,
     historyList: List<HistoryEntry>,
+    formatHistoryResult: (String) -> String = { it },
     onDismiss: () -> Unit,
     onEntryClick: (HistoryEntry) -> Unit,
     onClearHistory: () -> Unit
@@ -1066,7 +1072,7 @@ fun HistorySheet(
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "= ${formatResultNumber(entry.result)}",
+                                    text = "= ${formatResultNumber(formatHistoryResult(entry.result))}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = colorScheme.onSurface,
