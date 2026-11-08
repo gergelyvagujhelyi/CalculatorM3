@@ -76,7 +76,7 @@
     <string name="cancel">Annuler</string>
     <string name="ai_feature_low_ram">Vous avez besoin de plus de RAM pour utiliser cette fonction IA.</string>
     <string name="ai_feature_title">Résolveur de maths IA</string>
-    <string name="ai_feature_description">Cette fonctionnalité utilise un grand modèle d\'IA fonctionnant entièrement sur votre appareil pour résoudre des maths manuscrites à partir de photos.\n\nÀ noter :\n\n• Un téléchargement de modèle de 4–6 Go est requis\n• Nous recommandons d\'utiliser le Wi-Fi pour le téléchargement\n• L\'exécution du modèle d\'IA consomme beaucoup de batterie\n• Aucune donnée n\'est envoyée vers le cloud</string>
+    <string name="ai_feature_description">Cette fonctionnalité utilise un grand modèle d\'IA fonctionnant entièrement sur votre appareil pour résoudre des maths manuscrites à partir de photos.\n\nÀ noter :\n\n• Un téléchargement de modèle de 2,6–4,9 Go est requis\n• Nous recommandons d\'utiliser le Wi-Fi pour le téléchargement\n• L\'exécution du modèle d\'IA consomme beaucoup de batterie\n• Aucune donnée n\'est envoyée vers le cloud</string>
     <string name="ai_feature_continue">Choisir un modèle</string>
     <string name="license_required_title">Acceptation de la licence requise</string>
     <string name="license_required_description">%1$s nécessite que vous acceptiez la licence sur HuggingFace avant le téléchargement. Appuyez sur le bouton ci-dessous pour ouvrir la page du modèle, puis cliquez sur \"Agree and access repository\".</string>

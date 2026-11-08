@@ -76,7 +76,7 @@
     <string name="cancel">Batal</string>
     <string name="ai_feature_low_ram">Anda memerlukan lebih banyak RAM untuk menggunakan fitur AI ini.</string>
     <string name="ai_feature_title">Pemecah Matematika AI</string>
-    <string name="ai_feature_description">Fitur ini menggunakan model AI besar yang berjalan sepenuhnya di perangkat Anda untuk memecahkan matematika tulisan tangan dari foto.\n\nHarap diperhatikan:\n\n• Diperlukan unduhan model sebesar 4–6 GB\n• Kami menyarankan menggunakan Wi-Fi untuk mengunduh\n• Menjalankan model AI menggunakan banyak baterai\n• Tidak ada data yang dikirim ke cloud</string>
+    <string name="ai_feature_description">Fitur ini menggunakan model AI besar yang berjalan sepenuhnya di perangkat Anda untuk memecahkan matematika tulisan tangan dari foto.\n\nHarap diperhatikan:\n\n• Diperlukan unduhan model sebesar 2,6–4,9 GB\n• Kami menyarankan menggunakan Wi-Fi untuk mengunduh\n• Menjalankan model AI menggunakan banyak baterai\n• Tidak ada data yang dikirim ke cloud</string>
     <string name="ai_feature_continue">Pilih model</string>
     <string name="license_required_title">Penerimaan lisensi diperlukan</string>
     <string name="license_required_description">%1$s mengharuskan Anda menerima lisensi di HuggingFace sebelum mengunduh. Ketuk tombol di bawah untuk membuka halaman model, lalu klik \"Agree and access repository\".</string>

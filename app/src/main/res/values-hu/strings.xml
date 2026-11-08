@@ -76,7 +76,7 @@
     <string name="cancel">Mégse</string>
     <string name="ai_feature_low_ram">Több RAM szükséges ennek az MI-funkciónak a használatához.</string>
     <string name="ai_feature_title">MI matematikai megoldó</string>
-    <string name="ai_feature_description">Ez a funkció egy nagy, teljes egészében az eszközödön futó MI-modellt használ, hogy fényképekről megoldja a kézzel írt matematikát.\n\nNe feledd:\n\n• 4–6 GB méretű modell letöltése szükséges\n• A letöltéshez Wi-Fi használatát javasoljuk\n• Az MI-modell futtatása jelentős akkumulátort fogyaszt\n• Semmilyen adat nem kerül felküldésre a felhőbe</string>
+    <string name="ai_feature_description">Ez a funkció egy nagy, teljes egészében az eszközödön futó MI-modellt használ, hogy fényképekről megoldja a kézzel írt matematikát.\n\nNe feledd:\n\n• 2,6–4,9 GB méretű modell letöltése szükséges\n• A letöltéshez Wi-Fi használatát javasoljuk\n• Az MI-modell futtatása jelentős akkumulátort fogyaszt\n• Semmilyen adat nem kerül felküldésre a felhőbe</string>
     <string name="ai_feature_continue">Modell választása</string>
     <string name="license_required_title">Licenc elfogadása szükséges</string>
     <string name="license_required_description">A(z) %1$s használatához el kell fogadnod a licencet a HuggingFace-en a letöltés előtt. Koppints az alábbi gombra a modell oldalának megnyitásához, majd kattints az \"Agree and access repository\" gombra.</string>

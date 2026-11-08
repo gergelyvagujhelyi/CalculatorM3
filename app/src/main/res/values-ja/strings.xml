@@ -76,7 +76,7 @@
     <string name="cancel">キャンセル</string>
     <string name="ai_feature_low_ram">このAI機能を使用するにはより多くのRAMが必要です。</string>
     <string name="ai_feature_title">AI数式ソルバー</string>
-    <string name="ai_feature_description">この機能は、完全にデバイス上で動作する大規模なAIモデルを使用して、写真から手書きの数式を解きます。\n\nご注意：\n\n• 4～6 GB のモデルのダウンロードが必要です\n• ダウンロードにはWi-Fiの使用をおすすめします\n• AIモデルの実行はバッテリーを大量に消費します\n• データはクラウドに送信されません</string>
+    <string name="ai_feature_description">この機能は、完全にデバイス上で動作する大規模なAIモデルを使用して、写真から手書きの数式を解きます。\n\nご注意：\n\n• 2.6～4.9 GB のモデルのダウンロードが必要です\n• ダウンロードにはWi-Fiの使用をおすすめします\n• AIモデルの実行はバッテリーを大量に消費します\n• データはクラウドに送信されません</string>
     <string name="ai_feature_continue">モデルを選択</string>
     <string name="license_required_title">ライセンスへの同意が必要です</string>
     <string name="license_required_description">%1$s をダウンロードする前に、HuggingFaceでライセンスに同意する必要があります。下のボタンをタップしてモデルページを開き、\"Agree and access repository\" をクリックしてください。</string>

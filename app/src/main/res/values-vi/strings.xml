@@ -76,7 +76,7 @@
     <string name="cancel">Hủy</string>
     <string name="ai_feature_low_ram">Bạn cần nhiều RAM hơn để dùng tính năng AI này.</string>
     <string name="ai_feature_title">Trình giải toán AI</string>
-    <string name="ai_feature_description">Tính năng này dùng một mô hình AI lớn chạy hoàn toàn trên thiết bị của bạn để giải toán viết tay từ ảnh.\n\nLưu ý:\n\n• Cần tải mô hình dung lượng 4–6 GB\n• Nên dùng Wi-Fi để tải\n• Chạy mô hình AI tiêu tốn nhiều pin\n• Không có dữ liệu nào được gửi lên đám mây</string>
+    <string name="ai_feature_description">Tính năng này dùng một mô hình AI lớn chạy hoàn toàn trên thiết bị của bạn để giải toán viết tay từ ảnh.\n\nLưu ý:\n\n• Cần tải mô hình dung lượng 2,6–4,9 GB\n• Nên dùng Wi-Fi để tải\n• Chạy mô hình AI tiêu tốn nhiều pin\n• Không có dữ liệu nào được gửi lên đám mây</string>
     <string name="ai_feature_continue">Chọn một mô hình</string>
     <string name="license_required_title">Cần chấp nhận giấy phép</string>
     <string name="license_required_description">%1$s yêu cầu bạn chấp nhận giấy phép trên HuggingFace trước khi tải. Nhấn nút bên dưới để mở trang mô hình, rồi nhấp \"Agree and access repository\".</string>

@@ -76,7 +76,7 @@
     <string name="cancel">Annulla</string>
     <string name="ai_feature_low_ram">Hai bisogno di più RAM per usare questa funzione IA.</string>
     <string name="ai_feature_title">Risolutore di matematica IA</string>
-    <string name="ai_feature_description">Questa funzione usa un grande modello IA eseguito interamente sul tuo dispositivo per risolvere la matematica scritta a mano dalle foto.\n\nNota bene:\n\n• È richiesto il download di un modello da 4–6 GB\n• Consigliamo di usare il Wi-Fi per il download\n• L\'esecuzione del modello IA consuma molta batteria\n• Nessun dato viene inviato al cloud</string>
+    <string name="ai_feature_description">Questa funzione usa un grande modello IA eseguito interamente sul tuo dispositivo per risolvere la matematica scritta a mano dalle foto.\n\nNota bene:\n\n• È richiesto il download di un modello da 2,6–4,9 GB\n• Consigliamo di usare il Wi-Fi per il download\n• L\'esecuzione del modello IA consuma molta batteria\n• Nessun dato viene inviato al cloud</string>
     <string name="ai_feature_continue">Scegli un modello</string>
     <string name="license_required_title">Accettazione della licenza richiesta</string>
     <string name="license_required_description">%1$s richiede di accettare la licenza su HuggingFace prima del download. Tocca il pulsante qui sotto per aprire la pagina del modello, poi fai clic su \"Agree and access repository\".</string>
