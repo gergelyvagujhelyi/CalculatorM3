@@ -15,7 +15,10 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import kotlin.math.ceil
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
@@ -23,6 +26,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.HttpURLConnection
+import java.nio.channels.OverlappingFileLockException
 import java.net.URL
 
 class DownloadAuthException(
@@ -401,13 +405,41 @@ class ModelManager(private val context: Context) {
                 // Reads failing are network errors (IOException, retried); writes failing are
                 // local storage errors (DownloadStorageException, not retried).
                 storageOp { FileOutputStream(tmpFile, isResuming) }.use { output ->
-                    while (true) {
-                        ensureActive()
-                        val bytesRead = input.read(buffer)
-                        if (bytesRead == -1) break
-                        storageOp { output.write(buffer, 0, bytesRead) }
-                        downloadedBytes += bytesRead
-                        onProgress(downloadedBytes, totalBytes)
+                    // Only one attempt may write this .tmp. A cancelled attempt can outlive its
+                    // replacement (WorkManager REPLACE starts the new one right away), and two
+                    // writers appending to one file corrupt the model.
+                    val lock = try {
+                        output.channel.tryLock()
+                    } catch (_: OverlappingFileLockException) {
+                        null
+                    } ?: throw IOException("Another download is still writing ${tmpFile.name}")
+                    lock.use {
+                        coroutineScope {
+                            // A blocking socket read ignores coroutine cancellation, so a
+                            // cancelled download could sit in read() for up to readTimeout and
+                            // then write. Disconnecting aborts the read immediately.
+                            val abortOnCancel = launch {
+                                try { awaitCancellation() } finally { connection.disconnect() }
+                            }
+                            try {
+                                while (true) {
+                                    ensureActive()
+                                    val bytesRead = try {
+                                        input.read(buffer)
+                                    } catch (e: IOException) {
+                                        ensureActive() // aborted by cancellation, not a network error
+                                        throw e
+                                    }
+                                    if (bytesRead == -1) break
+                                    ensureActive() // never write after cancellation
+                                    storageOp { output.write(buffer, 0, bytesRead) }
+                                    downloadedBytes += bytesRead
+                                    onProgress(downloadedBytes, totalBytes)
+                                }
+                            } finally {
+                                abortOnCancel.cancel()
+                            }
+                        }
                     }
                 }
             }

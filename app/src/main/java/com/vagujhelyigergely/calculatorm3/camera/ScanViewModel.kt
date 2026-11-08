@@ -84,6 +84,8 @@ class ScanViewModel(
     private var loadedModelId: String? = null
     private var downloadObserver: Job? = null
     private var inferenceJob: Job? = null
+    /** The background release started by [releaseAll]; the next load must wait for it. */
+    private var releaseJob: Job? = null
 
     fun initialize() {
         viewModelScope.launch {
@@ -121,6 +123,9 @@ class ScanViewModel(
      * Returns true if the model is ready, false (and sets an Error state) on failure.
      */
     private suspend fun ensureModelLoaded(model: AiModel): Boolean {
+        // The previous scan's release may still be running. Let it finish first; otherwise it
+        // takes the solver lock after this load and closes the engine this scan is about to use.
+        releaseJob?.join()
         if (solver.isModelLoaded && loadedModelId == model.id) return true
         uiState = ScanUiState.ModelLoading()
         return try {
@@ -521,7 +526,11 @@ class ScanViewModel(
         // the solver mutex which may be held by an in-flight inference whose
         // onToken callback dispatches to Dispatchers.Main.  Blocking main here
         // with runBlocking would deadlock.
-        CoroutineScope(Dispatchers.IO).launch {
+        // Chained so overlapping releases finish in order, and kept so ensureModelLoaded can
+        // wait for the last one.
+        val previous = releaseJob
+        releaseJob = CoroutineScope(Dispatchers.IO).launch {
+            previous?.join()
             solver.release()
         }
     }
