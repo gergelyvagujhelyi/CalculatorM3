@@ -4,12 +4,14 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.test.platform.app.InstrumentationRegistry
+import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import kotlinx.coroutines.CompletableDeferred
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -67,12 +69,28 @@ class ScanReleaseOrderTest {
         return condition()
     }
 
+    private val created = mutableListOf<File>()
+
+    @After
+    fun tearDown() {
+        created.forEach { it.delete() }
+    }
+
     @Test
     fun nextScanWaitsForThePreviousReleaseBeforeLoading() {
         assumeTrue("Writes app data; run with allowDataWrites=true",
             InstrumentationRegistry.getArguments().getString("allowDataWrites") == "true")
         val solver = GatedSolver()
-        val vm = ScanViewModel(solver, ModelManager(context), HuggingFaceAuthManager(context), context)
+        // Placeholder files so the selected model counts as downloaded (the fake solver never
+        // reads them); only files created here are deleted afterwards.
+        val manager = ModelManager(context)
+        val model = AiModel.GEMMA4_E2B
+        manager.selectedModel = model
+        for (f in model.files) {
+            val file = File(File(context.getExternalFilesDir(null), "models/${model.id}"), f.filename)
+            if (!file.exists()) { file.parentFile!!.mkdirs(); file.writeText("placeholder"); created += file }
+        }
+        val vm = ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context)
         val instrumentation = InstrumentationRegistry.getInstrumentation()
 
         // The previous scan finished and released the model in the background; that release is
