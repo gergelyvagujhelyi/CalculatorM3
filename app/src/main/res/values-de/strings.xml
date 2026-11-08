@@ -103,6 +103,8 @@
         <item quantity="other">Noch %1$d Tastendrücke, um die KI-Funktionen freizuschalten</item>
     </plurals>
     <string name="error_no_numerical_answer">Es konnte keine Zahl als Ergebnis erkannt werden</string>
+    <string name="check_output_title">Prüfe die Antwort des Modells unten</string>
+    <string name="check_output_hint">Sie endete nicht mit einer einzelnen Zahl zum Übernehmen. Der vollständige Lösungsweg steht unten.</string>
     <string name="error_signin_failed">Anmeldung fehlgeschlagen: %1$s</string>
     <string name="please_try_again">bitte erneut versuchen</string>
     <string name="error_download_failed">Download fehlgeschlagen: %1$s</string>

@@ -152,25 +152,54 @@ class AiScreensUiTest {
     }
 
     @Test
-    fun errorScreenRetriesAndRevealsTheRawModelOutput() {
+    fun errorScreenShowsTheModelOutputOpenAndRetries() {
         var retried = 0
         val raw = "I see 1 / 0\nDivision by zero is undefined"
         show {
             ErrorContent(
-                message = str(R.string.error_no_numerical_answer),
+                message = str(R.string.error_total_timeout),
                 rawResponse = raw,
                 onRetry = { retried++ },
                 onDismiss = {}
             )
         }
+        // A real failure keeps its title and reason, and the output starts open.
         composeTestRule.onNodeWithText(str(R.string.recognition_error)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(raw).assertDoesNotExist()
+        composeTestRule.onNodeWithText(str(R.string.error_total_timeout)).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("model-output").assertExists()
 
+        // It can still be collapsed.
         button(str(R.string.raw_model_output)).performClick()
-        composeTestRule.onNodeWithText(raw).assertIsDisplayed()
+        composeTestRule.onNodeWithTag("model-output").assertDoesNotExist()
 
         button(str(R.string.retry)).performClick()
         assertEquals(1, retried)
+    }
+
+    @Test
+    fun answerWithoutASingleNumberPointsToTheOutputInsteadOfFailing() {
+        show {
+            ErrorContent(
+                message = str(R.string.error_no_numerical_answer),
+                rawResponse = "1/2 + 3/4 = 5/4\n\n5/4",
+                onRetry = {},
+                onDismiss = {},
+                checkOutput = true
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.check_output_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.check_output_hint)).assertExists()
+        composeTestRule.onNodeWithText(str(R.string.recognition_error)).assertDoesNotExist()
+        composeTestRule.onNodeWithTag("model-output").assertExists()
+    }
+
+    @Test
+    fun errorWithoutModelOutputHasNoOutputSection() {
+        show {
+            ErrorContent(message = str(R.string.error_image_process), rawResponse = null, onRetry = {}, onDismiss = {})
+        }
+        composeTestRule.onNodeWithText(str(R.string.recognition_error)).assertIsDisplayed()
+        button(str(R.string.raw_model_output)).assertDoesNotExist()
     }
 
     // ── Download progress ───────────────────────────────────────────────────

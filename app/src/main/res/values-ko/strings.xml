@@ -102,6 +102,8 @@
         <item quantity="other">AI 기능 잠금 해제까지 %1$d번 남았습니다</item>
     </plurals>
     <string name="error_no_numerical_answer">숫자 답을 추출할 수 없습니다</string>
+    <string name="check_output_title">아래에서 모델의 답을 확인하세요</string>
+    <string name="check_output_hint">사용할 수 있는 숫자 하나로 끝나지 않았습니다. 전체 풀이는 아래에 있습니다.</string>
     <string name="error_signin_failed">로그인 실패: %1$s</string>
     <string name="please_try_again">다시 시도해 주세요</string>
     <string name="error_download_failed">다운로드 실패: %1$s</string>

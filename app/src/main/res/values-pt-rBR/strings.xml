@@ -104,6 +104,8 @@
         <item quantity="many">Faltam %1$d toques para desbloquear os recursos de IA</item>
     </plurals>
     <string name="error_no_numerical_answer">Não foi possível extrair uma resposta numérica</string>
+    <string name="check_output_title">Confira a resposta do modelo abaixo</string>
+    <string name="check_output_hint">Ela não terminou com um único número para usar. A resolução completa está abaixo.</string>
     <string name="error_signin_failed">Falha ao entrar: %1$s</string>
     <string name="please_try_again">tente novamente</string>
     <string name="error_download_failed">Falha no download: %1$s</string>

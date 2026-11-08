@@ -102,6 +102,8 @@
         <item quantity="other">%1$d ketukan lagi untuk membuka fitur AI</item>
     </plurals>
     <string name="error_no_numerical_answer">Tidak dapat menemukan jawaban berupa angka</string>
+    <string name="check_output_title">Periksa jawaban model di bawah</string>
+    <string name="check_output_hint">Jawabannya tidak diakhiri satu angka yang bisa dipakai. Langkah lengkapnya ada di bawah.</string>
     <string name="error_signin_failed">Gagal masuk: %1$s</string>
     <string name="please_try_again">silakan coba lagi</string>
     <string name="error_download_failed">Gagal mengunduh: %1$s</string>

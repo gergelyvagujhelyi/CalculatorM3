@@ -103,6 +103,8 @@
         <item quantity="other">Nog %1$d tikken om de AI-functies te ontgrendelen</item>
     </plurals>
     <string name="error_no_numerical_answer">Kon geen numeriek antwoord herkennen</string>
+    <string name="check_output_title">Bekijk het antwoord van het model hieronder</string>
+    <string name="check_output_hint">Het eindigde niet met één getal om te gebruiken. De volledige uitwerking staat hieronder.</string>
     <string name="error_signin_failed">Aanmelden mislukt: %1$s</string>
     <string name="please_try_again">probeer het opnieuw</string>
     <string name="error_download_failed">Download mislukt: %1$s</string>
