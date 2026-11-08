@@ -217,4 +217,35 @@ class SolverPromptsTest {
     fun `unit after the answer is fine`() {
         assertEquals("5", SolverPrompts.extractAnswer("The speed is 5 km/h"))
     }
+
+    // ── Review follow-ups ────────────────────────────────────────────
+
+    @Test
+    fun `root, pi and factorial fragments are rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("x = √2"))
+        assertEquals("", SolverPrompts.extractAnswer("x = √ 2"))
+        assertEquals("", SolverPrompts.extractAnswer("= 2π"))
+        assertEquals("", SolverPrompts.extractAnswer("= π2"))
+        assertEquals("", SolverPrompts.extractAnswer("= 5!"))
+    }
+
+    @Test
+    fun `function call arguments are rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("= sqrt(2)"))
+        assertEquals("", SolverPrompts.extractAnswer("The answer is ln(5)"))
+        assertEquals("", SolverPrompts.extractAnswer("\\sqrt{2}"))
+    }
+
+    @Test
+    fun `prose dashes are punctuation, not minus signs`() {
+        assertEquals("42", SolverPrompts.extractAnswer("The answer is 42 — computed above"))
+        assertEquals("42", SolverPrompts.extractAnswer("The answer is 42 – see the working"))
+    }
+
+    @Test
+    fun `dash directly before a number is still a minus sign`() {
+        assertEquals("-7", SolverPrompts.extractAnswer("Result:\n–7"))
+        assertEquals("-2.5", SolverPrompts.extractAnswer("x = —2.5"))
+        assertEquals("-7", SolverPrompts.extractAnswer("−7")) // U+2212 is always a minus
+    }
 }

@@ -62,8 +62,11 @@ object SolverPrompts {
     // three digits that aren't themselves followed by another digit.
     private val thousandsSeparator = Regex("(?<=\\d),(?=\\d{3}(?:\\D|\$))")
 
-    // Dash-like characters models emit as a minus sign: U+2212 minus, en/em dash, hyphens, fullwidth.
-    private val minusVariants = Regex("[−–—‐‑﹣－]")
+    // Characters that are always a minus sign: U+2212 minus, hyphens, small/fullwidth hyphen-minus.
+    private val minusVariants = Regex("[−‐‑﹣－]")
+    // En/em dashes are prose punctuation ("42 — computed above") unless glued to a number ("–7").
+    private val dashAsSign = Regex("[–—](?=\\.?\\d)")
+    private val dashAsPunctuation = Regex("[–—]")
     // Wrappers around an otherwise plain number: **42**, \boxed{42}, $42$, \(42\), \[42\].
     private val boxed = Regex("\\\\boxed\\{([^{}]*)\\}")
     private val latexDelimiters = Regex("\\\\[()\\[\\]]|\\*\\*|\\$")
@@ -71,8 +74,8 @@ object SolverPrompts {
     private val timesTenPower =
         Regex("(-?(?:\\d+\\.?\\d*|\\.\\d+))\\s*(?:×|\\\\times|\\\\cdot|·|\\*|x)\\s*10\\^\\{?\\s*([+-]?\\d+)\\s*\\}?")
     // A number touching one of these is an operand of unfinished math or LaTeX (1/2, 2^10,
-    // 12+5, 50%, \frac{1}{2}), not a complete answer.
-    private const val OPERAND_NEIGHBORS = "+-*/^×÷·%{}\\_"
+    // 12+5, 50%, √2, 2π, 5!, \frac{1}{2}), not a complete answer.
+    private const val OPERAND_NEIGHBORS = "+-*/^×÷·%√π!{}\\_"
 
     /**
      * Extract the final numerical answer from the LLM response, or "" if there isn't exactly one
@@ -89,6 +92,8 @@ object SolverPrompts {
     fun extractAnswer(raw: String): String {
         val normalized = raw
             .replace(minusVariants, "-")
+            .replace(dashAsSign, "-")
+            .replace(dashAsPunctuation, " ")
             .replace(boxed, "$1")
             .replace(latexDelimiters, "")
             .replace(timesTenPower, "$1E$2")
@@ -120,6 +125,11 @@ object SolverPrompts {
         // A leading '-' glued to a previous digit is a binary minus ("10-3"); the pattern
         // includes it in this match, so look one character further back.
         if (text[range.first] == '-' && before != null && (before.isDigit() || before == ')')) return false
+        // The argument of a function call ("sqrt(2)", "ln(5)"): '(' glued to a name.
+        if (before == '(') {
+            val paren = text.lastIndexOf('(', range.first)
+            if (paren > 0 && text[paren - 1].isLetter()) return false
+        }
         // Digits glued to letters are identifiers or units without a space, not answers ("x2").
         if (before != null && before.isLetter() && range.first > 0 && !text[range.first - 1].isWhitespace()) return false
         return true
