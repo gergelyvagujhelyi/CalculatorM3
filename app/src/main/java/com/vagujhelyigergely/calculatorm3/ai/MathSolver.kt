@@ -88,6 +88,9 @@ object SolverPrompts {
      * Supported: plain and E-notation numbers, Unicode minus signs, `a × 10^b`, English thousands
      * separators, markdown/LaTeX wrappers, a trailing sentence period, a `= 42` tail and asides
      * like `17 (that is 12 + 5)`.
+     *
+     * The answer must also agree with the result the model already wrote in its working (see
+     * [agreesWithWorking]): a final line of `25` after `1 ÷ 4 = 0.25` is rejected.
      */
     fun extractAnswer(raw: String): String {
         val normalized = raw
@@ -101,8 +104,10 @@ object SolverPrompts {
 
         // The answer line is the last line with a digit, so a trailing sign-off ("Hope this
         // helps!") is skipped. Earlier lines (the working) are never mined for a fallback.
-        val answerLine = normalized.lines().lastOrNull { line -> line.any { it.isDigit() } }?.trim()
-            ?: return ""
+        val lines = normalized.lines()
+        val answerIndex = lines.indexOfLast { line -> line.any { it.isDigit() } }
+        if (answerIndex < 0) return ""
+        val answerLine = lines[answerIndex].trim()
 
         // With an '=', the answer is what follows the last one ("2 + 3 = 5", "x = 17 (12 + 5)").
         val candidateText = answerLine.substringAfterLast('=')
@@ -113,7 +118,55 @@ object SolverPrompts {
         // Exactly one complete number, or nothing: "4 or 5" and "1,5" are ambiguous.
         val match = standalone.singleOrNull() ?: return ""
         // "5." is the end of a sentence, not part of the number.
-        return match.value.removeSuffix(".")
+        val answer = match.value.removeSuffix(".")
+        // An answer line with its own '=' ("12 + 21 = 33") states the result itself; a bare
+        // final line is checked against the working above it.
+        if ('=' in answerLine) return answer
+        return if (agreesWithWorking(lines.subList(0, answerIndex), answer)) answer else ""
+    }
+
+    /**
+     * True unless the working before a bare answer line contradicts [answer]. The model's own
+     * result is what follows the last '=' in the working ("1 ÷ 4 = 1/4 or 0.25" gives 0.25;
+     * fraction pieces are skipped as above), plus any number stated after that line ("then add
+     * 12 to get 33"). If there is such a result and none of them equals [answer], the final line
+     * is a slip — measured on a Note 9: the working said `= 0.25`, the final line `25` — and
+     * offering it would put a wrong number into "Use answer".
+     *
+     * Working without such a result (no '=', or only fractions/percentages after it) can't be
+     * checked, so it's accepted as before.
+     */
+    private fun agreesWithWorking(working: List<String>, answer: String): Boolean {
+        val resultIndex = working.indexOfLast { line ->
+            '=' in line && line.substringAfterLast('=').any { it.isDigit() }
+        }
+        if (resultIndex < 0) return true
+        val rhs = working[resultIndex].substringAfterLast('=')
+        val results = standaloneNumbers(rhs, lineHasEquals = true) +
+            working.drop(resultIndex + 1).flatMap { standaloneNumbers(it, lineHasEquals = '=' in it) }
+        if (results.isEmpty()) return true
+        return results.any { sameValue(it, answer) }
+    }
+
+    private fun standaloneNumbers(text: String, lineHasEquals: Boolean): List<String> =
+        numberPattern.findAll(text)
+            .filter { isStandalone(text, it.range, lineHasEquals) }
+            .map { it.value.removeSuffix(".") }
+            .toList()
+
+    /**
+     * Numerically equal ("0.25" = ".25", "14" = "14.0"), or one is the other rounded or cut off to
+     * its own number of decimals ("0.3333" for 0.333333…, "0.6667" or "0.6666" for 0.666666…).
+     * The shorter one needs at least two decimals for that, so "0" doesn't count as 0.25 rounded.
+     */
+    private fun sameValue(a: String, b: String): Boolean {
+        val x = a.toBigDecimalOrNull() ?: return false
+        val y = b.toBigDecimalOrNull() ?: return false
+        if (x.compareTo(y) == 0) return true
+        val (short, long) = if (x.scale() <= y.scale()) x to y else y to x
+        if (short.scale() < 2) return false
+        return long.setScale(short.scale(), java.math.RoundingMode.HALF_UP).compareTo(short) == 0 ||
+            long.setScale(short.scale(), java.math.RoundingMode.DOWN).compareTo(short) == 0
     }
 
     /** True if the number at [range] isn't an operand of an operator or LaTeX group. */

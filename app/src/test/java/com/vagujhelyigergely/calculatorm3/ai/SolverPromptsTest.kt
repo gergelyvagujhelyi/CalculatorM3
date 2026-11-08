@@ -268,4 +268,76 @@ class SolverPromptsTest {
         assertEquals("", SolverPrompts.extractAnswer("The answer is 3!!"))
         assertEquals("", SolverPrompts.extractAnswer("The answer is 4! + 1"))
     }
+
+    // ── The final line must agree with the working ──────────────────
+
+    @Test
+    fun `final line contradicting the working is rejected (measured on a Note 9)`() {
+        // Gemma 4 E2B with a 140-token image budget: right working, final line lost its "0.".
+        val response = "Expression: \$1 \\div 4\$\n" +
+            "Calculation: \$1 \\div 4 = \\frac{1}{4}\$\n" +
+            "As a decimal: \$1 \\div 4 = 0.25\$\n\n25"
+        assertEquals("", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `final line matching the working is accepted`() {
+        val response = "Expression: \$1 \\div 4\$\n" +
+            "Calculation: \$1 \\div 4 = \\frac{1}{4}\$ or \$0.25\$\n\n0.25"
+        assertEquals("0.25", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `same value written differently is accepted`() {
+        assertEquals(".25", SolverPrompts.extractAnswer("1 / 4 = 0.25\n.25"))
+        assertEquals("14", SolverPrompts.extractAnswer("3.5 × 4 = 14.0\n14"))
+    }
+
+    @Test
+    fun `rounded or cut-off decimals are accepted`() {
+        assertEquals("0.3333", SolverPrompts.extractAnswer("1 ÷ 3 = 0.333333...\n0.3333"))
+        assertEquals("0.6667", SolverPrompts.extractAnswer("2 ÷ 3 = 0.666666\n0.6667"))
+        assertEquals("0.6666", SolverPrompts.extractAnswer("2 ÷ 3 = 0.666666\n0.6666"))
+    }
+
+    @Test
+    fun `rounding to fewer than two decimals is not agreement`() {
+        assertEquals("", SolverPrompts.extractAnswer("1 ÷ 4 = 0.25\n0"))
+        assertEquals("", SolverPrompts.extractAnswer("10 ÷ 4 = 2.5\n3"))
+    }
+
+    @Test
+    fun `wrong final line after multi-step working is rejected`() {
+        val response = """
+            Step 1: 7 × 3 = 21
+            Step 2: 12 + 21 = 33
+            23
+        """.trimIndent()
+        assertEquals("", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `answer line with its own equals sign states the result itself`() {
+        val response = """
+            Step 1: 7 × 3 = 21
+            12 + 21 = 33
+        """.trimIndent()
+        assertEquals("33", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `result stated in prose after the last equals counts`() {
+        val response = """
+            7 × 3 = 21
+            Then add 12 to get 33.
+            33
+        """.trimIndent()
+        assertEquals("33", SolverPrompts.extractAnswer(response))
+    }
+
+    @Test
+    fun `working without a numeric result can't be checked and is accepted`() {
+        assertEquals("0.25", SolverPrompts.extractAnswer("1 ÷ 4 = \\frac{1}{4}\n0.25"))
+        assertEquals("42", SolverPrompts.extractAnswer("I read 6 × 7.\n42"))
+    }
 }
