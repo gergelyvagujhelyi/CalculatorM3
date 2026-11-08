@@ -32,14 +32,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504;
-      # retry that one-off download instead of failing the whole job.
+      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504 or
+      # time out; retry that one-off download with a growing pause (~7.5 min worst case) instead
+      # of failing the whole job. Once a develop run has cached it, setup-gradle restores it.
       - name: Download Gradle (with retries)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew --version && exit 0
-            echo "Gradle download failed (attempt $attempt); retrying in 30s"
-            sleep 30
+            pause=$((attempt * 30))
+            echo "Gradle download failed (attempt $attempt of 5); retrying in ${pause}s"
+            sleep "$pause"
           done
           exit 1
 
@@ -74,14 +76,16 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504;
-      # retry that one-off download instead of failing the whole job.
+      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504 or
+      # time out; retry that one-off download with a growing pause (~7.5 min worst case) instead
+      # of failing the whole job. Once a develop run has cached it, setup-gradle restores it.
       - name: Download Gradle (with retries)
         run: |
-          for attempt in 1 2 3; do
+          for attempt in 1 2 3 4 5; do
             ./gradlew --version && exit 0
-            echo "Gradle download failed (attempt $attempt); retrying in 30s"
-            sleep 30
+            pause=$((attempt * 30))
+            echo "Gradle download failed (attempt $attempt of 5); retrying in ${pause}s"
+            sleep "$pause"
           done
           exit 1
 
