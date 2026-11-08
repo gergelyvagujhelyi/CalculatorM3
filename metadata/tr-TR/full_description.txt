@@ -46,6 +46,7 @@ Daha fazla RAM'e sahip cihazlar için deneysel bir ek: elle yazılmış bir mate
 - Sistem kameranızla bir fotoğraf çekin veya galerinizden birini seçin
 - Birkaç açık görüntü modeli arasından seçim yapın (Gemma 4, Gemma 3n)
 - Modeller tamamen cihazda çalışır, desteklenen yerlerde GPU hızlandırmalı
+- Hızlı, Dengeli veya Hassas seçin: daha hızlı ayarlar fotoğrafa daha az ayrıntıyla bakar ve yaklaşık yarı sürede yanıt verebilir
 - Çözüm, düzgün biçimlendirilmiş matematikle gösterilir — kesirler, kökler ve üsler
 - İnternet yalnızca bir kez, seçtiğiniz modeli indirmek için kullanılır
 - Hiçbir fotoğraf, hesaplama veya kullanım verisi cihazınızdan asla çıkmaz

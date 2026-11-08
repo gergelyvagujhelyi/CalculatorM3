@@ -46,6 +46,7 @@ Ein experimentelles Extra für Geräte mit mehr RAM: Fotografiere einen handgesc
 - Mache ein Foto mit deiner System-Kamera oder wähle eines aus deiner Galerie
 - Wähle aus mehreren offenen Vision-Modellen (Gemma 4, Gemma 3n)
 - Modelle laufen vollständig auf dem Gerät, GPU-beschleunigt, wo unterstützt
+- Wähle Schnell, Ausgewogen oder Genau: Schnellere Einstellungen betrachten das Foto weniger detailliert und antworten oft in etwa der halben Zeit
 - Die Lösung wird mit sauber formatierter Mathematik angezeigt — Brüche, Wurzeln und Exponenten
 - Das Internet wird nur einmal genutzt, um das von dir gewählte Modell herunterzuladen
 - Keine Fotos, Berechnungen oder Nutzungsdaten verlassen jemals dein Gerät

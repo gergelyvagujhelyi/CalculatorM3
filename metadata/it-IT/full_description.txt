@@ -46,6 +46,7 @@ Un extra sperimentale per i dispositivi con più RAM: fotografa un'espressione m
 - Scatta una foto con la fotocamera di sistema o scegline una dalla galleria
 - Scegli tra diversi modelli visivi aperti (Gemma 4, Gemma 3n)
 - I modelli vengono eseguiti interamente sul dispositivo, con accelerazione GPU dove supportata
+- Scegli Veloce, Bilanciato o Preciso: le impostazioni più veloci analizzano la foto con meno dettagli e possono rispondere in circa metà del tempo
 - La soluzione viene mostrata con una matematica ben formattata — frazioni, radici ed esponenti
 - Internet viene usato una sola volta, per scaricare il modello che scegli
 - Nessuna foto, calcolo o dato di utilizzo lascia mai il tuo dispositivo
