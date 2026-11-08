@@ -422,7 +422,7 @@ class ScanViewModel(
      * (so handwriting isn't sideways) and downscale so the longest edge is ≤ [maxEdge] px.
      * Returns the path to a new JPEG, or null on failure (caller falls back to the original).
      */
-    private fun prepareImage(imagePath: String, maxEdge: Int): String? {
+    internal fun prepareImage(imagePath: String, maxEdge: Int): String? {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(imagePath, opts)
         val w = opts.outWidth
