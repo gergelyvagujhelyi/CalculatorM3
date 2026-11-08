@@ -9,8 +9,6 @@
   <a href="https://f-droid.org/packages/com.vagujhelyigergely.calculatorm3/">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">
   </a>
-  <br>
-  <sub>Or download the APK from <a href="https://github.com/gergelyvagujhelyi/CalculatorM3/releases/latest">GitHub Releases</a>. F-Droid builds each version itself, so it can appear there later.</sub>
 
   <br>
 
