@@ -76,14 +76,39 @@ class DownloadPolicyTest {
     // ── Bounded retries ──────────────────────────────────────────────
 
     @Test
-    fun `attempts that make progress always retry`() {
-        assertFalse(DownloadPolicy.shouldGiveUp(runAttemptCount = 500, madeProgress = true))
+    fun `retries until the limit of consecutive runs without progress`() {
+        val max = DownloadPolicy.MAX_ATTEMPTS_WITHOUT_PROGRESS
+        assertFalse(DownloadPolicy.shouldGiveUp(consecutiveRunsWithoutProgress = 0))
+        assertFalse(DownloadPolicy.shouldGiveUp(consecutiveRunsWithoutProgress = max - 1))
+        assertTrue(DownloadPolicy.shouldGiveUp(consecutiveRunsWithoutProgress = max))
     }
 
     @Test
-    fun `gives up after the limit of attempts without progress`() {
-        val last = DownloadPolicy.MAX_ATTEMPTS_WITHOUT_PROGRESS - 1
-        assertFalse(DownloadPolicy.shouldGiveUp(runAttemptCount = last - 1, madeProgress = false))
-        assertTrue(DownloadPolicy.shouldGiveUp(runAttemptCount = last, madeProgress = false))
+    fun `progressing runs reset the streak, so a late blip does not give up`() {
+        // Review scenario: 9 failed runs that each made progress, then one that got no bytes.
+        var streak = 0
+        repeat(9) { streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = true) }
+        streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = false)
+        assertEquals(1, streak)
+        assertFalse(DownloadPolicy.shouldGiveUp(streak))
+    }
+
+    @Test
+    fun `only consecutive runs without progress reach the limit`() {
+        var streak = 0
+        repeat(DownloadPolicy.MAX_ATTEMPTS_WITHOUT_PROGRESS - 1) {
+            streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = false)
+        }
+        assertFalse(DownloadPolicy.shouldGiveUp(streak))
+        // One run with progress in between starts the count again.
+        streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = true)
+        streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = false)
+        assertFalse(DownloadPolicy.shouldGiveUp(streak))
+        // A full run of consecutive empty attempts does give up.
+        streak = 0
+        repeat(DownloadPolicy.MAX_ATTEMPTS_WITHOUT_PROGRESS) {
+            streak = DownloadPolicy.nextNoProgressStreak(streak, madeProgress = false)
+        }
+        assertTrue(DownloadPolicy.shouldGiveUp(streak))
     }
 }

@@ -50,9 +50,12 @@ internal object DownloadPolicy {
     /** Longest Retry-After the worker will wait in place before handing back to WorkManager. */
     const val MAX_RETRY_AFTER_MS = 5 * 60_000L
 
-    /** Attempts that download nothing before the worker stops retrying. Attempts that make
-     *  progress always retry, since each resumes via HTTP Range where the last one stopped. */
+    /** Consecutive runs that download nothing before the worker stops retrying. A run that
+     *  makes progress resets the count, since each resumes via HTTP Range where the last stopped. */
     const val MAX_ATTEMPTS_WITHOUT_PROGRESS = 10
+
+    /** Retry-After waits honoured within one worker run before handing back to WorkManager. */
+    const val MAX_RETRY_AFTER_WAITS_PER_RUN = 2
 
     /** Free space kept beyond the file itself, so a download never fills the disk completely. */
     const val FREE_SPACE_MARGIN_BYTES = 200L * 1024 * 1024
@@ -77,9 +80,13 @@ internal object DownloadPolicy {
     fun hasRoomFor(remainingBytes: Long, usableBytes: Long) =
         usableBytes - remainingBytes >= FREE_SPACE_MARGIN_BYTES
 
-    /** [runAttemptCount] is WorkManager's 0-based count of previous runs of this work. */
-    fun shouldGiveUp(runAttemptCount: Int, madeProgress: Boolean) =
-        !madeProgress && runAttemptCount + 1 >= MAX_ATTEMPTS_WITHOUT_PROGRESS
+    /** The no-progress streak after a failed run: reset by any bytes received, else one longer. */
+    fun nextNoProgressStreak(previous: Int, madeProgress: Boolean) =
+        if (madeProgress) 0 else previous + 1
+
+    /** [consecutiveRunsWithoutProgress] includes the run that just failed. */
+    fun shouldGiveUp(consecutiveRunsWithoutProgress: Int) =
+        consecutiveRunsWithoutProgress >= MAX_ATTEMPTS_WITHOUT_PROGRESS
 }
 
 /** A single file that makes up a model on disk. */
@@ -253,6 +260,15 @@ class ModelManager(private val context: Context) {
             return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
         }
 
+    /**
+     * Consecutive download-worker runs that received no bytes. Persisted because WorkManager's
+     * runAttemptCount also counts earlier runs that did make progress. Reset by progress, by
+     * success and by enqueueing a new download.
+     */
+    var downloadNoProgressStreak: Int
+        get() = prefs.getInt("download_no_progress_streak", 0)
+        set(value) { prefs.edit().putInt("download_no_progress_streak", value).commit() }
+
     /** HuggingFace access token for gated models (Gemma). */
     var hfToken: String?
         get() = prefs.getString("hf_token", null)
@@ -340,17 +356,18 @@ class ModelManager(private val context: Context) {
             var downloadedBytes = if (isResuming) existingBytes else 0L
             val buffer = ByteArray(131_072)
 
+            // Not resuming (e.g. the server ignored Range and sent the whole file): the stale .tmp
+            // is about to be replaced, so free its space before checking what's available.
+            if (!isResuming && tmpFile.exists()) {
+                tmpFile.delete()
+            }
+
             // Refuse up front rather than filling the disk: contentLength is what's still to come.
             if (contentLength > 0 && !DownloadPolicy.hasRoomFor(contentLength, dir.usableSpace)) {
                 connection.disconnect()
                 throw DownloadStorageException(
                     "Not enough free storage: ${contentLength / (1024 * 1024)} MB more is needed."
                 )
-            }
-
-            // If not resuming and tmp exists, start fresh
-            if (!isResuming && tmpFile.exists()) {
-                tmpFile.delete()
             }
 
             connection.inputStream.use { input ->
@@ -409,6 +426,7 @@ class ModelManager(private val context: Context) {
      * for Wi-Fi instead of silently continuing over cellular.
      */
     fun enqueueDownload(model: AiModel, allowMeteredNetwork: Boolean) {
+        downloadNoProgressStreak = 0
         val networkType = if (allowMeteredNetwork) NetworkType.CONNECTED else NetworkType.UNMETERED
         val request = OneTimeWorkRequestBuilder<ModelDownloadWorker>()
             .setInputData(workDataOf(ModelDownloadWorker.KEY_MODEL_ID to model.id))
