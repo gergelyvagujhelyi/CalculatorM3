@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: read  # to check the CI run for the commit being released
 
 jobs:
   build:
@@ -57,6 +58,33 @@ jobs:
             echo "::error::Tag '$TAG' already exists at $TAG_COMMIT, but this run built $GITHUB_SHA"; exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      # UI tests run only after merging (ci.yml, develop/main pushes), so a UI regression can sit
+      # on develop. Never release such a commit: require a passing CI run (push or manual,
+      # i.e. including the UI tests) for exactly this commit, waiting up to 30 min if it's
+      # still running.
+      - name: Require green CI for this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for attempt in $(seq 1 60); do
+            runs=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$GITHUB_SHA&per_page=50" \
+              --jq '[.workflow_runs[] | select(.event == "push" or .event == "workflow_dispatch")]')
+            if [ "$(jq '[.[] | select(.conclusion == "success")] | length' <<<"$runs")" -gt 0 ]; then
+              echo "CI passed for $GITHUB_SHA"; exit 0
+            fi
+            if [ "$(jq '[.[] | select(.status != "completed")] | length' <<<"$runs")" -eq 0 ]; then
+              if [ "$(jq 'length' <<<"$runs")" -eq 0 ]; then
+                echo "::error::No CI run for $GITHUB_SHA. Release a commit that is on develop/main, or run CI on it manually (Actions > CI > Run workflow) first."
+              else
+                echo "::error::CI failed for $GITHUB_SHA; fix it before releasing."
+              fi
+              exit 1
+            fi
+            echo "CI for $GITHUB_SHA still running; waiting (check $attempt of 60)"
+            sleep 30
+          done
+          echo "::error::Timed out waiting for CI on $GITHUB_SHA"; exit 1
 
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
