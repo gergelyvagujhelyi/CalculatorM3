@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
@@ -654,7 +655,9 @@ fun DisplaySection(
                     textAlign = TextAlign.End,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(CalculatorTestTags.HISTORY_LABEL)
                 )
             }
 
@@ -794,6 +797,7 @@ fun DisplaySection(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .testTag(CalculatorTestTags.EXPRESSION)
                         .pointerInput(displayText, bestTrim, eNotationActive) {
                             if (eNotationActive) return@pointerInput
                             detectTapGestures { offset ->
@@ -861,11 +865,22 @@ fun DisplaySection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp)
+                    .testTag(CalculatorTestTags.PREVIEW)
             )
         }
 
         Spacer(modifier = Modifier.height(8.dp))
     }
+}
+
+/** Stable semantics tags so UI tests can assert on one specific display, not any text on screen. */
+internal object CalculatorTestTags {
+    /** The main expression / answer line. */
+    const val EXPRESSION = "calc_expression"
+    /** The live result preview ("= 8") or the error message below the expression. */
+    const val PREVIEW = "calc_preview"
+    /** The "5 + 3 =" label above the expression after pressing equals. */
+    const val HISTORY_LABEL = "calc_history_label"
 }
 
 @Composable
