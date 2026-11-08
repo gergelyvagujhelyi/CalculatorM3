@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Das KI-Modell kann nicht geladen werden</string>
     <string name="model_unusable_description">%1$s ist möglicherweise beschädigt oder unvollständig. Versuche es erneut oder lade es neu herunter (%2$s).</string>
     <string name="download_again">Erneut herunterladen</string>
+    <string name="scan_quality_fast">Schnell</string>
+    <string name="scan_quality_balanced">Ausgewogen</string>
+    <string name="scan_quality_accurate">Genau</string>
+    <string name="scan_quality_hint">Schnellere Einstellungen betrachten das Foto weniger detailliert.</string>
     <string name="answer_found">Antwort</string>
     <string name="recognized_in">Gelöst in %1$s</string>
     <string name="use_expression">Verwenden</string>

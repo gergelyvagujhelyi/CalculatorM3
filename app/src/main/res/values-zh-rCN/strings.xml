@@ -46,6 +46,10 @@
     <string name="model_unusable_title">无法加载 AI 模型</string>
     <string name="model_unusable_description">%1$s 可能已损坏或不完整。请重试，或重新下载（%2$s）。</string>
     <string name="download_again">重新下载</string>
+    <string name="scan_quality_fast">快速</string>
+    <string name="scan_quality_balanced">均衡</string>
+    <string name="scan_quality_accurate">精确</string>
+    <string name="scan_quality_hint">速度越快，读取照片的细节越少。</string>
     <string name="answer_found">答案</string>
     <string name="recognized_in">用时 %1$s 求解</string>
     <string name="use_expression">使用</string>

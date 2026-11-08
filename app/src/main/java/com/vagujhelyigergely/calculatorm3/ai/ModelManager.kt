@@ -5,6 +5,7 @@ import com.vagujhelyigergely.calculatorm3.BuildConfig
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
+import androidx.core.content.edit
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.work.Constraints
@@ -193,6 +194,26 @@ enum class AiModel(
         requiresAuth = true,
         licenseUrl = "https://huggingface.co/google/gemma-3n-E4B-it-litert-lm"
     );
+
+    /**
+     * Whether the speed/quality switch ([ScanQuality]) applies. LiteRT-LM's image-token budget
+     * is documented for Gemma 4 only, so the Gemma 3n models always use the engine default.
+     */
+    val supportsScanQuality: Boolean get() = this == GEMMA4_E2B || this == GEMMA4_E4B
+}
+
+/**
+ * How much detail the model takes from the photo: LiteRT-LM's image-token budget
+ * ([visualTokenBudget]; null = the engine default, 280 for Gemma 4). Fewer image tokens make
+ * the slow part of a scan, the image prefill, faster. Measured on a Galaxy Note 9 with Gemma 4
+ * E2B on 20 printed and handwriting-style photos: 70 tokens answered all 20 correctly in a
+ * median 14 s per scan, against 27 s with the default.
+ */
+enum class ScanQuality(val visualTokenBudget: Int?) {
+    FAST(70),
+    BALANCED(140),
+    /** Today's behavior: the engine's own default. */
+    ACCURATE(null),
 }
 
 /**
@@ -203,6 +224,14 @@ class ModelManager(private val context: Context) {
 
     private val modelsDir: File = File(context.getExternalFilesDir(null), "models")
     private val prefs = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
+
+    /** The speed/quality switch; [ScanQuality.ACCURATE] (the engine default) until changed. */
+    var scanQuality: ScanQuality
+        get() = prefs.getString("scan_quality", null)
+            ?.let { name -> ScanQuality.entries.find { it.name == name } } ?: ScanQuality.ACCURATE
+        set(value) {
+            prefs.edit { putString("scan_quality", value.name) }
+        }
 
     var selectedModel: AiModel
         get() {

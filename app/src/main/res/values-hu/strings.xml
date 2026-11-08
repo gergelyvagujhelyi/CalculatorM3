@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Az AI-modell nem tölthető be</string>
     <string name="model_unusable_description">A(z) %1$s lehet, hogy sérült vagy hiányos. Próbáld újra, vagy töltsd le újra (%2$s).</string>
     <string name="download_again">Letöltés újra</string>
+    <string name="scan_quality_fast">Gyors</string>
+    <string name="scan_quality_balanced">Kiegyensúlyozott</string>
+    <string name="scan_quality_accurate">Pontos</string>
+    <string name="scan_quality_hint">A gyorsabb beállítások kevésbé részletesen nézik meg a fényképet.</string>
     <string name="answer_found">Válasz</string>
     <string name="recognized_in">Megoldva %1$s alatt</string>
     <string name="use_expression">Használat</string>

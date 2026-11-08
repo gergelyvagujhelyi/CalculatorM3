@@ -46,6 +46,10 @@
     <string name="model_unusable_title">AIモデルを読み込めません</string>
     <string name="model_unusable_description">%1$s が破損しているか、不完全な可能性があります。再試行するか、もう一度ダウンロードしてください（%2$s）。</string>
     <string name="download_again">再ダウンロード</string>
+    <string name="scan_quality_fast">高速</string>
+    <string name="scan_quality_balanced">バランス</string>
+    <string name="scan_quality_accurate">高精度</string>
+    <string name="scan_quality_hint">高速な設定ほど、写真を粗く読み取ります。</string>
     <string name="answer_found">答え</string>
     <string name="recognized_in">%1$s で解きました</string>
     <string name="use_expression">使用</string>

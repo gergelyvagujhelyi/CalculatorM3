@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Не вдається завантажити ШІ-модель</string>
     <string name="model_unusable_description">Можливо, %1$s пошкоджена або завантажена не повністю. Спробуйте ще раз або завантажте її знову (%2$s).</string>
     <string name="download_again">Завантажити знову</string>
+    <string name="scan_quality_fast">Швидко</string>
+    <string name="scan_quality_balanced">Баланс</string>
+    <string name="scan_quality_accurate">Точно</string>
+    <string name="scan_quality_hint">Швидші налаштування розглядають фото менш детально.</string>
     <string name="answer_found">Відповідь</string>
     <string name="recognized_in">Розв’язано за %1$s</string>
     <string name="use_expression">Використати</string>

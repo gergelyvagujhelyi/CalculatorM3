@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Model AI tidak dapat dimuat</string>
     <string name="model_unusable_description">%1$s mungkin rusak atau tidak lengkap. Coba lagi, atau unduh ulang (%2$s).</string>
     <string name="download_again">Unduh lagi</string>
+    <string name="scan_quality_fast">Cepat</string>
+    <string name="scan_quality_balanced">Seimbang</string>
+    <string name="scan_quality_accurate">Akurat</string>
+    <string name="scan_quality_hint">Setelan yang lebih cepat melihat foto dengan detail lebih sedikit.</string>
     <string name="answer_found">Jawaban</string>
     <string name="recognized_in">Diselesaikan dalam %1$s</string>
     <string name="use_expression">Gunakan</string>

@@ -46,6 +46,10 @@
     <string name="model_unusable_title">AI मॉडल लोड नहीं हो सका</string>
     <string name="model_unusable_description">%1$s शायद खराब या अधूरा है। फिर से कोशिश करें, या इसे दोबारा डाउनलोड करें (%2$s)।</string>
     <string name="download_again">फिर से डाउनलोड करें</string>
+    <string name="scan_quality_fast">तेज़</string>
+    <string name="scan_quality_balanced">संतुलित</string>
+    <string name="scan_quality_accurate">सटीक</string>
+    <string name="scan_quality_hint">तेज़ सेटिंग्स फ़ोटो को कम बारीकी से देखती हैं।</string>
     <string name="answer_found">उत्तर</string>
     <string name="recognized_in">%1$s में हल किया गया</string>
     <string name="use_expression">उपयोग करें</string>

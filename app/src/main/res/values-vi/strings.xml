@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Không thể tải mô hình AI</string>
     <string name="model_unusable_description">%1$s có thể bị hỏng hoặc chưa đầy đủ. Hãy thử lại hoặc tải lại (%2$s).</string>
     <string name="download_again">Tải lại</string>
+    <string name="scan_quality_fast">Nhanh</string>
+    <string name="scan_quality_balanced">Cân bằng</string>
+    <string name="scan_quality_accurate">Chính xác</string>
+    <string name="scan_quality_hint">Chế độ nhanh hơn xem ảnh ít chi tiết hơn.</string>
     <string name="answer_found">Đáp án</string>
     <string name="recognized_in">Đã giải trong %1$s</string>
     <string name="use_expression">Dùng</string>
