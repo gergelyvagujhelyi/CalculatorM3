@@ -1,0 +1,3 @@
+- AI Math Solver: new Fast / Balanced / Accurate switch on the photo screen. Fast looks at the photo in less detail and can answer in about half the time; Accurate stays the default
+- A final answer that contradicts the model's own working is no longer offered for "Use"; the full response is shown instead
+- The AI intro now shows the correct download size (2.6–4.9 GB)

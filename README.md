@@ -73,6 +73,13 @@ Point your camera at a handwritten math expression and let an on-device AI model
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
 5. Tap "Use" to insert the answer into the calculator
 
+**Speed or quality:** with the Gemma 4 models, a **Fast / Balanced / Accurate** switch under the photo buttons sets how much detail the model takes from the photo. Fast can answer in about half the time; Accurate (the default) reads the most detail. The choice is remembered and applies from the next scan.
+
+**Good to know:**
+- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working; otherwise the full response is shown instead, so a wrong number never slips into the calculator
+- After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
+- If the model is deleted outside the app or can't be loaded, the app says so and offers **Download again**
+
 **Available models:**
 
 All models are vision-capable and run on Google's [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) on-device engine.

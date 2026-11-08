@@ -46,6 +46,7 @@ Een experimentele extra voor apparaten met meer RAM: fotografeer een handgeschre
 - Maak een foto met je systeemcamera of kies er een uit je galerij
 - Kies uit meerdere open visiemodellen (Gemma 4, Gemma 3n)
 - Modellen draaien volledig op het apparaat, met GPU-versnelling waar ondersteund
+- Kies Snel, Gebalanceerd of Nauwkeurig: snellere instellingen bekijken de foto met minder detail en kunnen in ongeveer de helft van de tijd antwoorden
 - De oplossing wordt getoond met netjes opgemaakte wiskunde — breuken, wortels en exponenten
 - Internet wordt slechts één keer gebruikt, om het door jou gekozen model te downloaden
 - Geen foto, berekening of gebruiksgegeven verlaat ooit je apparaat

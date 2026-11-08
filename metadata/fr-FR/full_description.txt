@@ -40,12 +40,13 @@ Saisissez des expressions mathématiques complètes avec la priorité des opéra
 
 Un extra expérimental pour les appareils disposant de plus de RAM : photographiez une expression mathématique manuscrite et laissez un modèle d'IA sur l'appareil la lire et la résoudre — entièrement sur votre appareil, sans rien envoyer à un serveur.
 
-➡️ COMMENT L'ACTIVER : les fonctions IA sont masquées jusqu'à ce que vous les débloquiez. Dans la calculatrice, touchez le bouton « AC » (tout effacer) 7 fois de suite — un compte à rebours guide les derniers appuis. Une icône d'appareil photo apparaît alors en haut à gauche, et le déblocage est mémorisé.
+➡️ COMMENT L'ACTIVER : les fonctions IA sont masquées jusqu'à ce que vous les débloquiez. Dans la calculatrice, touchez le bouton « AC » 7 fois de suite — un compte à rebours guide les derniers appuis. Une icône d'appareil photo apparaît alors en haut à gauche, et le déblocage est mémorisé.
 
 - Nécessite un appareil de 6 Go+ et un téléchargement unique du modèle de vision (2,6–4,9 Go)
 - Prenez une photo avec l'appareil photo du système, ou choisissez-en une dans votre galerie
 - Choisissez parmi plusieurs modèles de vision ouverts (Gemma 4, Gemma 3n)
-- Les modèles s'exécutent entièrement sur l'appareil, accélérés par le GPU lorsque c'est pris en charge
+- Les modèles s'exécutent entièrement sur l'appareil, accélérés par le GPU si possible
+- Rapide, Équilibré ou Précis : les réglages rapides lisent la photo moins finement
 - La solution est affichée avec des maths proprement formatées — fractions, racines et exposants
 - Internet n'est utilisé qu'une seule fois, pour télécharger le modèle que vous choisissez
 - Aucune photo, aucun calcul ni aucune donnée d'utilisation ne quitte jamais votre appareil

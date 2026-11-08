@@ -46,6 +46,7 @@ Tambahan eksperimental untuk perangkat dengan RAM lebih besar: foto sebuah ekspr
 - Ambil foto dengan kamera sistem, atau pilih satu dari galeri Anda
 - Pilih dari beberapa model visi terbuka (Gemma 4, Gemma 3n)
 - Model berjalan sepenuhnya di perangkat, dengan akselerasi GPU jika didukung
+- Pilih Cepat, Seimbang, atau Akurat: setelan yang lebih cepat melihat foto dengan detail lebih sedikit dan dapat menjawab dalam sekitar separuh waktu
 - Solusi ditampilkan dengan matematika yang diformat rapi — pecahan, akar, dan eksponen
 - Internet hanya digunakan sekali, untuk mengunduh model yang Anda pilih
 - Tidak ada foto, perhitungan, atau data penggunaan yang pernah meninggalkan perangkat Anda

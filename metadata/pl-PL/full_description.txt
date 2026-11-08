@@ -46,6 +46,7 @@ Eksperymentalny dodatek dla urządzeń z większą ilością RAM: sfotografuj od
 - Zrób zdjęcie aparatem systemowym lub wybierz je z galerii
 - Wybieraj spośród kilku otwartych modeli wizyjnych (Gemma 4, Gemma 3n)
 - Modele działają w całości na urządzeniu, z akceleracją GPU tam, gdzie jest obsługiwana
+- Wybierz Szybko, Zrównoważony lub Dokładnie: szybsze ustawienia analizują zdjęcie mniej szczegółowo i mogą odpowiedzieć w mniej więcej o połowę krótszym czasie
 - Rozwiązanie jest pokazywane z ładnie sformatowaną matematyką — ułamki, pierwiastki i wykładniki
 - Internet jest używany tylko raz, do pobrania wybranego modelu
 - Żadne zdjęcie, obliczenie ani dane o użyciu nigdy nie opuszczają Twojego urządzenia

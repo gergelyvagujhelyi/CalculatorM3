@@ -46,6 +46,7 @@ Kísérleti extra a több RAM-mal rendelkező eszközökhöz: fényképezz le eg
 - Készíts fényképet a rendszerkamerával, vagy válassz egyet a galériádból
 - Válassz több nyílt vizuális modell közül (Gemma 4, Gemma 3n)
 - A modellek teljesen az eszközön futnak, GPU-gyorsítással, ahol támogatott
+- Válaszd a Gyors, Közepes vagy Pontos beállítást: a gyorsabb beállítások kevésbé részletesen nézik meg a fényképet, és nagyjából feleannyi idő alatt válaszolhatnak
 - A megoldás szépen formázott matematikával jelenik meg – törtek, gyökök és kitevők
 - Az internetet csak egyszer használja, a kiválasztott modell letöltéséhez
 - Semmilyen fénykép, számítás vagy használati adat nem hagyja el az eszközödet
