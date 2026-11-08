@@ -175,15 +175,13 @@ class ModelDownloadWorker(
             .build()
 
     private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notificationManager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    "Model downloads",
-                    NotificationManager.IMPORTANCE_LOW
-                )
+        notificationManager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                "Model downloads",
+                NotificationManager.IMPORTANCE_LOW
             )
-        }
+        )
     }
 
     companion object {

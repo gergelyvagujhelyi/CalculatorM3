@@ -89,6 +89,7 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="one">Falta %1$d toque para desbloquear os recursos de IA</item>
         <item quantity="other">Faltam %1$d toques para desbloquear os recursos de IA</item>
+        <item quantity="many">Faltam %1$d toques para desbloquear os recursos de IA</item>
     </plurals>
     <string name="error_no_numerical_answer">Não foi possível extrair uma resposta numérica</string>
     <string name="error_model_load">Falha ao carregar o modelo de IA: %1$s</string>

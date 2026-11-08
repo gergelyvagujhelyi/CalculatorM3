@@ -89,6 +89,7 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="one">Te queda %1$d pulsación para desbloquear las funciones de IA</item>
         <item quantity="other">Te quedan %1$d pulsaciones para desbloquear las funciones de IA</item>
+        <item quantity="many">Te quedan %1$d pulsaciones para desbloquear las funciones de IA</item>
     </plurals>
     <string name="error_no_numerical_answer">No se pudo extraer una respuesta numérica</string>
     <string name="error_model_load">No se pudo cargar el modelo de IA: %1$s</string>

@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.net.ConnectivityManager
@@ -267,12 +268,37 @@ class ModelManager(private val context: Context) {
      */
     var downloadNoProgressStreak: Int
         get() = prefs.getInt("download_no_progress_streak", 0)
+        // commit(), not apply(): the worker returns Result.retry() right after writing, and the
+        // process may be killed before an async apply() lands. It runs on a background thread.
+        @SuppressLint("ApplySharedPref")
         set(value) { prefs.edit().putInt("download_no_progress_streak", value).commit() }
 
-    /** HuggingFace access token for gated models (Gemma). */
+    /**
+     * HuggingFace access token for gated models (Gemma). Kept in its own preferences file
+     * ([AUTH_PREFS]) so data_extraction_rules.xml can exclude just the login from backup and
+     * device-to-device transfer, while models, history and settings still move to a new phone.
+     */
     var hfToken: String?
-        get() = prefs.getString("hf_token", null)
-        set(value) { prefs.edit().putString("hf_token", value).apply() }
+        get() {
+            authPrefs.getString(KEY_HF_TOKEN, null)?.let { return it }
+            // One-time move from the shared ai_settings file used by earlier versions.
+            val legacy = prefs.getString(KEY_HF_TOKEN, null) ?: return null
+            authPrefs.edit().putString(KEY_HF_TOKEN, legacy).apply()
+            prefs.edit().remove(KEY_HF_TOKEN).apply()
+            return legacy
+        }
+        set(value) {
+            authPrefs.edit().putString(KEY_HF_TOKEN, value).apply()
+            prefs.edit().remove(KEY_HF_TOKEN).apply()
+        }
+
+    private val authPrefs = context.getSharedPreferences(AUTH_PREFS, Context.MODE_PRIVATE)
+
+    companion object {
+        /** Preferences file holding only the HF login; excluded in res/xml/data_extraction_rules.xml. */
+        const val AUTH_PREFS = "hf_auth"
+        private const val KEY_HF_TOKEN = "hf_token"
+    }
 
     suspend fun downloadFile(
         model: AiModel,
@@ -363,7 +389,7 @@ class ModelManager(private val context: Context) {
             }
 
             // Refuse up front rather than filling the disk: contentLength is what's still to come.
-            if (contentLength > 0 && !DownloadPolicy.hasRoomFor(contentLength, dir.usableSpace)) {
+            if (contentLength > 0 && !DownloadPolicy.hasRoomFor(contentLength, allocatableBytes(dir))) {
                 connection.disconnect()
                 throw DownloadStorageException(
                     "Not enough free storage: ${contentLength / (1024 * 1024)} MB more is needed."
@@ -404,6 +430,18 @@ class ModelManager(private val context: Context) {
             // on the next run (process death, WorkManager retry, network drop).
             throw e
         }
+    }
+
+    /**
+     * Bytes that can be made available in [dir]: free space plus cached data the system is able
+     * to clear on demand, so a download that would fit isn't refused. Falls back to plain free
+     * space if the storage volume can't be resolved.
+     */
+    private fun allocatableBytes(dir: File): Long = try {
+        val storage = context.getSystemService(Context.STORAGE_SERVICE) as android.os.storage.StorageManager
+        storage.getAllocatableBytes(storage.getUuidForPath(dir))
+    } catch (e: IOException) {
+        dir.usableSpace
     }
 
     /** Run a local file operation, reporting an [IOException] as a [DownloadStorageException]. */
