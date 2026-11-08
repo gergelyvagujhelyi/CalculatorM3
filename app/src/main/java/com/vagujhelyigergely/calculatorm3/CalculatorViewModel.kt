@@ -44,6 +44,13 @@ class CalculatorViewModel(
      */
     private var justEvaluated = savedState.get<Boolean>(KEY_JUST_EVALUATED) ?: false
 
+    /**
+     * Length of an answer placed into [expression] by "=" or history recall. Typing gets its
+     * normal [MAX_EXPRESSION_LENGTH] budget on top of it, so a long answer (10^200 is 201
+     * digits) can still be continued with an operator. Reset when a new entry starts.
+     */
+    private var answerAllowance = savedState.get<Int>(KEY_ANSWER_ALLOWANCE) ?: 0
+
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
@@ -86,6 +93,7 @@ class CalculatorViewModel(
         savedState["result"] = result
         savedState["history"] = history
         savedState[KEY_JUST_EVALUATED] = justEvaluated
+        savedState[KEY_ANSWER_ALLOWANCE] = answerAllowance
         savedState["historyExpressions"] = _historyList.map { it.expression }
         savedState["historyResults"] = _historyList.map { it.result }
         savedState["historyTimestamps"] = _historyList.map { it.timestamp }
@@ -109,17 +117,32 @@ class CalculatorViewModel(
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
         private const val KEY_JUST_EVALUATED = "justEvaluated"
+        private const val KEY_ANSWER_ALLOWANCE = "answerAllowance"
+
+        /**
+         * Longest plain-decimal result the calculator will produce. Above this, "=" reports
+         * the overflow (out of range) error instead of expanding a compact value like
+         * 1E+998001 into a megabyte string. Comfortably above [MAX_EXACT_DIGITS], so every
+         * exact sum stays representable.
+         */
+        private const val MAX_RESULT_PLAIN_LENGTH = 4200L
+        private const val RANGE_LIMIT_MESSAGE = "Result out of range"
+
+        /** History results longer than this are stored in exact scientific form (1E+999). */
+        private const val MAX_HISTORY_RESULT_LENGTH = 400
+
+        /** Integer exponents handled exactly by BigDecimal.pow (its documented limit). */
+        private const val MAX_EXACT_POW_EXPONENT = 999_999_999
 
         /** Keys that begin a new entry when pressed right after "=" (see [justEvaluated]). */
         private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "(")
 
         /**
          * Upper bound on the coefficient digits an exact addition/subtraction may need after
-         * aligning the operands' scales (see [checkedExactAdd]). Keeps 10^100 + 1 − 10^100 exact
-         * while refusing alignments like 1 + 1E-2000000000 before BigDecimal allocates them.
+         * aligning the operands' scales (see [checkedExactAdd]). Keeps 10^100 + 1 − 10^100 exact;
+         * beyond it (1 + 1E-2000000000) the sum is rounded instead of allocating the alignment.
          */
         private const val MAX_EXACT_DIGITS = 4096L
-        private const val EXACT_LIMIT_MESSAGE = "Exact precision limit exceeded"
 
         // Locale-independent error codes used as the internal "result" sentinel
         // (detected via startsWith("Error")) and persisted across config changes.
@@ -133,14 +156,13 @@ class CalculatorViewModel(
     fun moveCursorTo(position: Int) {
         cursorPosition = position.coerceIn(0, expression.length)
         // Tapping the display is an explicit choice to edit the answer in place.
-        if (justEvaluated) {
-            justEvaluated = false
-            saveState()
-        }
+        justEvaluated = false
+        // Save immediately so a process restore doesn't put the cursor back where it was.
+        saveState()
     }
 
     private fun insertAtCursor(text: String) {
-        if (expression.length + text.length > MAX_EXPRESSION_LENGTH) return
+        if (expression.length + text.length > MAX_EXPRESSION_LENGTH + answerAllowance) return
         expression = expression.substring(0, cursorPosition) + text + expression.substring(cursorPosition)
         cursorPosition += text.length
     }
@@ -159,14 +181,18 @@ class CalculatorViewModel(
         result = ""
         history = ""
         justEvaluated = false
+        answerAllowance = 0
         updatePreview()
         saveState()
     }
 
     fun loadHistoryEntry(entry: HistoryEntry) {
-        // Convert E notation back to plain for safe editing
+        // History holds the full result, in scientific form when long (and display-rounded
+        // E notation in entries saved by older versions); expand to plain for safe editing,
+        // unless that would exceed the result range (then keep the compact form).
         val plain = try {
-            BigDecimal(entry.result).toPlainString()
+            val value = BigDecimal(entry.result)
+            if (plainLength(value) <= MAX_RESULT_PLAIN_LENGTH) value.toPlainString() else entry.result
         } catch (_: Exception) {
             entry.result
         }
@@ -175,6 +201,7 @@ class CalculatorViewModel(
         result = ""
         history = "${entry.expression} ="
         justEvaluated = false
+        answerAllowance = plain.length
         saveState()
     }
 
@@ -193,6 +220,7 @@ class CalculatorViewModel(
                 cursorPosition = 0
                 result = ""
                 history = ""
+                answerAllowance = 0
             }
         }
         when (label) {
@@ -201,6 +229,7 @@ class CalculatorViewModel(
                 cursorPosition = 0
                 result = ""
                 history = ""
+                answerAllowance = 0
             }
             "⌫" -> {
                 if (expression.isNotEmpty() && cursorPosition > 0) {
@@ -228,19 +257,12 @@ class CalculatorViewModel(
                     } else {
                         deleteAtCursor()
                     }
-                    updatePreview()
                 }
             }
             "=" -> {
                 if (expression.isNotEmpty()) {
-                    // Strip leading operators that need a left operand
-                    while (expression.isNotEmpty() && expression.first() in listOf('+', '×', '÷', '^')) {
-                        expression = expression.drop(1)
-                    }
-                    // Strip trailing operator before evaluating
-                    while (expression.isNotEmpty() && expression.last() in listOf('+', '−', '×', '÷', '^')) {
-                        expression = expression.dropLast(1)
-                    }
+                    // Strip leading/trailing operators that lack an operand (as the preview does)
+                    expression = stripDanglingOperators(expression)
                     if (expression.isEmpty()) {
                         cursorPosition = 0
                         return
@@ -249,7 +271,9 @@ class CalculatorViewModel(
                     val res = evaluate(expression)
                     history = "$expression ="
                     if (!res.startsWith("Error")) {
-                        _historyList.add(0, HistoryEntry(expression, formatForDisplay(res)))
+                        // Store the full result; it is formatted for the screen only when drawn,
+                        // so recalling it gives back the same value at any screen width.
+                        _historyList.add(0, HistoryEntry(expression, compactForHistory(res)))
                         if (_historyList.size > MAX_HISTORY_SIZE) {
                             _historyList.removeRange(MAX_HISTORY_SIZE, _historyList.size)
                         }
@@ -259,6 +283,7 @@ class CalculatorViewModel(
                     expression = if (res.startsWith("Error")) "" else res
                     cursorPosition = expression.length
                     justEvaluated = expression.isNotEmpty()
+                    answerAllowance = expression.length
                 }
             }
             "+/−" -> {
@@ -290,25 +315,21 @@ class CalculatorViewModel(
                     expression = expression.substring(0, effectiveStart) + "-" + expression.substring(effectiveStart)
                     cursorPosition++
                 }
-                updatePreview()
             }
             "%" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
                 if (charBefore != null && charBefore.isDigit()) {
                     insertAtCursor("%")
-                    updatePreview()
                 }
             }
             "√" -> {
                 if (expression.isNotEmpty()) {
                     expression = "√($expression)"
                     cursorPosition = expression.length
-                    updatePreview()
                 }
             }
             "π" -> {
                 insertAtCursor("π")
-                updatePreview()
             }
             "^" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
@@ -320,7 +341,6 @@ class CalculatorViewModel(
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
                 if (charBefore != null && (charBefore.isDigit() || charBefore == ')')) {
                     insertAtCursor("!")
-                    updatePreview()
                 }
             }
             "+", "−", "×", "÷" -> {
@@ -352,9 +372,13 @@ class CalculatorViewModel(
             }
             else -> {
                 insertAtCursor(label)
-                updatePreview()
             }
         }
+        // The long-answer allowance covers only what's left of the answer: deleting it (or part of
+        // it) gives back the normal typing budget instead of silently raising it.
+        if (label != "=") answerAllowance = minOf(answerAllowance, expression.length)
+        // Every edit refreshes the preview from the new expression ("=" sets the result itself).
+        if (label != "=") updatePreview()
         saveState()
     }
 
@@ -380,12 +404,24 @@ class CalculatorViewModel(
         return null
     }
 
+    /**
+     * Recompute the preview as "=" would evaluate the expression right now (dangling leading /
+     * trailing operators ignored), or clear it when there is nothing to show. Called after
+     * every expression change, so it can never describe a previous expression.
+     */
     private fun updatePreview() {
-        if (expression.isNotEmpty() && expression.last().let { it.isDigit() || it == '!' || it == 'π' || it == ')' || it == '%' }) {
-            val preview = evaluate(expression)
-            result = if (!preview.startsWith("Error")) formatForDisplay(preview) else ""
+        val evaluable = stripDanglingOperators(expression)
+        if (evaluable.none { it.isDigit() || it == 'π' }) {
+            result = ""
+            return
         }
+        val preview = evaluate(evaluable)
+        result = if (!preview.startsWith("Error")) formatForDisplay(preview) else ""
     }
+
+    /** Drop operators that lack an operand at either end, exactly as "=" does before evaluating. */
+    private fun stripDanglingOperators(expr: String): String =
+        expr.trimStart('+', '×', '÷', '^').trimEnd('+', '−', '×', '÷', '^')
 
     private val MC = MathContext.DECIMAL128
     private val PI = BigDecimal("3.14159265358979323846264338327950288")
@@ -486,19 +522,23 @@ class CalculatorViewModel(
             val result = evaluateExpression(sanitized)
 
             val stripped = result.stripTrailingZeros()
-            if (stripped.scale() <= 0) {
-                stripped.toBigInteger().toString()
-            } else {
-                val formatted = result.round(RESULT_PRECISION).stripTrailingZeros()
-                formatted.toPlainString()
+            // Integers keep all digits; fractions round to RESULT_PRECISION significant digits.
+            val printable = if (stripped.scale() <= 0) stripped
+                else result.round(RESULT_PRECISION).stripTrailingZeros()
+            // Measure before expanding: a compact value like 1E+998001 would otherwise become a
+            // megabyte-long string (and hang the UI) on its way to the display.
+            if (plainLength(printable) > MAX_RESULT_PLAIN_LENGTH) {
+                throw ArithmeticException(RANGE_LIMIT_MESSAGE)
             }
+            if (printable.scale() <= 0) printable.toBigInteger().toString()
+            else printable.toPlainString()
         } catch (e: ArithmeticException) {
             when {
                 e.message?.contains("Division by zero") == true -> ERROR_DIVISION_BY_ZERO
                 e.message?.contains("Negative sqrt") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Invalid factorial") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Non-finite") == true -> ERROR_OVERFLOW
-                e.message == EXACT_LIMIT_MESSAGE -> ERROR_OVERFLOW
+                e.message == RANGE_LIMIT_MESSAGE -> ERROR_OVERFLOW
                 e.message?.contains("Nesting too deep") == true -> ERROR_INVALID_OPERATION
                 else -> ERROR_INVALID_OPERATION
             }
@@ -656,12 +696,22 @@ class CalculatorViewModel(
                         }
                         '^' -> {
                             val bExact = try { b.v.intValueExact() } catch (_: ArithmeticException) { null }
-                            if (bExact != null && bExact in -999..999) {
-                                if (bExact >= 0) a.v.pow(bExact, MC)
-                                else BigDecimal.ONE.divide(a.v.pow(-bExact, MC), MC)
+                            if (bExact != null && bExact in -MAX_EXACT_POW_EXPONENT..MAX_EXACT_POW_EXPONENT) {
+                                // Integer exponent: BigDecimal power (repeated squaring, rounded to
+                                // DECIMAL128), so 10^-1000 is 1E-1000 rather than a Double underflow to 0.
+                                if (bExact < 0 && a.v.signum() == 0) throw ArithmeticException("Division by zero")
+                                try {
+                                    if (bExact >= 0) a.v.pow(bExact, MC)
+                                    else BigDecimal.ONE.divide(a.v.pow(-bExact, MC), MC)
+                                } catch (_: ArithmeticException) {
+                                    // Exponent of the result overflows BigDecimal's scale range.
+                                    throw ArithmeticException(RANGE_LIMIT_MESSAGE)
+                                }
                             } else {
                                 val dResult = Math.pow(a.v.toDouble(), b.v.toDouble())
                                 if (!dResult.isFinite()) throw ArithmeticException("Non-finite result")
+                                // Zero from a non-zero base is a Double underflow, not the answer.
+                                if (dResult == 0.0 && a.v.signum() != 0) throw ArithmeticException(RANGE_LIMIT_MESSAGE)
                                 BigDecimal.valueOf(dResult)
                             }
                         }
@@ -703,9 +753,11 @@ class CalculatorViewModel(
     }
 
     /**
-     * Exact (unrounded) a + b, refused before any scale alignment if the aligned coefficients
-     * would exceed [MAX_EXACT_DIGITS]. Only + and − are exact; ×, ÷, ^, √ and ! still round
-     * to DECIMAL128, so the calculator as a whole is not exact or symbolic arithmetic.
+     * a + b, exact when the aligned coefficients fit in [MAX_EXACT_DIGITS], otherwise rounded to
+     * DECIMAL128 as before exact addition existed. The check runs before any scale alignment,
+     * and BigDecimal's rounded add skips the alignment when one operand is far below the other's
+     * precision, so neither path allocates a huge coefficient. Only + and − are exact; ×, ÷, ^,
+     * √ and ! still round to DECIMAL128, so the calculator is not exact or symbolic arithmetic.
      */
     private fun checkedExactAdd(a: BigDecimal, b: BigDecimal): BigDecimal {
         // A zero operand needs no alignment; skip it so a zero with an extreme scale is harmless.
@@ -719,8 +771,34 @@ class CalculatorViewModel(
             a.precision() + (targetScale - a.scale()),
             b.precision() + (targetScale - b.scale())
         )
-        if (alignedDigits > MAX_EXACT_DIGITS) throw ArithmeticException(EXACT_LIMIT_MESSAGE)
+        // Too far apart to add exactly (1 + 10^-5000): the rounded sum is the displayed answer anyway.
+        if (alignedDigits > MAX_EXACT_DIGITS) return a.add(b, MC)
         return a.add(b)
+    }
+
+    /** Length of [value].toPlainString(), computed without building the string. */
+    private fun plainLength(value: BigDecimal): Long {
+        val sign = if (value.signum() < 0) 1L else 0L
+        val precision = value.precision().toLong()
+        val scale = value.scale().toLong()
+        if (scale <= 0) return sign + precision - scale // digits followed by -scale zeros
+        val integerDigits = (precision - scale).coerceAtLeast(1) // "0" when |value| < 1
+        return sign + integerDigits + 1 + scale // integer part, '.', fraction digits
+    }
+
+    /**
+     * A full-precision result as stored in history: plain when reasonably short, otherwise
+     * the exact scientific form (1E+999) so saved state stays small. Only a result with more
+     * than [MAX_HISTORY_RESULT_LENGTH] significant digits (possible from exact additions) is
+     * rounded to fit.
+     */
+    private fun compactForHistory(res: String): String {
+        if (res.length <= MAX_HISTORY_RESULT_LENGTH) return res
+        val value = try { BigDecimal(res).stripTrailingZeros() } catch (_: NumberFormatException) { return res }
+        val scientific = value.toString()
+        if (scientific.length <= MAX_HISTORY_RESULT_LENGTH) return scientific
+        return value.round(MathContext(MAX_HISTORY_RESULT_LENGTH - 20, RoundingMode.HALF_UP))
+            .stripTrailingZeros().toString()
     }
 
     private fun bigSqrt(a: BigDecimal): BigDecimal {
@@ -728,8 +806,13 @@ class CalculatorViewModel(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             return a.sqrt(MC)
         }
-        // Newton's method for API < 33
-        var x = BigDecimal.valueOf(Math.sqrt(a.toDouble()))
+        // Newton's method for API < 33. Seed it from the decimal magnitude instead of a.toDouble(),
+        // which overflows to Infinity above ~1E+308 and underflows to 0 below ~1E-324.
+        // Write a = m × 10^e with e even and 1 ≤ m < 100, so √a ≈ √m × 10^(e/2).
+        val exponent = a.precision() - a.scale() - 1 // a = d.ddd × 10^exponent
+        val evenExponent = if (exponent % 2 == 0) exponent else exponent - 1 // floor to even
+        val mantissa = a.scaleByPowerOfTen(-evenExponent)
+        var x = BigDecimal.valueOf(Math.sqrt(mantissa.toDouble())).scaleByPowerOfTen(evenExponent / 2)
         val two = BigDecimal(2)
         repeat(3) {
             x = a.divide(x, MC).add(x, MC).divide(two, MC)
