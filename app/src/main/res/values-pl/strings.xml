@@ -76,7 +76,7 @@
     <string name="cancel">Anuluj</string>
     <string name="ai_feature_low_ram">Potrzebujesz więcej RAM, aby korzystać z tej funkcji AI.</string>
     <string name="ai_feature_title">Solver matematyczny AI</string>
-    <string name="ai_feature_description">Ta funkcja używa dużego modelu AI działającego w całości na Twoim urządzeniu, aby rozwiązywać odręczną matematykę ze zdjęć.\n\nUwaga:\n\n• Wymagane jest pobranie modelu o rozmiarze 4–6 GB\n• Do pobierania zalecamy Wi-Fi\n• Uruchamianie modelu AI zużywa dużo baterii\n• Żadne dane nie są wysyłane do chmury</string>
+    <string name="ai_feature_description">Ta funkcja używa dużego modelu AI działającego w całości na Twoim urządzeniu, aby rozwiązywać odręczną matematykę ze zdjęć.\n\nUwaga:\n\n• Wymagane jest pobranie modelu o rozmiarze 2,6–4,9 GB\n• Do pobierania zalecamy Wi-Fi\n• Uruchamianie modelu AI zużywa dużo baterii\n• Żadne dane nie są wysyłane do chmury</string>
     <string name="ai_feature_continue">Wybierz model</string>
     <string name="license_required_title">Wymagana akceptacja licencji</string>
     <string name="license_required_description">%1$s wymaga zaakceptowania licencji na HuggingFace przed pobraniem. Dotknij przycisku poniżej, aby otworzyć stronę modelu, a następnie kliknij \"Agree and access repository\".</string>

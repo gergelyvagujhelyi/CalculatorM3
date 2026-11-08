@@ -76,7 +76,7 @@
     <string name="cancel">İptal</string>
     <string name="ai_feature_low_ram">Bu yapay zeka özelliğini kullanmak için daha fazla RAM gerekiyor.</string>
     <string name="ai_feature_title">Yapay Zeka Matematik Çözücü</string>
-    <string name="ai_feature_description">Bu özellik, fotoğraflardan elle yazılmış matematiği çözmek için tamamen cihazınızda çalışan büyük bir yapay zeka modeli kullanır.\n\nLütfen dikkat:\n\n• 4–6 GB boyutunda bir model indirilmesi gerekir\n• İndirme için Wi-Fi kullanmanızı öneririz\n• Yapay zeka modelini çalıştırmak çok fazla pil tüketir\n• Hiçbir veri buluta gönderilmez</string>
+    <string name="ai_feature_description">Bu özellik, fotoğraflardan elle yazılmış matematiği çözmek için tamamen cihazınızda çalışan büyük bir yapay zeka modeli kullanır.\n\nLütfen dikkat:\n\n• 2,6–4,9 GB boyutunda bir model indirilmesi gerekir\n• İndirme için Wi-Fi kullanmanızı öneririz\n• Yapay zeka modelini çalıştırmak çok fazla pil tüketir\n• Hiçbir veri buluta gönderilmez</string>
     <string name="ai_feature_continue">Bir model seç</string>
     <string name="license_required_title">Lisans kabulü gerekli</string>
     <string name="license_required_description">%1$s, indirmeden önce HuggingFace üzerinde lisansı kabul etmenizi gerektirir. Model sayfasını açmak için aşağıdaki düğmeye dokunun, ardından \"Agree and access repository\" seçeneğine tıklayın.</string>

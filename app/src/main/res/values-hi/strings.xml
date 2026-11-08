@@ -76,7 +76,7 @@
     <string name="cancel">रद्द करें</string>
     <string name="ai_feature_low_ram">इस AI सुविधा का उपयोग करने के लिए आपको अधिक RAM चाहिए।</string>
     <string name="ai_feature_title">AI गणित समाधानकर्ता</string>
-    <string name="ai_feature_description">यह सुविधा पूरी तरह आपके डिवाइस पर चलने वाले एक बड़े AI मॉडल का उपयोग करके फ़ोटो से हाथ से लिखे गणित को हल करती है।\n\nकृपया ध्यान दें:\n\n• 4–6 GB मॉडल डाउनलोड आवश्यक है\n• डाउनलोड के लिए Wi-Fi का उपयोग करने की सलाह दी जाती है\n• AI मॉडल चलाने से बैटरी काफ़ी खर्च होती है\n• कोई डेटा क्लाउड पर नहीं भेजा जाता</string>
+    <string name="ai_feature_description">यह सुविधा पूरी तरह आपके डिवाइस पर चलने वाले एक बड़े AI मॉडल का उपयोग करके फ़ोटो से हाथ से लिखे गणित को हल करती है।\n\nकृपया ध्यान दें:\n\n• 2.6–4.9 GB मॉडल डाउनलोड आवश्यक है\n• डाउनलोड के लिए Wi-Fi का उपयोग करने की सलाह दी जाती है\n• AI मॉडल चलाने से बैटरी काफ़ी खर्च होती है\n• कोई डेटा क्लाउड पर नहीं भेजा जाता</string>
     <string name="ai_feature_continue">मॉडल चुनें</string>
     <string name="license_required_title">लाइसेंस स्वीकृति आवश्यक</string>
     <string name="license_required_description">%1$s को डाउनलोड करने से पहले आपको HuggingFace पर लाइसेंस स्वीकार करना होगा। मॉडल पेज खोलने के लिए नीचे दिए गए बटन पर टैप करें, फिर \"Agree and access repository\" पर क्लिक करें।</string>

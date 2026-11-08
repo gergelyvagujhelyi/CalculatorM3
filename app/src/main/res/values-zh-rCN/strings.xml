@@ -76,7 +76,7 @@
     <string name="cancel">取消</string>
     <string name="ai_feature_low_ram">你需要更多内存才能使用此 AI 功能。</string>
     <string name="ai_feature_title">AI 数学求解器</string>
-    <string name="ai_feature_description">此功能使用完全在你的设备上运行的大型 AI 模型，从照片中求解手写数学题。\n\n请注意：\n\n• 需要下载 4–6 GB 的模型\n• 建议使用 Wi-Fi 下载\n• 运行 AI 模型会消耗大量电量\n• 不会向云端发送任何数据</string>
+    <string name="ai_feature_description">此功能使用完全在你的设备上运行的大型 AI 模型，从照片中求解手写数学题。\n\n请注意：\n\n• 需要下载 2.6–4.9 GB 的模型\n• 建议使用 Wi-Fi 下载\n• 运行 AI 模型会消耗大量电量\n• 不会向云端发送任何数据</string>
     <string name="ai_feature_continue">选择模型</string>
     <string name="license_required_title">需要接受许可</string>
     <string name="license_required_description">%1$s 要求你在下载前接受 HuggingFace 上的许可。点按下方按钮打开模型页面，然后点击 \"Agree and access repository\"。</string>

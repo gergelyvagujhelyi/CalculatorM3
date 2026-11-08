@@ -87,7 +87,7 @@
     <string name="cancel">Cancel</string>
     <string name="ai_feature_low_ram">You need more RAM to use this AI feature.</string>
     <string name="ai_feature_title">AI Math Solver</string>
-    <string name="ai_feature_description">This feature uses a large AI model running entirely on your device to solve handwritten math from photos.\n\nPlease note:\n\n\u2022 A model download of 4\u20136 GB is required\n\u2022 We recommend using Wi-Fi for the download\n\u2022 Running the AI model uses significant battery\n\u2022 No data is sent to the cloud</string>
+    <string name="ai_feature_description">This feature uses a large AI model running entirely on your device to solve handwritten math from photos.\n\nPlease note:\n\n\u2022 A model download of 2.6\u20134.9 GB is required\n\u2022 We recommend using Wi-Fi for the download\n\u2022 Running the AI model uses significant battery\n\u2022 No data is sent to the cloud</string>
     <string name="ai_feature_continue">Choose a model</string>
     <string name="license_required_title">License acceptance required</string>
     <string name="license_required_description">%1$s requires you to accept the license on HuggingFace before downloading. Tap the button below to open the model page, then click \"Agree and access repository\".</string>

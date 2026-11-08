@@ -76,7 +76,7 @@
     <string name="cancel">Abbrechen</string>
     <string name="ai_feature_low_ram">Du benötigst mehr RAM, um diese KI-Funktion zu nutzen.</string>
     <string name="ai_feature_title">KI-Mathelöser</string>
-    <string name="ai_feature_description">Diese Funktion nutzt ein großes KI-Modell, das vollständig auf deinem Gerät läuft, um handgeschriebene Mathematik aus Fotos zu lösen.\n\nBitte beachte:\n\n• Ein Modell-Download von 4–6 GB ist erforderlich\n• Wir empfehlen WLAN für den Download\n• Das Ausführen des KI-Modells verbraucht viel Akku\n• Es werden keine Daten in die Cloud gesendet</string>
+    <string name="ai_feature_description">Diese Funktion nutzt ein großes KI-Modell, das vollständig auf deinem Gerät läuft, um handgeschriebene Mathematik aus Fotos zu lösen.\n\nBitte beachte:\n\n• Ein Modell-Download von 2,6–4,9 GB ist erforderlich\n• Wir empfehlen WLAN für den Download\n• Das Ausführen des KI-Modells verbraucht viel Akku\n• Es werden keine Daten in die Cloud gesendet</string>
     <string name="ai_feature_continue">Modell wählen</string>
     <string name="license_required_title">Lizenzannahme erforderlich</string>
     <string name="license_required_description">%1$s erfordert, dass du die Lizenz auf HuggingFace akzeptierst, bevor du herunterlädst. Tippe auf die Schaltfläche unten, um die Modellseite zu öffnen, und klicke dann auf \"Agree and access repository\".</string>

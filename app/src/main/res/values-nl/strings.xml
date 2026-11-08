@@ -76,7 +76,7 @@
     <string name="cancel">Annuleren</string>
     <string name="ai_feature_low_ram">Je hebt meer RAM nodig om deze AI-functie te gebruiken.</string>
     <string name="ai_feature_title">AI-wiskundeoplosser</string>
-    <string name="ai_feature_description">Deze functie gebruikt een groot AI-model dat volledig op je apparaat draait om handgeschreven wiskunde uit foto\'s op te lossen.\n\nLet op:\n\n• Een modeldownload van 4–6 GB is vereist\n• We raden wifi aan voor de download\n• Het draaien van het AI-model verbruikt veel batterij\n• Er worden geen gegevens naar de cloud verzonden</string>
+    <string name="ai_feature_description">Deze functie gebruikt een groot AI-model dat volledig op je apparaat draait om handgeschreven wiskunde uit foto\'s op te lossen.\n\nLet op:\n\n• Een modeldownload van 2,6–4,9 GB is vereist\n• We raden wifi aan voor de download\n• Het draaien van het AI-model verbruikt veel batterij\n• Er worden geen gegevens naar de cloud verzonden</string>
     <string name="ai_feature_continue">Een model kiezen</string>
     <string name="license_required_title">Licentieacceptatie vereist</string>
     <string name="license_required_description">%1$s vereist dat je de licentie op HuggingFace accepteert voordat je downloadt. Tik op de knop hieronder om de modelpagina te openen en klik vervolgens op \"Agree and access repository\".</string>
