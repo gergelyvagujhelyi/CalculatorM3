@@ -44,6 +44,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.ui.platform.testTag
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -302,6 +304,7 @@ fun CameraScanScreen(
                             is ScanUiState.Error -> ErrorContent(
                                 message = state.message,
                                 rawResponse = state.rawResponse,
+                                checkOutput = state.checkOutput,
                                 onRetry = { viewModel.retry() },
                                 onDismiss = onDismiss
                             )
@@ -880,31 +883,52 @@ internal fun ErrorContent(
     message: String,
     rawResponse: String?,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /**
+     * The model finished but didn't end with a single number to use. Its working usually holds
+     * the result (e.g. a fraction like 5/4), so lead with "check the answer below" rather than
+     * "Recognition failed".
+     */
+    checkOutput: Boolean = false,
 ) {
-    var showRaw by remember { mutableStateOf(false) }
+    // The model's output starts open, and the screen starts scrolled to its end, where the
+    // result is; it can still be collapsed.
+    var showRaw by remember { mutableStateOf(!rawResponse.isNullOrBlank()) }
+    val scroll = rememberScrollState()
+    LaunchedEffect(showRaw) {
+        if (!showRaw) return@LaunchedEffect
+        // The rendered math lays out after the first frame (and the card expands), so follow the
+        // content height as it grows instead of scrolling once.
+        snapshotFlow { scroll.maxValue }.collect { scroll.scrollTo(it) }
+    }
 
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .padding(32.dp)
-                .animateContentSize(),
+                .verticalScroll(scroll)
+                .padding(horizontal = 24.dp)
+                .padding(top = 72.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            AiHero(
-                title = stringResource(R.string.recognition_error),
-                subtitle = message,
-                icon = Icons.Default.ErrorOutline,
-                tint = MaterialTheme.colorScheme.error,
-                titleColor = MaterialTheme.colorScheme.error
-            )
-            OutlinedButton(onClick = onRetry) {
-                Text(stringResource(R.string.retry))
+            if (checkOutput) {
+                AiHero(
+                    title = stringResource(R.string.check_output_title),
+                    subtitle = stringResource(R.string.check_output_hint),
+                    icon = Icons.Default.Info
+                )
+            } else {
+                AiHero(
+                    title = stringResource(R.string.recognition_error),
+                    subtitle = message,
+                    icon = Icons.Default.ErrorOutline,
+                    tint = MaterialTheme.colorScheme.error,
+                    titleColor = MaterialTheme.colorScheme.error
+                )
             }
-            if (rawResponse != null) {
+            if (!rawResponse.isNullOrBlank()) {
                 TextButton(onClick = { showRaw = !showRaw }) {
                     Text(
                         text = stringResource(R.string.raw_model_output),
@@ -917,26 +941,25 @@ internal fun ErrorContent(
                     )
                 }
                 AnimatedVisibility(visible = showRaw) {
-                    AiCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-                        )
-                    ) {
-                        Text(
-                            text = rawResponse,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(12.dp)
+                    // Rendered like the answer screen (markdown + LaTeX), so fractions and roots
+                    // in the working read as math.
+                    AiCard(modifier = Modifier.fillMaxWidth().testTag("model-output")) {
+                        MarkdownLatexText(
+                            text = rawResponse.trim(),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
                         )
                     }
                 }
             }
+            OutlinedButton(onClick = onRetry) {
+                Text(stringResource(R.string.retry))
+            }
         }
     }
 }
-
 /**
  * The model's file is gone (deleted outside the app) or can't be loaded (damaged). Offers to
  * download it again; for a damaged file also to retry, since a load can fail for a passing

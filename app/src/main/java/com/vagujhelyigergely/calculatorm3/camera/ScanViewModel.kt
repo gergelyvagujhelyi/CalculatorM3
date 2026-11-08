@@ -57,7 +57,15 @@ sealed interface ScanUiState {
         /** Steady-state decode speed, excluding prefill. */
         val decodeTokensPerSec: Double = 0.0
     ) : ScanUiState
-    data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
+    /**
+     * [checkOutput]: the model finished but its answer isn't a single number to use (e.g. it
+     * ended with a fraction); the screen then points to its output instead of "failed".
+     */
+    data class Error(
+        val message: String,
+        val rawResponse: String? = null,
+        val checkOutput: Boolean = false
+    ) : ScanUiState
     /**
      * [model] can't be used: its file is gone ([missing], e.g. deleted outside the app) or the
      * engine can't load it (damaged, or cut short). Offers to download it again. [detail] is the
@@ -494,7 +502,7 @@ class ScanViewModel(
                         val res = (it as? RecognitionException)?.messageRes ?: 0
                         val msg = if (res != 0) appContext.getString(res)
                             else it.message ?: appContext.getString(R.string.recognition_error)
-                        ScanUiState.Error(msg, raw)
+                        ScanUiState.Error(msg, raw, checkOutput = res == R.string.error_no_numerical_answer)
                     }
                 )
             } catch (e: Throwable) {
