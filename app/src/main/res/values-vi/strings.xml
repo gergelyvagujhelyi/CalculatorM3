@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Đang cập nhật sang định dạng mô hình mới</string>
     <string name="model_preparing_title">Đang chuẩn bị mô hình AI</string>
     <string name="model_preparing_hint">Việc này chỉ diễn ra một lần và có thể mất khoảng một phút.</string>
+    <string name="model_missing_title">Không tìm thấy mô hình AI</string>
+    <string name="model_missing_description">%1$s không còn trên thiết bị này. Hãy tải lại (%2$s) để tiếp tục quét.</string>
+    <string name="model_unusable_title">Không thể tải mô hình AI</string>
+    <string name="model_unusable_description">%1$s có thể bị hỏng hoặc chưa đầy đủ. Hãy thử lại hoặc tải lại (%2$s).</string>
+    <string name="download_again">Tải lại</string>
     <string name="answer_found">Đáp án</string>
     <string name="recognized_in">Đã giải trong %1$s</string>
     <string name="use_expression">Dùng</string>
@@ -93,7 +98,6 @@
         <item quantity="other">Còn %1$d lần nhấn nữa để mở khóa tính năng AI</item>
     </plurals>
     <string name="error_no_numerical_answer">Không thể trích xuất câu trả lời dạng số</string>
-    <string name="error_model_load">Không tải được mô hình AI: %1$s</string>
     <string name="error_signin_failed">Đăng nhập thất bại: %1$s</string>
     <string name="please_try_again">vui lòng thử lại</string>
     <string name="error_download_failed">Tải xuống thất bại: %1$s</string>

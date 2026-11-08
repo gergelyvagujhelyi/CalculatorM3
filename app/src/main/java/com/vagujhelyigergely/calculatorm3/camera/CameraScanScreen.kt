@@ -301,6 +301,16 @@ fun CameraScanScreen(
                                 onRetry = { viewModel.retry() },
                                 onDismiss = onDismiss
                             )
+                            is ScanUiState.ModelUnusable -> ModelUnusableContent(
+                                model = state.model,
+                                missing = state.missing,
+                                detail = state.detail,
+                                onRedownload = {
+                                    viewModel.redownload(state.model, startDownloadWithNotifPrompt)
+                                },
+                                onRetry = { viewModel.retry() },
+                                onDismiss = onDismiss
+                            )
                             is ScanUiState.FirstTimeWarning -> FirstTimeWarningContent(
                                 onContinue = { viewModel.showModelSelection() },
                                 onDismiss = onDismiss
@@ -374,6 +384,7 @@ private fun ScanUiState.screenKey(): Any = when (this) {
     is ScanUiState.Processing -> "processing"
     is ScanUiState.Success -> "success"
     is ScanUiState.Error -> "error"
+    is ScanUiState.ModelUnusable -> "modelUnusable"
     is ScanUiState.ModelSelection -> "modelSelection"
     is ScanUiState.Downloading -> "downloading"
     is ScanUiState.DownloadComplete -> "downloadComplete"
@@ -870,6 +881,61 @@ internal fun ErrorContent(
                             modifier = Modifier.padding(12.dp)
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The model's file is gone (deleted outside the app) or can't be loaded (damaged). Offers to
+ * download it again; for a damaged file also to retry, since a load can fail for a passing
+ * reason such as low memory.
+ */
+@Composable
+internal fun ModelUnusableContent(
+    model: AiModel,
+    missing: Boolean,
+    detail: String,
+    onRedownload: () -> Unit,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AiStateScaffold(onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            AiHero(
+                title = stringResource(
+                    if (missing) R.string.model_missing_title else R.string.model_unusable_title
+                ),
+                subtitle = stringResource(
+                    if (missing) R.string.model_missing_description else R.string.model_unusable_description,
+                    model.displayName, model.totalSizeDisplay
+                ),
+                icon = Icons.Default.ErrorOutline,
+                tint = MaterialTheme.colorScheme.error
+            )
+            if (detail.isNotBlank()) {
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                if (!missing) {
+                    OutlinedButton(onClick = onRetry) {
+                        Text(stringResource(R.string.retry))
+                    }
+                }
+                Button(onClick = onRedownload) {
+                    Text(stringResource(R.string.download_again))
                 }
             }
         }

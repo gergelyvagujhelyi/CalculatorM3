@@ -302,6 +302,12 @@ class ModelManager(private val context: Context) {
         return "${BuildConfig.LITERT_LM_VERSION}|${file.length()}|${file.lastModified()}"
     }
 
+    /** Delete [model]'s files, any partial download of them, and its prepared record. */
+    fun deleteModel(model: AiModel) {
+        modelDir(model).deleteRecursively()
+        prefs.edit().remove(preparedKey(model)).apply()
+    }
+
     private fun preparedKey(model: AiModel) = "prepared_engine_version_${model.id}"
 
     /**

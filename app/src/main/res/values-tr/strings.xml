@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Yeni model biçimine güncelleniyor</string>
     <string name="model_preparing_title">Yapay zeka modeli hazırlanıyor</string>
     <string name="model_preparing_hint">Bu yalnızca bir kez yapılır ve yaklaşık bir dakika sürebilir.</string>
+    <string name="model_missing_title">Yapay zekâ modeli eksik</string>
+    <string name="model_missing_description">%1$s artık bu cihazda değil. Taramaya devam etmek için yeniden indirin (%2$s).</string>
+    <string name="model_unusable_title">Yapay zekâ modeli yüklenemiyor</string>
+    <string name="model_unusable_description">%1$s hasarlı veya eksik olabilir. Tekrar deneyin ya da yeniden indirin (%2$s).</string>
+    <string name="download_again">Yeniden indir</string>
     <string name="answer_found">Yanıt</string>
     <string name="recognized_in">%1$s içinde çözüldü</string>
     <string name="use_expression">Kullan</string>
@@ -94,7 +99,6 @@
         <item quantity="other">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
     </plurals>
     <string name="error_no_numerical_answer">Sayısal bir yanıt çıkarılamadı</string>
-    <string name="error_model_load">Yapay zekâ modeli yüklenemedi: %1$s</string>
     <string name="error_signin_failed">Oturum açılamadı: %1$s</string>
     <string name="please_try_again">lütfen tekrar deneyin</string>
     <string name="error_download_failed">İndirme başarısız: %1$s</string>

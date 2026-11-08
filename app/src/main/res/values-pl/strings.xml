@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Aktualizowanie do nowego formatu modelu</string>
     <string name="model_preparing_title">Przygotowywanie modelu AI</string>
     <string name="model_preparing_hint">To dzieje się tylko raz i może potrwać około minuty.</string>
+    <string name="model_missing_title">Brak modelu AI</string>
+    <string name="model_missing_description">%1$s nie ma już na tym urządzeniu. Pobierz go ponownie (%2$s), aby dalej skanować.</string>
+    <string name="model_unusable_title">Nie można wczytać modelu AI</string>
+    <string name="model_unusable_description">%1$s może być uszkodzony lub niekompletny. Spróbuj ponownie albo pobierz go jeszcze raz (%2$s).</string>
+    <string name="download_again">Pobierz ponownie</string>
     <string name="answer_found">Odpowiedź</string>
     <string name="recognized_in">Rozwiązano w %1$s</string>
     <string name="use_expression">Użyj</string>
@@ -96,7 +101,6 @@
         <item quantity="other">Pozostało %1$d naciśnięć do odblokowania funkcji AI</item>
     </plurals>
     <string name="error_no_numerical_answer">Nie udało się odczytać odpowiedzi liczbowej</string>
-    <string name="error_model_load">Nie udało się załadować modelu AI: %1$s</string>
     <string name="error_signin_failed">Logowanie nie powiodło się: %1$s</string>
     <string name="please_try_again">spróbuj ponownie</string>
     <string name="error_download_failed">Pobieranie nie powiodło się: %1$s</string>

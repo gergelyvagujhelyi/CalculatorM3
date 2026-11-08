@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Actualizando al nuevo formato del modelo</string>
     <string name="model_preparing_title">Preparando el modelo de IA</string>
     <string name="model_preparing_hint">Esto solo ocurre una vez y puede tardar alrededor de un minuto.</string>
+    <string name="model_missing_title">Falta el modelo de IA</string>
+    <string name="model_missing_description">%1$s ya no está en este dispositivo. Descárgalo de nuevo (%2$s) para seguir escaneando.</string>
+    <string name="model_unusable_title">No se puede cargar el modelo de IA</string>
+    <string name="model_unusable_description">Es posible que %1$s esté dañado o incompleto. Inténtalo de nuevo o vuelve a descargarlo (%2$s).</string>
+    <string name="download_again">Descargar de nuevo</string>
     <string name="answer_found">Respuesta</string>
     <string name="recognized_in">Resuelto en %1$s</string>
     <string name="use_expression">Usar</string>
@@ -95,7 +100,6 @@
         <item quantity="many">Te quedan %1$d pulsaciones para desbloquear las funciones de IA</item>
     </plurals>
     <string name="error_no_numerical_answer">No se pudo extraer una respuesta numérica</string>
-    <string name="error_model_load">No se pudo cargar el modelo de IA: %1$s</string>
     <string name="error_signin_failed">Error al iniciar sesión: %1$s</string>
     <string name="please_try_again">inténtalo de nuevo</string>
     <string name="error_download_failed">Error en la descarga: %1$s</string>

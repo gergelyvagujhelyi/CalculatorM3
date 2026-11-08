@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Updating to the new model format</string>
     <string name="model_preparing_title">Preparing the AI model</string>
     <string name="model_preparing_hint">This happens only once and can take about a minute.</string>
+    <string name="model_missing_title">The AI model is missing</string>
+    <string name="model_missing_description">%1$s is no longer on this device. Download it again (%2$s) to keep scanning.</string>
+    <string name="model_unusable_title">The AI model can\'t be loaded</string>
+    <string name="model_unusable_description">%1$s may be damaged or incomplete. Try again, or download it again (%2$s).</string>
+    <string name="download_again">Download again</string>
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>
@@ -50,7 +55,6 @@
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
     <string name="error_no_numerical_answer">Could not extract a numerical answer</string>
-    <string name="error_model_load">Failed to load AI model: %1$s</string>
     <string name="error_signin_failed">Sign-in failed: %1$s</string>
     <string name="please_try_again">please try again</string>
     <string name="error_download_failed">Download failed: %1$s</string>

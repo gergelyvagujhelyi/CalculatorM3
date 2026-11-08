@@ -41,6 +41,11 @@
     <string name="model_format_update_title">नए मॉडल फ़ॉर्मैट में अपडेट हो रहा है</string>
     <string name="model_preparing_title">AI मॉडल तैयार किया जा रहा है</string>
     <string name="model_preparing_hint">यह केवल एक बार होता है और इसमें लगभग एक मिनट लग सकता है।</string>
+    <string name="model_missing_title">AI मॉडल मौजूद नहीं है</string>
+    <string name="model_missing_description">%1$s अब इस डिवाइस पर नहीं है। स्कैन जारी रखने के लिए इसे फिर से डाउनलोड करें (%2$s)।</string>
+    <string name="model_unusable_title">AI मॉडल लोड नहीं हो सका</string>
+    <string name="model_unusable_description">%1$s शायद खराब या अधूरा है। फिर से कोशिश करें, या इसे दोबारा डाउनलोड करें (%2$s)।</string>
+    <string name="download_again">फिर से डाउनलोड करें</string>
     <string name="answer_found">उत्तर</string>
     <string name="recognized_in">%1$s में हल किया गया</string>
     <string name="use_expression">उपयोग करें</string>
@@ -94,7 +99,6 @@
         <item quantity="other">AI सुविधाएँ अनलॉक करने के लिए %1$d बार और टैप करें</item>
     </plurals>
     <string name="error_no_numerical_answer">कोई संख्यात्मक उत्तर नहीं निकाला जा सका</string>
-    <string name="error_model_load">AI मॉडल लोड नहीं हो सका: %1$s</string>
     <string name="error_signin_failed">साइन-इन विफल: %1$s</string>
     <string name="please_try_again">कृपया पुनः प्रयास करें</string>
     <string name="error_download_failed">डाउनलोड विफल: %1$s</string>
