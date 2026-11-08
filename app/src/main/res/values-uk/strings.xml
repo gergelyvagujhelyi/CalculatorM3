@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Оновлення до нового формату моделі</string>
     <string name="model_preparing_title">Підготовка моделі ШІ</string>
     <string name="model_preparing_hint">Це відбувається лише один раз і може тривати близько хвилини.</string>
+    <string name="model_missing_title">ШІ-модель відсутня</string>
+    <string name="model_missing_description">%1$s більше немає на цьому пристрої. Завантажте її знову (%2$s), щоб продовжити сканування.</string>
+    <string name="model_unusable_title">Не вдається завантажити ШІ-модель</string>
+    <string name="model_unusable_description">Можливо, %1$s пошкоджена або завантажена не повністю. Спробуйте ще раз або завантажте її знову (%2$s).</string>
+    <string name="download_again">Завантажити знову</string>
     <string name="answer_found">Відповідь</string>
     <string name="recognized_in">Розв’язано за %1$s</string>
     <string name="use_expression">Використати</string>

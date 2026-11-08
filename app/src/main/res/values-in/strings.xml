@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Memperbarui ke format model baru</string>
     <string name="model_preparing_title">Menyiapkan model AI</string>
     <string name="model_preparing_hint">Ini hanya terjadi sekali dan bisa memakan waktu sekitar satu menit.</string>
+    <string name="model_missing_title">Model AI tidak ditemukan</string>
+    <string name="model_missing_description">%1$s sudah tidak ada di perangkat ini. Unduh lagi (%2$s) untuk terus memindai.</string>
+    <string name="model_unusable_title">Model AI tidak dapat dimuat</string>
+    <string name="model_unusable_description">%1$s mungkin rusak atau tidak lengkap. Coba lagi, atau unduh ulang (%2$s).</string>
+    <string name="download_again">Unduh lagi</string>
     <string name="answer_found">Jawaban</string>
     <string name="recognized_in">Diselesaikan dalam %1$s</string>
     <string name="use_expression">Gunakan</string>

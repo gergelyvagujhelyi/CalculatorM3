@@ -41,6 +41,11 @@
     <string name="model_format_update_title">新しいモデル形式に更新しています</string>
     <string name="model_preparing_title">AIモデルを準備しています</string>
     <string name="model_preparing_hint">これは一度だけ行われ、1分ほどかかる場合があります。</string>
+    <string name="model_missing_title">AIモデルが見つかりません</string>
+    <string name="model_missing_description">%1$s はこのデバイスにありません。スキャンを続けるには、もう一度ダウンロードしてください（%2$s）。</string>
+    <string name="model_unusable_title">AIモデルを読み込めません</string>
+    <string name="model_unusable_description">%1$s が破損しているか、不完全な可能性があります。再試行するか、もう一度ダウンロードしてください（%2$s）。</string>
+    <string name="download_again">再ダウンロード</string>
     <string name="answer_found">答え</string>
     <string name="recognized_in">%1$s で解きました</string>
     <string name="use_expression">使用</string>

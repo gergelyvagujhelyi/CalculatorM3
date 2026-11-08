@@ -14,6 +14,7 @@ import com.vagujhelyigergely.calculatorm3.camera.ErrorContent
 import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
 import com.vagujhelyigergely.calculatorm3.camera.ModelCard
 import com.vagujhelyigergely.calculatorm3.camera.ModelPreparingContent
+import com.vagujhelyigergely.calculatorm3.camera.ModelUnusableContent
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.camera.SuccessContent
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
@@ -193,6 +194,46 @@ class AiScreensUiTest {
     }
 
     // ── One-time model preparation (new engine version / fresh download) ──
+
+    // ── Model missing or unloadable ─────────────────────────────────────────
+
+    @Test
+    fun missingModelOffersOnlyToDownloadItAgain() {
+        val model = AiModel.GEMMA4_E2B
+        var redownloads = 0
+        show {
+            ModelUnusableContent(
+                model = model, missing = true, detail = "",
+                onRedownload = { redownloads++ }, onRetry = {}, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.model_missing_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(
+            str(R.string.model_missing_description, model.displayName, model.totalSizeDisplay)
+        ).assertIsDisplayed()
+        button(str(R.string.retry)).assertDoesNotExist()
+        button(str(R.string.download_again)).performClick()
+        assertEquals(1, redownloads)
+    }
+
+    @Test
+    fun unloadableModelShowsTheErrorAndOffersRetryOrDownloadAgain() {
+        val model = AiModel.GEMMA4_E2B
+        var redownloads = 0
+        var retries = 0
+        show {
+            ModelUnusableContent(
+                model = model, missing = false, detail = "Unable to open zip archive.",
+                onRedownload = { redownloads++ }, onRetry = { retries++ }, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.model_unusable_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Unable to open zip archive.").assertIsDisplayed()
+        button(str(R.string.retry)).performClick()
+        assertEquals(1, retries)
+        button(str(R.string.download_again)).performClick()
+        assertEquals(1, redownloads)
+    }
 
     @Test
     fun engineUpdateShowsTheNewModelFormatMessage() {

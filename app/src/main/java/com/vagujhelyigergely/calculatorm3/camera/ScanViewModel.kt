@@ -57,6 +57,16 @@ sealed interface ScanUiState {
         val decodeTokensPerSec: Double = 0.0
     ) : ScanUiState
     data class Error(val message: String, val rawResponse: String? = null) : ScanUiState
+    /**
+     * [model] can't be used: its file is gone ([missing], e.g. deleted outside the app) or the
+     * engine can't load it (damaged, or cut short). Offers to download it again. [detail] is the
+     * engine's error, if any.
+     */
+    data class ModelUnusable(
+        val model: AiModel,
+        val missing: Boolean,
+        val detail: String = ""
+    ) : ScanUiState
     data class ModelSelection(val selectedModel: AiModel, val downloadedModels: List<AiModel>, val deviceRamGb: Int) : ScanUiState
     data class Downloading(
         val model: AiModel,
@@ -144,16 +154,22 @@ class ScanViewModel(
             uiState = ScanUiState.PreparingModel(isUpdate)
             try {
                 withContext(Dispatchers.IO) {
-                    solver.loadModel(modelManager.modelPath(model))
-                    solver.release()
+                    try {
+                        solver.loadModel(modelManager.modelPath(model))
+                    } finally {
+                        // Free whatever the failed or finished load left behind.
+                        solver.release()
+                    }
                 }
                 loadedModelId = null
                 modelManager.markPrepared(model)
+                uiState = ScanUiState.Capturing
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                android.util.Log.w("ScanViewModel", "Model preparation failed; first scan will retry", e)
+                android.util.Log.w("ScanViewModel", "Model preparation failed", e)
+                loadedModelId = null
+                uiState = unusable(model, e)
             }
-            uiState = ScanUiState.Capturing
         }
     }
 
@@ -165,6 +181,11 @@ class ScanViewModel(
      */
     private suspend fun ensureModelLoaded(model: AiModel): Boolean {
         if (solver.isModelLoaded && loadedModelId == model.id) return true
+        if (!modelManager.areModelsAvailable(model)) {
+            // Deleted outside the app while the window was open.
+            uiState = ScanUiState.ModelUnusable(model, missing = true)
+            return false
+        }
         uiState = ScanUiState.ModelLoading()
         return try {
             solver.loadModel(modelManager.modelPath(model))
@@ -175,8 +196,30 @@ class ScanViewModel(
             // finally releases the engine) instead of surfacing it as a load error.
             if (e is kotlinx.coroutines.CancellationException) throw e
             loadedModelId = null
-            uiState = ScanUiState.Error(appContext.getString(R.string.error_model_load, e.message ?: ""))
+            uiState = unusable(model, e)
             false
+        }
+    }
+
+    /** The state for a model whose load just failed with [e]: missing, or present but unloadable. */
+    private fun unusable(model: AiModel, e: Exception) =
+        if (!modelManager.areModelsAvailable(model)) ScanUiState.ModelUnusable(model, missing = true)
+        else ScanUiState.ModelUnusable(model, missing = false, detail = e.message ?: "")
+
+    /**
+     * Delete [model]'s files (including a partial download) and its prepared record, then hand
+     * it to [startDownload] — the screen passes its own starter, which asks for the notification
+     * permission first. Used from [ScanUiState.ModelUnusable] when the file is damaged or gone.
+     */
+    fun redownload(model: AiModel, startDownload: (AiModel) -> Unit = ::startDownload) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                // Nothing may hold the file open while it's deleted.
+                solver.release()
+                modelManager.deleteModel(model)
+            }
+            loadedModelId = null
+            startDownload(model)
         }
     }
 
@@ -538,7 +581,9 @@ class ScanViewModel(
     fun retry() {
         // Back to the capture chooser if the model is available (loaded lazily on
         // the next photo); otherwise re-run the first-time / download flow.
-        if (modelManager.areModelsAvailable()) {
+        // A model that still needs its one-time preparation goes through initialize(), which
+        // prepares it (with the message) before the capture chooser.
+        if (modelManager.areModelsAvailable() && !modelManager.needsPreparation(modelManager.selectedModel)) {
             uiState = ScanUiState.Capturing
         } else {
             initialize()

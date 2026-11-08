@@ -41,6 +41,11 @@
     <string name="model_format_update_title">새 모델 형식으로 업데이트하는 중</string>
     <string name="model_preparing_title">AI 모델 준비 중</string>
     <string name="model_preparing_hint">한 번만 진행되며 1분 정도 걸릴 수 있습니다.</string>
+    <string name="model_missing_title">AI 모델이 없습니다</string>
+    <string name="model_missing_description">%1$s이(가) 더 이상 이 기기에 없습니다. 계속 스캔하려면 다시 다운로드하세요(%2$s).</string>
+    <string name="model_unusable_title">AI 모델을 불러올 수 없습니다</string>
+    <string name="model_unusable_description">%1$s이(가) 손상되었거나 불완전할 수 있습니다. 다시 시도하거나 다시 다운로드하세요(%2$s).</string>
+    <string name="download_again">다시 다운로드</string>
     <string name="answer_found">답</string>
     <string name="recognized_in">%1$s 만에 풀이함</string>
     <string name="use_expression">사용</string>

@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Aggiornamento al nuovo formato del modello</string>
     <string name="model_preparing_title">Preparazione del modello IA</string>
     <string name="model_preparing_hint">Succede solo una volta e può richiedere circa un minuto.</string>
+    <string name="model_missing_title">Il modello di IA non c\'è più</string>
+    <string name="model_missing_description">%1$s non è più su questo dispositivo. Scaricalo di nuovo (%2$s) per continuare a scansionare.</string>
+    <string name="model_unusable_title">Impossibile caricare il modello di IA</string>
+    <string name="model_unusable_description">%1$s potrebbe essere danneggiato o incompleto. Riprova o scaricalo di nuovo (%2$s).</string>
+    <string name="download_again">Scarica di nuovo</string>
     <string name="answer_found">Risposta</string>
     <string name="recognized_in">Risolto in %1$s</string>
     <string name="use_expression">Usa</string>

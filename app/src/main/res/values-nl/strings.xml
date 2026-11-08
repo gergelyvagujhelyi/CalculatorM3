@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Bijwerken naar het nieuwe modelformaat</string>
     <string name="model_preparing_title">AI-model wordt voorbereid</string>
     <string name="model_preparing_hint">Dit gebeurt maar één keer en kan ongeveer een minuut duren.</string>
+    <string name="model_missing_title">Het AI-model ontbreekt</string>
+    <string name="model_missing_description">%1$s staat niet meer op dit apparaat. Download het opnieuw (%2$s) om verder te scannen.</string>
+    <string name="model_unusable_title">Het AI-model kan niet worden geladen</string>
+    <string name="model_unusable_description">%1$s is mogelijk beschadigd of onvolledig. Probeer het opnieuw of download het opnieuw (%2$s).</string>
+    <string name="download_again">Opnieuw downloaden</string>
     <string name="answer_found">Antwoord</string>
     <string name="recognized_in">Opgelost in %1$s</string>
     <string name="use_expression">Gebruiken</string>

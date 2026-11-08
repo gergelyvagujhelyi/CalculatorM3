@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Aktualisierung auf das neue Modellformat</string>
     <string name="model_preparing_title">KI-Modell wird vorbereitet</string>
     <string name="model_preparing_hint">Das passiert nur einmal und kann etwa eine Minute dauern.</string>
+    <string name="model_missing_title">Das KI-Modell fehlt</string>
+    <string name="model_missing_description">%1$s ist nicht mehr auf diesem Gerät. Lade es erneut herunter (%2$s), um weiter zu scannen.</string>
+    <string name="model_unusable_title">Das KI-Modell kann nicht geladen werden</string>
+    <string name="model_unusable_description">%1$s ist möglicherweise beschädigt oder unvollständig. Versuche es erneut oder lade es neu herunter (%2$s).</string>
+    <string name="download_again">Erneut herunterladen</string>
     <string name="answer_found">Antwort</string>
     <string name="recognized_in">Gelöst in %1$s</string>
     <string name="use_expression">Verwenden</string>

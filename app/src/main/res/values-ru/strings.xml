@@ -41,6 +41,11 @@
     <string name="model_format_update_title">Обновление до нового формата модели</string>
     <string name="model_preparing_title">Подготовка модели ИИ</string>
     <string name="model_preparing_hint">Это происходит только один раз и может занять около минуты.</string>
+    <string name="model_missing_title">ИИ-модель отсутствует</string>
+    <string name="model_missing_description">%1$s больше нет на этом устройстве. Скачайте её снова (%2$s), чтобы продолжить сканирование.</string>
+    <string name="model_unusable_title">Не удаётся загрузить ИИ-модель</string>
+    <string name="model_unusable_description">Возможно, %1$s повреждена или загружена не полностью. Повторите попытку или скачайте её заново (%2$s).</string>
+    <string name="download_again">Скачать снова</string>
     <string name="answer_found">Ответ</string>
     <string name="recognized_in">Решено за %1$s</string>
     <string name="use_expression">Использовать</string>
