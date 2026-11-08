@@ -13,6 +13,13 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+kotlin {
+    compilerOptions {
+        // Kotlin 2.4 removed the android { kotlinOptions { jvmTarget = "17" } } form.
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
 android {
     namespace = "com.vagujhelyigergely.calculatorm3"
     compileSdk = 35
@@ -79,9 +86,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
     }
@@ -120,7 +124,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.5.0-alpha14")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.19.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     // EXIF orientation of scanned photos; the framework android.media.ExifInterface has known
     // parsing bugs on older Android versions (minSdk is 26).
