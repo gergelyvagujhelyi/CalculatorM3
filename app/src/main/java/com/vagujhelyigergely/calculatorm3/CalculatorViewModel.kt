@@ -36,6 +36,14 @@ class CalculatorViewModel(
         private set
     var maxDisplayLength = 24
 
+    /**
+     * True while [expression] holds the answer of a just-completed "=". The next number-like
+     * key (digit, ".", π, "(") then starts a new entry instead of appending to the answer;
+     * operators and unary functions continue from it. Cleared by any other input, explicit
+     * cursor placement, AC, scan input and history recall.
+     */
+    private var justEvaluated = savedState.get<Boolean>(KEY_JUST_EVALUATED) ?: false
+
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
@@ -77,6 +85,7 @@ class CalculatorViewModel(
         savedState["cursorPosition"] = cursorPosition
         savedState["result"] = result
         savedState["history"] = history
+        savedState[KEY_JUST_EVALUATED] = justEvaluated
         savedState["historyExpressions"] = _historyList.map { it.expression }
         savedState["historyResults"] = _historyList.map { it.result }
         savedState["historyTimestamps"] = _historyList.map { it.timestamp }
@@ -99,6 +108,18 @@ class CalculatorViewModel(
         private const val MAX_HISTORY_SIZE = 100
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
+        private const val KEY_JUST_EVALUATED = "justEvaluated"
+
+        /** Keys that begin a new entry when pressed right after "=" (see [justEvaluated]). */
+        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "(")
+
+        /**
+         * Upper bound on the coefficient digits an exact addition/subtraction may need after
+         * aligning the operands' scales (see [checkedExactAdd]). Keeps 10^100 + 1 − 10^100 exact
+         * while refusing alignments like 1 + 1E-2000000000 before BigDecimal allocates them.
+         */
+        private const val MAX_EXACT_DIGITS = 4096L
+        private const val EXACT_LIMIT_MESSAGE = "Exact precision limit exceeded"
 
         // Locale-independent error codes used as the internal "result" sentinel
         // (detected via startsWith("Error")) and persisted across config changes.
@@ -111,6 +132,11 @@ class CalculatorViewModel(
 
     fun moveCursorTo(position: Int) {
         cursorPosition = position.coerceIn(0, expression.length)
+        // Tapping the display is an explicit choice to edit the answer in place.
+        if (justEvaluated) {
+            justEvaluated = false
+            saveState()
+        }
     }
 
     private fun insertAtCursor(text: String) {
@@ -132,6 +158,7 @@ class CalculatorViewModel(
         cursorPosition = clamped.length
         result = ""
         history = ""
+        justEvaluated = false
         updatePreview()
         saveState()
     }
@@ -147,6 +174,7 @@ class CalculatorViewModel(
         cursorPosition = plain.length
         result = ""
         history = "${entry.expression} ="
+        justEvaluated = false
         saveState()
     }
 
@@ -157,6 +185,16 @@ class CalculatorViewModel(
     }
 
     fun onButtonPress(label: String) {
+        if (justEvaluated && label != "=") {
+            justEvaluated = false
+            if (label in NEW_ENTRY_LABELS) {
+                // Start a new calculation; drop the answer and its stale preview/history labels.
+                expression = ""
+                cursorPosition = 0
+                result = ""
+                history = ""
+            }
+        }
         when (label) {
             "AC" -> {
                 expression = ""
@@ -220,6 +258,7 @@ class CalculatorViewModel(
                     result = res
                     expression = if (res.startsWith("Error")) "" else res
                     cursorPosition = expression.length
+                    justEvaluated = expression.isNotEmpty()
                 }
             }
             "+/−" -> {
@@ -459,6 +498,7 @@ class CalculatorViewModel(
                 e.message?.contains("Negative sqrt") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Invalid factorial") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Non-finite") == true -> ERROR_OVERFLOW
+                e.message == EXACT_LIMIT_MESSAGE -> ERROR_OVERFLOW
                 e.message?.contains("Nesting too deep") == true -> ERROR_INVALID_OPERATION
                 else -> ERROR_INVALID_OPERATION
             }
@@ -478,12 +518,26 @@ class CalculatorViewModel(
         return evaluatePostfix(postfix)
     }
 
+    // Precedence, lowest to highest: + − < × ÷ < prefix sign < ^ (right-assoc) < postfix ! %.
+    // A prefix sign therefore negates a whole power (-2^2 = -4, 2^-2^2 = 2^(-(2^2))) but
+    // binds tighter than a product (-2×3 = (-2)×3).
     private sealed class Token {
         data class Num(val value: BigDecimal) : Token()
         data class Op(val op: Char, val precedence: Int, val leftAssoc: Boolean = true) : Token()
         data class UnaryOp(val op: Char) : Token()
+        /** Prefix unary sign ('+' or '-'), kept separate from numeric literals. */
+        data class Sign(val negate: Boolean) : Token()
         data object LParen : Token()
         data object RParen : Token()
+    }
+
+    private val SIGN_PRECEDENCE = 3
+
+    /** True when the next token must be an operand, so a '+'/'-' here is a prefix sign. */
+    private fun expectsOperand(last: Token?): Boolean = when (last) {
+        null, is Token.LParen, is Token.Op, is Token.Sign -> true
+        is Token.UnaryOp -> last.op == '√' // prefix √; postfix ! and % end an operand
+        else -> false
     }
 
     private fun tokenize(expr: String): List<Token> {
@@ -507,27 +561,17 @@ class CalculatorViewModel(
                 }
                 c == '(' -> tokens.add(Token.LParen)
                 c == ')' -> tokens.add(Token.RParen)
-                c == '+' -> tokens.add(Token.Op('+', 1))
-                c == '-' -> {
-                    if (tokens.isEmpty() || tokens.last() is Token.LParen || tokens.last() is Token.Op) {
-                        i++
-                        val start = i
-                        while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
-                        if (start < i) {
-                            tokens.add(Token.Num(BigDecimal(expr.substring(start, i)).negate()))
-                        } else {
-                            // Unary minus before non-digit (e.g., √, parenthesis): treat as 0 - x
-                            tokens.add(Token.Num(BigDecimal.ZERO))
-                            tokens.add(Token.Op('-', 1))
-                        }
-                        continue
-                    } else {
-                        tokens.add(Token.Op('-', 1))
-                    }
+                c == '+' || c == '-' -> {
+                    // A sign in operand position is unary; the literal after it (including any
+                    // E notation) is read by the number branch above on the next iteration.
+                    tokens.add(
+                        if (expectsOperand(tokens.lastOrNull())) Token.Sign(negate = c == '-')
+                        else Token.Op(c, 1)
+                    )
                 }
                 c == '*' -> tokens.add(Token.Op('*', 2))
                 c == '/' -> tokens.add(Token.Op('/', 2))
-                c == '^' -> tokens.add(Token.Op('^', 3, leftAssoc = false))
+                c == '^' -> tokens.add(Token.Op('^', 4, leftAssoc = false))
                 c == '√' -> tokens.add(Token.UnaryOp('√'))
                 c == '!' -> tokens.add(Token.UnaryOp('!'))
                 c == '%' -> tokens.add(Token.UnaryOp('%'))
@@ -546,16 +590,22 @@ class CalculatorViewModel(
                 is Token.Num -> output.add(token)
                 is Token.Op -> {
                     while (stack.isNotEmpty()) {
-                        val top = stack.last()
-                        if (top is Token.Op &&
-                            ((token.leftAssoc && token.precedence <= top.precedence) ||
-                                    (!token.leftAssoc && token.precedence < top.precedence))
+                        val topPrecedence = when (val top = stack.last()) {
+                            is Token.Op -> top.precedence
+                            is Token.Sign -> SIGN_PRECEDENCE
+                            else -> break
+                        }
+                        if ((token.leftAssoc && token.precedence <= topPrecedence) ||
+                            (!token.leftAssoc && token.precedence < topPrecedence)
                         ) {
                             output.add(stack.removeLast())
                         } else break
                     }
                     stack.addLast(token)
                 }
+                // A prefix sign has no left operand, so it must not pop pending operators
+                // (2^-3 keeps the ^ waiting for its signed exponent).
+                is Token.Sign -> stack.addLast(token)
                 is Token.UnaryOp -> {
                     if (token.op == '!' || token.op == '%') {
                         output.add(token) // postfix unary: immediately output
@@ -592,10 +642,13 @@ class CalculatorViewModel(
                     val b = stack.removeLast()
                     val a = stack.removeLast()
                     val result = when (token.op) {
-                        '+' -> if (b.pct) a.v.add(a.v.multiply(b.v, MC), MC)
-                               else a.v.add(b.v, MC)
-                        '-' -> if (b.pct) a.v.subtract(a.v.multiply(b.v, MC), MC)
-                               else a.v.subtract(b.v, MC)
+                        // + and − are exact (bounded by checkedExactAdd) so a small term survives
+                        // cancellation of large ones: 10^100 + 1 − 10^100 = 1. The percent
+                        // product itself is still rounded to DECIMAL128, as before.
+                        '+' -> if (b.pct) checkedExactAdd(a.v, a.v.multiply(b.v, MC))
+                               else checkedExactAdd(a.v, b.v)
+                        '-' -> if (b.pct) checkedExactAdd(a.v, a.v.multiply(b.v, MC).negate())
+                               else checkedExactAdd(a.v, b.v.negate())
                         '*' -> a.v.multiply(b.v, MC)
                         '/' -> {
                             if (b.v.compareTo(BigDecimal.ZERO) == 0) throw ArithmeticException("Division by zero")
@@ -615,6 +668,12 @@ class CalculatorViewModel(
                         else -> throw ArithmeticException("Unknown operator")
                     }
                     stack.addLast(SVal(result))
+                }
+                is Token.Sign -> {
+                    if (stack.isEmpty()) throw ArithmeticException("Insufficient operands")
+                    val a = stack.removeLast()
+                    // Keep the percent flag so 200 + -10% stays consumer-style (= 180).
+                    stack.addLast(if (token.negate) a.copy(v = a.v.negate()) else a)
                 }
                 is Token.UnaryOp -> {
                     if (stack.isEmpty()) throw ArithmeticException("Insufficient operands")
@@ -641,6 +700,27 @@ class CalculatorViewModel(
         }
         if (stack.size != 1) throw ArithmeticException("Malformed expression")
         return stack.last().v
+    }
+
+    /**
+     * Exact (unrounded) a + b, refused before any scale alignment if the aligned coefficients
+     * would exceed [MAX_EXACT_DIGITS]. Only + and − are exact; ×, ÷, ^, √ and ! still round
+     * to DECIMAL128, so the calculator as a whole is not exact or symbolic arithmetic.
+     */
+    private fun checkedExactAdd(a: BigDecimal, b: BigDecimal): BigDecimal {
+        // A zero operand needs no alignment; skip it so a zero with an extreme scale is harmless.
+        if (a.signum() == 0) return b
+        if (b.signum() == 0) return a
+        // BigDecimal.add rescales the operand with the smaller scale up to the larger scale,
+        // multiplying its coefficient by 10^(scale difference). Compute the resulting digit
+        // counts in Long (scale differences can exceed Int range) before doing any of that.
+        val targetScale = maxOf(a.scale(), b.scale()).toLong()
+        val alignedDigits = maxOf(
+            a.precision() + (targetScale - a.scale()),
+            b.precision() + (targetScale - b.scale())
+        )
+        if (alignedDigits > MAX_EXACT_DIGITS) throw ArithmeticException(EXACT_LIMIT_MESSAGE)
+        return a.add(b)
     }
 
     private fun bigSqrt(a: BigDecimal): BigDecimal {

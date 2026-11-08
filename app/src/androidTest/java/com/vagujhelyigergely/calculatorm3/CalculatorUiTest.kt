@@ -1,8 +1,12 @@
 package com.vagujhelyigergely.calculatorm3
 
+import androidx.annotation.StringRes
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,11 +34,29 @@ class CalculatorUiTest {
         }
     }
 
-    private fun expressionShows(text: String) {
-        // At least one node with this text is displayed
-        composeTestRule.onAllNodesWithText(text, substring = true)
-            .onFirst()
-            .assertIsDisplayed()
+    // Assertions target one tagged display and compare its exact text, so a keypad button,
+    // the history label or the preview can't satisfy a check meant for the expression.
+
+    /** The expression line shows exactly [text] (as formatted on screen, e.g. "1,024"). */
+    private fun displayShows(text: String) {
+        composeTestRule.onNodeWithTag(CalculatorTestTags.EXPRESSION).assertTextEquals(text)
+    }
+
+    /**
+     * The expression line starts with [prefix]. Only for long decimals (π, 1/7), whose visible
+     * digit count depends on the screen width.
+     */
+    private fun displayStartsWith(prefix: String) {
+        val shown = composeTestRule.onNodeWithTag(CalculatorTestTags.EXPRESSION)
+            .fetchSemanticsNode().config[SemanticsProperties.Text].joinToString("") { it.text }
+        assertTrue("expected display to start with '$prefix' but was '$shown'", shown.startsWith(prefix))
+    }
+
+    /** The preview / error line shows the localized error [messageRes], and the expression is cleared. */
+    private fun errorShows(@StringRes messageRes: Int) {
+        val message = InstrumentationRegistry.getInstrumentation().targetContext.getString(messageRes)
+        composeTestRule.onNodeWithTag(CalculatorTestTags.PREVIEW).assertTextEquals(message)
+        displayShows("0")
     }
 
     // ── Basic arithmetic ────────────────────────────────────────────
@@ -43,35 +65,35 @@ class CalculatorUiTest {
     fun addition() {
         launch()
         tap("2", "+", "3", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
     fun subtraction() {
         launch()
         tap("9", "−", "4", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
     fun multiplication() {
         launch()
         tap("6", "×", "7", "=")
-        expressionShows("42")
+        displayShows("42")
     }
 
     @Test
     fun division() {
         launch()
         tap("8", "÷", "2", "=")
-        expressionShows("4")
+        displayShows("4")
     }
 
     @Test
     fun decimalArithmetic() {
         launch()
         tap("0", ".", "1", "+", "0", ".", "2", "=")
-        expressionShows("0.3")
+        displayShows("0.3")
     }
 
     // ── Operator precedence ─────────────────────────────────────────
@@ -80,7 +102,7 @@ class CalculatorUiTest {
     fun chainedOperations() {
         launch()
         tap("2", "+", "3", "×", "4", "=")
-        expressionShows("14")
+        displayShows("14")
     }
 
     // ── Trailing operator stripped ───────────────────────────────────
@@ -89,7 +111,7 @@ class CalculatorUiTest {
     fun trailingOperatorStripped() {
         launch()
         tap("5", "+", "3", "×", "=")
-        expressionShows("8")
+        displayShows("8")
     }
 
     // ── Unary operators ─────────────────────────────────────────────
@@ -98,21 +120,21 @@ class CalculatorUiTest {
     fun squareRoot() {
         launch()
         tap("9", "√", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
     fun factorial() {
         launch()
         tap("5", "!", "=")
-        expressionShows("120")
+        displayShows("120")
     }
 
     @Test
     fun percentage() {
         launch()
         tap("2", "0", "0", "×", "5", "0", "%", "=")
-        expressionShows("100")
+        displayShows("100")
     }
 
     // ── Special values ──────────────────────────────────────────────
@@ -121,7 +143,7 @@ class CalculatorUiTest {
     fun power() {
         launch()
         tap("2", "^", "1", "0", "=")
-        expressionShows("1024")
+        displayShows("1,024")
     }
 
     // ── Clear and backspace ─────────────────────────────────────────
@@ -131,7 +153,7 @@ class CalculatorUiTest {
         launch()
         tap("5", "+", "3")
         tap("AC")
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
@@ -139,7 +161,7 @@ class CalculatorUiTest {
         launch()
         tap("1", "2", "3")
         tap("⌫")
-        expressionShows("12")
+        displayShows("12")
     }
 
     // ── Sign toggle ─────────────────────────────────────────────────
@@ -149,7 +171,7 @@ class CalculatorUiTest {
         launch()
         tap("5")
         tap("+/−")
-        expressionShows("-5") // leading minus is unary, no spaces
+        displayShows("-5") // leading minus is unary, no spaces
     }
 
     // ── Result carry-over ───────────────────────────────────────────
@@ -159,7 +181,7 @@ class CalculatorUiTest {
         launch()
         tap("3", "+", "2", "=")
         tap("+", "1", "=")
-        expressionShows("6")
+        displayShows("6")
     }
 
     // ── Multi-digit ─────────────────────────────────────────────────
@@ -168,7 +190,7 @@ class CalculatorUiTest {
     fun multiDigitNumber() {
         launch()
         tap("1", "2", "3", "+", "4", "5", "6", "=")
-        expressionShows("579")
+        displayShows("579")
     }
 
     // ── Decimal guard ───────────────────────────────────────────────
@@ -177,7 +199,7 @@ class CalculatorUiTest {
     fun noDuplicateDecimal() {
         launch()
         tap("1", ".", "2", ".")
-        expressionShows("1.2")
+        displayShows("1.2")
     }
 
     // ── Complex arithmetic chains ──────────────────────────────────
@@ -187,14 +209,14 @@ class CalculatorUiTest {
         launch()
         // 2 + 3×4 - 10÷2 = 2 + 12 - 5 = 9
         tap("2", "+", "3", "×", "4", "−", "1", "0", "÷", "2", "=")
-        expressionShows("9")
+        displayShows("9")
     }
 
     @Test
     fun longAdditionChain() {
         launch()
         tap("1", "+", "2", "+", "3", "+", "4", "+", "5", "+", "6", "+", "7", "+", "8", "+", "9", "=")
-        expressionShows("45")
+        displayShows("45")
     }
 
     @Test
@@ -202,7 +224,7 @@ class CalculatorUiTest {
         launch()
         // 100 - 25×3 + 50÷2 = 50
         tap("1", "0", "0", "−", "2", "5", "×", "3", "+", "5", "0", "÷", "2", "=")
-        expressionShows("50")
+        displayShows("50")
     }
 
     // ── Factorial edge cases ───────────────────────────────────────
@@ -211,7 +233,7 @@ class CalculatorUiTest {
     fun zeroFactorial() {
         launch()
         tap("0", "!", "=")
-        expressionShows("1")
+        displayShows("1")
     }
 
     @Test
@@ -219,7 +241,7 @@ class CalculatorUiTest {
         launch()
         // 5! + 3 = 123
         tap("5", "!", "+", "3", "=")
-        expressionShows("123")
+        displayShows("123")
     }
 
     @Test
@@ -227,7 +249,7 @@ class CalculatorUiTest {
         launch()
         // Only one ! should be accepted
         tap("5", "!", "!", "=")
-        expressionShows("120")
+        displayShows("120")
     }
 
     // ── Sqrt edge cases ────────────────────────────────────────────
@@ -237,7 +259,7 @@ class CalculatorUiTest {
         launch()
         // √(√(81)) = 3
         tap("8", "1", "√", "√", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
@@ -245,7 +267,7 @@ class CalculatorUiTest {
         launch()
         // √(9) + 1 = 4
         tap("9", "√", "+", "1", "=")
-        expressionShows("4")
+        displayShows("4")
     }
 
     @Test
@@ -253,7 +275,7 @@ class CalculatorUiTest {
         launch()
         // √(9)! = 3! = 6
         tap("9", "√", "!", "=")
-        expressionShows("6")
+        displayShows("6")
     }
 
     // ── Power edge cases ───────────────────────────────────────────
@@ -262,7 +284,7 @@ class CalculatorUiTest {
     fun powerOfZero() {
         launch()
         tap("5", "^", "0", "=")
-        expressionShows("1")
+        displayShows("1")
     }
 
     @Test
@@ -270,7 +292,7 @@ class CalculatorUiTest {
         launch()
         // 2×3^2 = 18
         tap("2", "×", "3", "^", "2", "=")
-        expressionShows("18")
+        displayShows("18")
     }
 
     @Test
@@ -278,7 +300,7 @@ class CalculatorUiTest {
         launch()
         // 2^2^3 = 256
         tap("2", "^", "2", "^", "3", "=")
-        expressionShows("256")
+        displayShows("256")
     }
 
     // ── Percentage edge cases ──────────────────────────────────────
@@ -287,7 +309,7 @@ class CalculatorUiTest {
     fun standalonePercentage() {
         launch()
         tap("5", "0", "%", "=")
-        expressionShows("0.5")
+        displayShows("0.5")
     }
 
     // ── Negative numbers ───────────────────────────────────────────
@@ -299,7 +321,7 @@ class CalculatorUiTest {
         tap("5")
         tap("+/−")
         tap("×", "3", "=")
-        expressionShows("-15") // leading minus is unary, no spaces
+        displayShows("-15") // leading minus is unary, no spaces
     }
 
     @Test
@@ -307,7 +329,7 @@ class CalculatorUiTest {
         launch()
         tap("5")
         tap("+/−", "+/−")
-        expressionShows("5")
+        displayShows("5")
     }
 
     // ── Result carry-over complex ──────────────────────────────────
@@ -317,11 +339,11 @@ class CalculatorUiTest {
         launch()
         // 2+3=5, +5=10, ×2=20
         tap("2", "+", "3", "=")
-        expressionShows("5")
+        displayShows("5")
         tap("+", "5", "=")
-        expressionShows("10")
+        displayShows("10")
         tap("×", "2", "=")
-        expressionShows("20")
+        displayShows("20")
     }
 
     @Test
@@ -330,7 +352,7 @@ class CalculatorUiTest {
         // 4+5=9, then √ → 3
         tap("4", "+", "5", "=")
         tap("√", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
@@ -339,7 +361,7 @@ class CalculatorUiTest {
         tap("5", "÷", "0", "=")
         // After error, type new expression
         tap("3", "+", "2", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     // ── Repeated equals ────────────────────────────────────────────
@@ -348,9 +370,9 @@ class CalculatorUiTest {
     fun repeatedEqualsIsIdempotent() {
         launch()
         tap("2", "+", "3", "=")
-        expressionShows("5")
+        displayShows("5")
         tap("=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     // ── Backspace stress ───────────────────────────────────────────
@@ -360,7 +382,7 @@ class CalculatorUiTest {
         launch()
         tap("1", "2", "+", "3")
         tap("⌫", "⌫", "⌫", "⌫")
-        expressionShows("0") // empty expression shows "0"
+        displayShows("0") // empty expression shows "0"
     }
 
     @Test
@@ -369,7 +391,7 @@ class CalculatorUiTest {
         tap("1", "2", "3")
         tap("⌫")
         tap("+", "4", "=")
-        expressionShows("16")
+        displayShows("16")
     }
 
     // ── Multiple trailing operators ────────────────────────────────
@@ -378,7 +400,7 @@ class CalculatorUiTest {
     fun multipleTrailingOperatorsStripped() {
         launch()
         tap("7", "+", "−", "=")
-        expressionShows("7")
+        displayShows("7")
     }
 
     // ── Combined unary + binary ────────────────────────────────────
@@ -388,7 +410,7 @@ class CalculatorUiTest {
         launch()
         // 4! - 20 = 4
         tap("4", "!", "−", "2", "0", "=")
-        expressionShows("4")
+        displayShows("4")
     }
 
     @Test
@@ -396,7 +418,7 @@ class CalculatorUiTest {
         launch()
         // 2^3+1 = 9
         tap("2", "^", "3", "+", "1", "=")
-        expressionShows("9")
+        displayShows("9")
     }
 
     @Test
@@ -404,7 +426,7 @@ class CalculatorUiTest {
         launch()
         // 50%×200 = 100
         tap("5", "0", "%", "×", "2", "0", "0", "=")
-        expressionShows("100")
+        displayShows("100")
     }
 
     // ── Precision ──────────────────────────────────────────────────
@@ -414,7 +436,7 @@ class CalculatorUiTest {
         launch()
         // 1÷3×3 should round cleanly to 1
         tap("1", "÷", "3", "×", "3", "=")
-        expressionShows("1")
+        displayShows("1")
     }
 
     @Test
@@ -422,7 +444,7 @@ class CalculatorUiTest {
         launch()
         // 1.5+2.5 = 4
         tap("1", ".", "5", "+", "2", ".", "5", "=")
-        expressionShows("4")
+        displayShows("4")
     }
 
     @Test
@@ -430,7 +452,7 @@ class CalculatorUiTest {
         launch()
         // 99999×99999 = 9999800001
         tap("9", "9", "9", "9", "9", "×", "9", "9", "9", "9", "9", "=")
-        expressionShows("9999800001")
+        displayShows("9,999,800,001")
     }
 
     // ── AC after result ────────────────────────────────────────────
@@ -441,7 +463,7 @@ class CalculatorUiTest {
         tap("5", "+", "3", "=")
         tap("AC")
         tap("7", "×", "6", "=")
-        expressionShows("42")
+        displayShows("42")
     }
 
     // ── Rapid workflow ─────────────────────────────────────────────
@@ -450,13 +472,13 @@ class CalculatorUiTest {
     fun rapidCalculations() {
         launch()
         tap("1", "+", "2", "=")
-        expressionShows("3")
+        displayShows("3")
         tap("AC")
         tap("4", "×", "5", "=")
-        expressionShows("20")
+        displayShows("20")
         tap("AC")
         tap("6", "−", "1", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     // ── Operator precedence (additional) ──────────────────────────
@@ -465,21 +487,21 @@ class CalculatorUiTest {
     fun divisionBeforeSubtraction() {
         launch()
         tap("1", "0", "−", "6", "÷", "3", "=")
-        expressionShows("8")
+        displayShows("8")
     }
 
     @Test
     fun multipleMultiplications() {
         launch()
         tap("2", "×", "3", "×", "4", "=")
-        expressionShows("24")
+        displayShows("24")
     }
 
     @Test
     fun multipleDivisions() {
         launch()
         tap("1", "0", "0", "÷", "2", "÷", "5", "=")
-        expressionShows("10")
+        displayShows("10")
     }
 
     // ── Pi ─────────────────────────────────────────────────────────
@@ -488,28 +510,28 @@ class CalculatorUiTest {
     fun piValue() {
         launch()
         tap("π", "=")
-        expressionShows("3.1415926535")
+        displayStartsWith("3.1415926535")
     }
 
     @Test
     fun piTimesTwo() {
         launch()
         tap("π", "×", "2", "=")
-        expressionShows("6.283185307")
+        displayStartsWith("6.283185307")
     }
 
     @Test
     fun piMinusPi() {
         launch()
         tap("π", "−", "π", "=")
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
     fun piTimesPiImplicit() {
         launch()
         tap("π", "π", "=")
-        expressionShows("9.869604401")
+        displayStartsWith("9.869604401")
     }
 
     // ── IEEE 754 error messages ─────────────────────────────────────
@@ -518,21 +540,21 @@ class CalculatorUiTest {
     fun divisionByZero() {
         launch()
         tap("5", "÷", "0", "=")
-        expressionShows("Cannot divide by zero")
+        errorShows(R.string.error_division_by_zero)
     }
 
     @Test
     fun divisionByZeroInChain() {
         launch()
         tap("5", "+", "1", "0", "÷", "0", "=")
-        expressionShows("Cannot divide by zero")
+        errorShows(R.string.error_division_by_zero)
     }
 
     @Test
     fun zeroByZero() {
         launch()
         tap("0", "÷", "0", "=")
-        expressionShows("Cannot divide by zero")
+        errorShows(R.string.error_division_by_zero)
     }
 
     // ── Factorial (additional) ────────────────────────────────────
@@ -541,21 +563,21 @@ class CalculatorUiTest {
     fun factorialBoundary20() {
         launch()
         tap("2", "0", "!", "=")
-        expressionShows("2432902008176640000")
+        displayShows("2,432,902,008,176,640,000")
     }
 
     @Test
     fun factorialAbove99ReturnsInvalidOperation() {
         launch()
         tap("1", "0", "0", "!", "=")
-        expressionShows("Invalid operation")
+        errorShows(R.string.error_invalid_operation)
     }
 
     @Test
     fun factorialThenMultiply() {
         launch()
         tap("3", "!", "×", "2", "=")
-        expressionShows("12")
+        displayShows("12")
     }
 
     @Test
@@ -563,7 +585,7 @@ class CalculatorUiTest {
         launch()
         // ! on empty does nothing, then 5 = 5
         tap("!", "5", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
@@ -571,7 +593,7 @@ class CalculatorUiTest {
         launch()
         // 5+ then ! ignored, then 3 = 8
         tap("5", "+", "!", "3", "=")
-        expressionShows("8")
+        displayShows("8")
     }
 
     // ── Sqrt (additional) ─────────────────────────────────────────
@@ -580,28 +602,28 @@ class CalculatorUiTest {
     fun sqrtOfZero() {
         launch()
         tap("0", "√", "=")
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
     fun sqrtOfOne() {
         launch()
         tap("1", "√", "=")
-        expressionShows("1")
+        displayShows("1")
     }
 
     @Test
     fun sqrtThenMultiply() {
         launch()
         tap("4", "√", "×", "3", "=")
-        expressionShows("6")
+        displayShows("6")
     }
 
     @Test
     fun sqrtOfNegativeReturnsInvalidOperation() {
         launch()
         tap("4", "+/−", "√", "=")
-        expressionShows("Invalid operation")
+        errorShows(R.string.error_invalid_operation)
     }
 
     @Test
@@ -609,7 +631,7 @@ class CalculatorUiTest {
         launch()
         // √ on empty does nothing, then 9 = 9
         tap("√", "9", "=")
-        expressionShows("9")
+        displayShows("9")
     }
 
     // ── Power (additional) ────────────────────────────────────────
@@ -618,21 +640,21 @@ class CalculatorUiTest {
     fun zeroToZero() {
         launch()
         tap("0", "^", "0", "=")
-        expressionShows("1")
+        displayShows("1")
     }
 
     @Test
     fun zeroToPositive() {
         launch()
         tap("0", "^", "5", "=")
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
     fun largePower() {
         launch()
         tap("9", "^", "9", "=")
-        expressionShows("387420489")
+        displayShows("387,420,489")
     }
 
     @Test
@@ -640,7 +662,7 @@ class CalculatorUiTest {
         launch()
         // 2^3! = 2^6 = 64
         tap("2", "^", "3", "!", "=")
-        expressionShows("64")
+        displayShows("64")
     }
 
     @Test
@@ -648,7 +670,7 @@ class CalculatorUiTest {
         launch()
         // 3!^2 = 36
         tap("3", "!", "^", "2", "=")
-        expressionShows("36")
+        displayShows("36")
     }
 
     @Test
@@ -656,7 +678,7 @@ class CalculatorUiTest {
         launch()
         // ^ on empty does nothing, then 5 = 5
         tap("^", "5", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
@@ -664,7 +686,7 @@ class CalculatorUiTest {
         launch()
         // 5+ then ^ ignored, then 3 = 8
         tap("5", "+", "^", "3", "=")
-        expressionShows("8")
+        displayShows("8")
     }
 
     // ── Percentage (additional) ───────────────────────────────────
@@ -674,7 +696,7 @@ class CalculatorUiTest {
         launch()
         // 200 + 50% = 300 (consumer-style)
         tap("2", "0", "0", "+", "5", "0", "%", "=")
-        expressionShows("300")
+        displayShows("300")
     }
 
     @Test
@@ -682,7 +704,7 @@ class CalculatorUiTest {
         launch()
         // 200 - 10% = 180
         tap("2", "0", "0", "−", "1", "0", "%", "=")
-        expressionShows("180")
+        displayShows("180")
     }
 
     @Test
@@ -690,21 +712,21 @@ class CalculatorUiTest {
         launch()
         // 100 + 50% - 10% = 135
         tap("1", "0", "0", "+", "5", "0", "%", "−", "1", "0", "%", "=")
-        expressionShows("135")
+        displayShows("135")
     }
 
     @Test
     fun percentageIgnoredAtStart() {
         launch()
         tap("%", "5", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
     fun percentageIgnoredAfterOperator() {
         launch()
         tap("5", "+", "%", "3", "=")
-        expressionShows("8")
+        displayShows("8")
     }
 
     @Test
@@ -712,7 +734,7 @@ class CalculatorUiTest {
         launch()
         // 50%% → second % blocked, so 50% = 0.5
         tap("5", "0", "%", "%", "=")
-        expressionShows("0.5")
+        displayShows("0.5")
     }
 
     // ── Sign toggle (additional) ──────────────────────────────────
@@ -721,7 +743,7 @@ class CalculatorUiTest {
     fun signToggleOnMultiDigit() {
         launch()
         tap("1", "2", "3", "+/−")
-        expressionShows("-123")
+        displayShows("-123")
     }
 
     @Test
@@ -729,7 +751,7 @@ class CalculatorUiTest {
         launch()
         // -5 + 8 = 3
         tap("5", "+/−", "+", "8", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
@@ -738,9 +760,9 @@ class CalculatorUiTest {
         // 5+3, toggle → 5+-3, toggle → 5+3
         // Formatted display adds spaces around +: "5 + -3" / "5 + 3"
         tap("5", "+", "3", "+/−")
-        expressionShows("5 + -3")
+        displayShows("5 + -3")
         tap("+/−")
-        expressionShows("5 + 3")
+        displayShows("5 + 3")
     }
 
     @Test
@@ -748,7 +770,7 @@ class CalculatorUiTest {
         launch()
         // 10+-3 = 7
         tap("1", "0", "+", "3", "+/−", "=")
-        expressionShows("7")
+        displayShows("7")
     }
 
     @Test
@@ -756,7 +778,7 @@ class CalculatorUiTest {
         launch()
         // 9 → √(9) → +/− → -√(9) → = → -3
         tap("9", "√", "+/−", "=")
-        expressionShows("-3")
+        displayShows("-3")
     }
 
     // ── Leading operators ─────────────────────────────────────────
@@ -765,21 +787,21 @@ class CalculatorUiTest {
     fun leadingOperatorStrippedOnEquals() {
         launch()
         tap("+", "5", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
     fun leadingMultiplyStrippedOnEquals() {
         launch()
         tap("×", "3", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
     fun leadingMinusKeptOnEquals() {
         launch()
         tap("−", "5", "=")
-        expressionShows("-5")
+        displayShows("-5")
     }
 
     // ── Operator replacement ──────────────────────────────────────
@@ -788,7 +810,7 @@ class CalculatorUiTest {
     fun operatorAfterOperatorReplaces() {
         launch()
         tap("5", "+", "×", "3", "=")
-        expressionShows("15")
+        displayShows("15")
     }
 
     @Test
@@ -796,7 +818,7 @@ class CalculatorUiTest {
         launch()
         tap("5", "+", "−", "3", "=")
         // − replaces +, so 5−3 = 2
-        expressionShows("2")
+        displayShows("2")
     }
 
     @Test
@@ -804,7 +826,7 @@ class CalculatorUiTest {
         launch()
         // 2^× → × replaces ^, then ×3 = 6
         tap("2", "^", "×", "3", "=")
-        expressionShows("6")
+        displayShows("6")
     }
 
     // ── Decimal (additional) ──────────────────────────────────────
@@ -814,21 +836,21 @@ class CalculatorUiTest {
         launch()
         // 5+.3 = 5.3
         tap("5", "+", ".", "3", "=")
-        expressionShows("5.3")
+        displayShows("5.3")
     }
 
     @Test
     fun decimalInSecondOperand() {
         launch()
         tap("1", "+", "2", ".", "5", "=")
-        expressionShows("3.5")
+        displayShows("3.5")
     }
 
     @Test
     fun leadingZeroHandled() {
         launch()
         tap("0", "1", "+", "2", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     // ── Backspace (additional) ────────────────────────────────────
@@ -837,28 +859,28 @@ class CalculatorUiTest {
     fun backspaceAfterEquals() {
         launch()
         tap("2", "+", "3", "=")
-        expressionShows("5")
+        displayShows("5")
         tap("⌫")
         // After equals, backspace clears expression
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
     fun backspaceSqrtUnwraps() {
         launch()
         tap("9", "√")
-        expressionShows("√(9)")
+        displayShows("√(9)")
         tap("⌫")
-        expressionShows("9")
+        displayShows("9")
     }
 
     @Test
     fun multipleBackspacesOnSqrt() {
         launch()
         tap("1", "2", "√")
-        expressionShows("√(12)")
+        displayShows("√(12)")
         tap("⌫")
-        expressionShows("12")
+        displayShows("12")
     }
 
     // ── Trailing caret stripped ───────────────────────────────────
@@ -867,7 +889,7 @@ class CalculatorUiTest {
     fun trailingCaretStrippedOnEquals() {
         launch()
         tap("5", "^", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     // ── Implicit multiplication ───────────────────────────────────
@@ -877,7 +899,7 @@ class CalculatorUiTest {
         launch()
         // √(9)5 = 3×5 = 15
         tap("9", "√", "5", "=")
-        expressionShows("15")
+        displayShows("15")
     }
 
     @Test
@@ -885,7 +907,7 @@ class CalculatorUiTest {
         launch()
         // 5!3 = 120×3 = 360
         tap("5", "!", "3", "=")
-        expressionShows("360")
+        displayShows("360")
     }
 
     @Test
@@ -893,7 +915,7 @@ class CalculatorUiTest {
         launch()
         // 50%5 = 0.5×5 = 2.5
         tap("5", "0", "%", "5", "=")
-        expressionShows("2.5")
+        displayShows("2.5")
     }
 
     @Test
@@ -901,7 +923,7 @@ class CalculatorUiTest {
         launch()
         // √(4)π = 2π ≈ 6.283185307
         tap("4", "√", "π", "=")
-        expressionShows("6.283185307")
+        displayStartsWith("6.283185307")
     }
 
     // ── Precision (additional) ────────────────────────────────────
@@ -910,7 +932,7 @@ class CalculatorUiTest {
     fun oneDividedBySeven() {
         launch()
         tap("1", "÷", "7", "=")
-        expressionShows("0.1428571428")
+        displayStartsWith("0.1428571428")
     }
 
     // ── Combined unary + binary (additional) ──────────────────────
@@ -920,18 +942,18 @@ class CalculatorUiTest {
         launch()
         // √(16)+5 = 4+5 = 9
         tap("1", "6", "√", "+", "5", "=")
-        expressionShows("9")
+        displayShows("9")
     }
 
     @Test
     fun computeThenSwitchOperation() {
         launch()
         tap("3", "+", "2", "=")
-        expressionShows("5")
+        displayShows("5")
         tap("×", "3", "=")
-        expressionShows("15")
+        displayShows("15")
         tap("−", "5", "=")
-        expressionShows("10")
+        displayShows("10")
     }
 
     // ── Lone decimal point ────────────────────────────────────────
@@ -940,7 +962,7 @@ class CalculatorUiTest {
     fun loneDecimalPointEvaluatesToZero() {
         launch()
         tap(".", "=")
-        expressionShows("0")
+        displayShows("0")
     }
 
     @Test
@@ -948,7 +970,7 @@ class CalculatorUiTest {
         launch()
         // .5 + 3 = 3.5
         tap(".", "5", "+", "3", "=")
-        expressionShows("3.5")
+        displayShows("3.5")
     }
 
     // ── IEEE 754 overflow ────────────────────────────────────────────
@@ -958,7 +980,7 @@ class CalculatorUiTest {
         launch()
         // 9^9999 overflows Double → Error: overflow
         tap("9", "^", "9", "9", "9", "9", "=")
-        expressionShows("Number too large")
+        errorShows(R.string.error_overflow)
     }
 
     // ── IEEE 754 error recovery ──────────────────────────────────────
@@ -967,26 +989,95 @@ class CalculatorUiTest {
     fun newExpressionAfterDivisionByZero() {
         launch()
         tap("5", "÷", "0", "=")
-        expressionShows("Cannot divide by zero")
+        errorShows(R.string.error_division_by_zero)
         tap("3", "+", "2", "=")
-        expressionShows("5")
+        displayShows("5")
     }
 
     @Test
     fun newExpressionAfterInvalidOperation() {
         launch()
         tap("4", "+/−", "√", "=")
-        expressionShows("Invalid operation")
+        errorShows(R.string.error_invalid_operation)
         tap("9", "√", "=")
-        expressionShows("3")
+        displayShows("3")
     }
 
     @Test
     fun newExpressionAfterOverflow() {
         launch()
         tap("9", "^", "9", "9", "9", "9", "=")
-        expressionShows("Number too large")
+        errorShows(R.string.error_overflow)
         tap("2", "+", "3", "=")
-        expressionShows("5")
+        displayShows("5")
+    }
+
+    // ── Preview and history label ───────────────────────────────────
+
+    @Test
+    fun previewShowsLiveResultWhileTyping() {
+        launch()
+        tap("5", "+", "3")
+        displayShows("5 + 3")
+        composeTestRule.onNodeWithTag(CalculatorTestTags.PREVIEW).assertTextEquals("= 8")
+    }
+
+    @Test
+    fun historyLabelShowsCompletedExpression() {
+        launch()
+        tap("1", "2", "0", "0", "+", "3", "=")
+        displayShows("1,203")
+        composeTestRule.onNodeWithTag(CalculatorTestTags.HISTORY_LABEL).assertTextEquals("1,200 + 3 =")
+        // The preview is hidden once the answer is on the expression line.
+        composeTestRule.onNodeWithTag(CalculatorTestTags.PREVIEW).assertDoesNotExist()
+    }
+
+    @Test
+    fun keypadDigitDoesNotSatisfyDisplayAssertion() {
+        // Regression guard for the old substring helper: a visible "7" button used to make
+        // any check for "7" pass. The display really shows "0" here.
+        launch()
+        composeTestRule.onNodeWithTag(CalculatorTestTags.EXPRESSION).assertTextEquals("0")
+        composeTestRule.onNode(hasText("7") and hasClickAction()).assertIsDisplayed()
+    }
+
+    // ── Regressions: #81, #41, #80 ──────────────────────────────────
+
+    /** Exact-text match on non-clickable (display) nodes, so keypad buttons can't satisfy it. */
+    private fun displayNodes(text: String) =
+        composeTestRule.onAllNodes(hasText(text) and !hasClickAction())
+
+    @Test
+    fun digitAfterEqualsStartsNewCalculation() {
+        launch()
+        tap("1", "2", "+", "3", "=")
+        tap("4")
+        displayNodes("4").onFirst().assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("154", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun operatorAfterEqualsContinuesFromAnswer() {
+        launch()
+        tap("1", "2", "+", "3", "=")
+        tap("+", "4", "=")
+        displayNodes("19").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun signTogglePowerAppliesSignAfterExponent() {
+        launch()
+        tap("8", "+/−", "^", "2", "+/−", "=")
+        // displayNodes, not expressionShows: #85 replaces that helper, and this test must
+        // compile whichever of the two PRs merges first.
+        displayNodes("-0.015625").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun largeNumberCancellationKeepsSmallTerm() {
+        launch()
+        tap("1", "0", "^", "1", "0", "0", "+", "1", "−", "1", "0", "^", "1", "0", "0", "=")
+        displayNodes("1").onFirst().assertIsDisplayed()
+        displayNodes("0").assertCountEquals(0)
     }
 }
