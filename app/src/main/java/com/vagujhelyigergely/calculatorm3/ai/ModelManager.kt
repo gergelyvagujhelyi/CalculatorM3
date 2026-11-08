@@ -276,16 +276,25 @@ class ModelManager(private val context: Context) {
         set(value) { prefs.edit().putInt("download_no_progress_streak", value).commit() }
 
     /**
-     * True if [model] hasn't been loaded with the current LiteRT-LM version on this device yet.
-     * A new engine version does a slow one-time preparation of the model on its first load
-     * (measured: ~56 s instead of ~10 s on a Galaxy Note 9 for 0.13.1 -> 0.19.1).
+     * True if [model]'s file on disk hasn't been loaded with the current LiteRT-LM version on this
+     * device yet. A new engine version does a slow one-time preparation of the model on its first
+     * load (measured: ~56 s instead of ~10 s on a Galaxy Note 9 for 0.13.1 -> 0.19.1), and so does
+     * a freshly downloaded file.
+     *
+     * The record names the exact file it was made for (size and modification time), so a model
+     * that was deleted outside the app and downloaded again, or replaced, counts as unprepared.
      */
     fun needsPreparation(model: AiModel): Boolean =
-        prefs.getString(preparedKey(model), null) != BuildConfig.LITERT_LM_VERSION
+        prefs.getString(preparedKey(model), null) != preparedStamp(model)
 
-    /** Record that [model] has been loaded (prepared) with the current LiteRT-LM version. */
+    /** Record that [model]'s current file has been loaded (prepared) with this LiteRT-LM version. */
     fun markPrepared(model: AiModel) {
-        prefs.edit().putString(preparedKey(model), BuildConfig.LITERT_LM_VERSION).apply()
+        prefs.edit().putString(preparedKey(model), preparedStamp(model)).apply()
+    }
+
+    private fun preparedStamp(model: AiModel): String {
+        val file = File(modelPath(model))
+        return "${BuildConfig.LITERT_LM_VERSION}|${file.length()}|${file.lastModified()}"
     }
 
     private fun preparedKey(model: AiModel) = "prepared_engine_version_${model.id}"

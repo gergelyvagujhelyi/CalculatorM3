@@ -110,6 +110,27 @@ class ScanPreparationTest {
     }
 
     @Test
+    fun aModelDeletedOutsideTheAppAndDownloadedAgainNeedsPreparingAgain() {
+        val primary = File(manager.modelPath(model))
+        assumeTrue("only with our placeholder, never a real model file", primary in created)
+        manager.markPrepared(model)
+        assertFalse(manager.needsPreparation(model))
+
+        // Deleted by a file manager, then a fresh download writes a new file at the same path.
+        assertTrue(primary.delete())
+        primary.writeText("placeholder, downloaded again")
+
+        assertTrue("a new file must be prepared again", manager.needsPreparation(model))
+        val solver = FakeSolver()
+        val vm = newViewModel(solver)
+        instrumentation.runOnMainSync { vm.initialize() }
+        waitFor(5_000, "the preparing message") { vm.uiState is ScanUiState.PreparingModel }
+        solver.loadGate.complete(Unit)
+        waitFor(5_000, "the capture chooser") { vm.uiState is ScanUiState.Capturing }
+        assertFalse(manager.needsPreparation(model))
+    }
+
+    @Test
     fun reopeningTheWindowDuringPreparationDoesNotStartASecondOne() {
         val solver = FakeSolver()
         val vm = newViewModel(solver)
