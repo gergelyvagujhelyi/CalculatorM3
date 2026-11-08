@@ -79,15 +79,6 @@ android {
     buildFeatures {
         compose = true
     }
-    lint {
-        // The bumped AndroidX libraries (Compose 1.9 / lifecycle) ship lint checks built
-        // against a newer lint-api than AGP 8.7.3 bundles, so the built-in
-        // NonNullableMutableLiveDataDetector throws IncompatibleClassChangeError mid-analysis
-        // and aborts the release-only lintVital task. It's a tooling-version crash, not a code
-        // finding; disabling its issue id makes lint skip that one detector (its UAST visitor
-        // never runs) while every other lint check keeps working.
-        disable += "NullSafeMutableLiveData"
-    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
