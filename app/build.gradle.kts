@@ -27,7 +27,7 @@ val litertLmVersion = "0.19.1"
 
 android {
     namespace = "com.vagujhelyigergely.calculatorm3"
-    compileSdk = 35
+    compileSdk = 36
 
     signingConfigs {
         create("release") {
@@ -66,6 +66,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // `-PdeviceTest` builds the debug app as a separate package (….devicetest), so
+            // on-device integration tests that write app data run in their own sandbox and never
+            // touch the real app's login, history or models on a personal phone.
+            if (project.hasProperty("deviceTest")) applicationIdSuffix = ".devicetest"
+        }
         release {
             isMinifyEnabled = true
             // Sign only when keystore.properties exists (local release builds, and the release
@@ -111,26 +117,27 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2025.10.01"))
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.activity:activity-compose:1.9.3")
+    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
+    implementation("androidx.core:core-ktx:1.18.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     // material3 1.5.0-alpha brings the M3-Expressive loaders (LoadingIndicator,
     // LinearWavyProgressIndicator) used by the AI views — they are NOT in 1.4.0 stable.
-    // alpha14 is the last 1.5.0 alpha that still targets Compose 1.8/1.9 (the BOM above);
-    // alpha16+ requires Compose 1.11+. Pinned explicitly to override the BOM's material3.
-    implementation("androidx.compose.material3:material3:1.5.0-alpha14")
+    // Pinned explicitly to override the BOM's (1.4.x) material3. 1.5.0-alpha16+ needs Compose
+    // 1.11+ (the BOM above); alpha18 is the newest 1.5.0 build that still supports AGP 8.x and
+    // compileSdk 36 — alpha19+, beta and rc require AGP 9.1 and compileSdk 37.
+    implementation("androidx.compose.material3:material3:1.5.0-alpha18")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation("com.google.ai.edge.litertlm:litertlm-android:$litertLmVersion")
-    implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.work:work-runtime-ktx:2.12.0")
     // EXIF orientation of scanned photos; the framework android.media.ExifInterface has known
     // parsing bugs on older Android versions (minSdk is 26).
     implementation("androidx.exifinterface:exifinterface:1.4.2")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences:1.3.0")
     // HuggingFace OAuth (authorization-code + PKCE) for gated model downloads.
     // Handles the Custom Tab, redirect capture, and code→token exchange; pulls in androidx.browser.
     implementation("net.openid:appauth:0.11.1")
@@ -142,9 +149,9 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
 
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.10.01"))
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.06.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

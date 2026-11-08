@@ -48,6 +48,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -132,6 +133,9 @@ fun CalculatorScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
+    // Strings via LocalResources (not LocalContext) so a configuration change such as a
+    // language switch is picked up; the Toasts below still need the Context itself.
+    val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     var showAiWarningDialog by remember { mutableStateOf(false) }
 
@@ -175,7 +179,7 @@ fun CalculatorScreen(
                     unlockToast[0]?.cancel()
                     unlockToast[0] = android.widget.Toast.makeText(
                         context,
-                        context.getString(R.string.ai_unlocked),
+                        resources.getString(R.string.ai_unlocked),
                         android.widget.Toast.LENGTH_LONG
                     ).also { it.show() }
                 }
@@ -184,7 +188,7 @@ fun CalculatorScreen(
                     unlockToast[0]?.cancel()
                     unlockToast[0] = android.widget.Toast.makeText(
                         context,
-                        context.resources.getQuantityString(
+                        resources.getQuantityString(
                             R.plurals.ai_unlock_countdown, remaining, remaining
                         ),
                         android.widget.Toast.LENGTH_SHORT
@@ -194,7 +198,7 @@ fun CalculatorScreen(
         }
     }
 
-    val handleShowCamera: () -> Unit = remember(scanViewModel, context, scope) {
+    val handleShowCamera: () -> Unit = remember(scanViewModel, context, resources, scope) {
         {
             when {
                 // The button isn't shown when scanViewModel is null, but guard anyway.
@@ -202,7 +206,7 @@ fun CalculatorScreen(
                 !scanViewModel.canRunAnyModel -> {
                     android.widget.Toast.makeText(
                         context,
-                        context.getString(R.string.ai_feature_low_ram),
+                        resources.getString(R.string.ai_feature_low_ram),
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 }
