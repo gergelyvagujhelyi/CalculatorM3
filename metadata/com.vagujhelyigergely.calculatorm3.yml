@@ -32,7 +32,7 @@ Builds:
 
   - versionName: 1.5.2
     versionCode: 13
-    commit: TBD
+    commit: v1.5.2
     subdir: app
     gradle:
       - yes
