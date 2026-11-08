@@ -122,7 +122,9 @@ fun CalculatorScreen(
         ),
     )
 
-    var showHistory by remember { mutableStateOf(false) }
+    // Saveable so an open history sheet stays open when the screen rotates (the Activity is
+    // recreated); plain remember reset it and closed the sheet.
+    var showHistory by rememberSaveable { mutableStateOf(false) }
     // Saveable so the scan dialog survives the activity being recreated while the
     // system camera is foreground (memory pressure) — otherwise it would close and
     // drop the user back on the calculator mid-scan.
