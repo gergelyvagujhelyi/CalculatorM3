@@ -37,6 +37,12 @@ interface MathSolver {
      */
     fun cancel() {}
 
+    /**
+     * Image-token budget for the next [loadModel] (null = the engine default). It's fixed when
+     * the model loads, so a change takes effect on the next load. No-op for solvers without it.
+     */
+    fun setVisualTokenBudget(budget: Int?) {}
+
     suspend fun release()
 }
 

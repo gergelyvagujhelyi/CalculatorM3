@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Yapay zekâ modeli yüklenemiyor</string>
     <string name="model_unusable_description">%1$s hasarlı veya eksik olabilir. Tekrar deneyin ya da yeniden indirin (%2$s).</string>
     <string name="download_again">Yeniden indir</string>
+    <string name="scan_quality_fast">Hızlı</string>
+    <string name="scan_quality_balanced">Dengeli</string>
+    <string name="scan_quality_accurate">Hassas</string>
+    <string name="scan_quality_hint">Daha hızlı ayarlar fotoğrafa daha az ayrıntıyla bakar.</string>
     <string name="answer_found">Yanıt</string>
     <string name="recognized_in">%1$s içinde çözüldü</string>
     <string name="use_expression">Kullan</string>

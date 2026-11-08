@@ -15,6 +15,8 @@ import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
 import com.vagujhelyigergely.calculatorm3.camera.ModelCard
 import com.vagujhelyigergely.calculatorm3.camera.ModelPreparingContent
 import com.vagujhelyigergely.calculatorm3.camera.ModelUnusableContent
+import com.vagujhelyigergely.calculatorm3.camera.ScanQualitySwitch
+import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.camera.SuccessContent
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
@@ -194,6 +196,20 @@ class AiScreensUiTest {
     }
 
     // ── One-time model preparation (new engine version / fresh download) ──
+
+    // ── Speed/quality switch ────────────────────────────────────────────────
+
+    @Test
+    fun scanQualitySwitchShowsThreeLevelsAndReportsTheChoice() {
+        val chosen = mutableListOf<ScanQuality>()
+        show { ScanQualitySwitch(ScanQuality.ACCURATE) { chosen += it } }
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_accurate)).assertIsSelected()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_fast)).assertIsNotSelected()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_hint)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_fast)).performClick()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_balanced)).performClick()
+        assertEquals(listOf(ScanQuality.FAST, ScanQuality.BALANCED), chosen)
+    }
 
     // ── Model missing or unloadable ─────────────────────────────────────────
 

@@ -11,6 +11,8 @@ import com.google.ai.edge.litertlm.Conversation
 import com.google.ai.edge.litertlm.ConversationConfig
 import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
+import com.google.ai.edge.litertlm.ExperimentalApi
+import com.google.ai.edge.litertlm.ExperimentalFlags
 import com.google.ai.edge.litertlm.SamplerConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -39,9 +41,14 @@ class LiteRTSolver : MathSolver {
     @Volatile private var conversation: Conversation? = null
     @Volatile private var currentModelPath: String? = null
     @Volatile private var backendLabel: String = "—"
+    @Volatile private var visualTokenBudget: Int? = null
 
     override val isModelLoaded: Boolean get() = engine != null
     override val activeBackend: String get() = backendLabel
+
+    override fun setVisualTokenBudget(budget: Int?) {
+        visualTokenBudget = budget
+    }
 
     override suspend fun loadModel(modelPath: String) = mutex.withLock {
         withContext(Dispatchers.IO) {
@@ -64,7 +71,11 @@ class LiteRTSolver : MathSolver {
         backendLabel = "CPU"
     }
 
+    @OptIn(ExperimentalApi::class)
     private fun buildEngine(modelPath: String, backend: Backend, visionBackend: Backend): Engine {
+        // Engine.initialize() reads this process-wide flag, so set it for every build (including
+        // the GPU→CPU fallbacks). Builds are serialized by [mutex].
+        ExperimentalFlags.visualTokenBudget = visualTokenBudget
         val eng = Engine(
             EngineConfig(
                 modelPath = modelPath,

@@ -46,6 +46,10 @@
     <string name="model_unusable_title">The AI model can\'t be loaded</string>
     <string name="model_unusable_description">%1$s may be damaged or incomplete. Try again, or download it again (%2$s).</string>
     <string name="download_again">Download again</string>
+    <string name="scan_quality_fast">Fast</string>
+    <string name="scan_quality_balanced">Balanced</string>
+    <string name="scan_quality_accurate">Accurate</string>
+    <string name="scan_quality_hint">Faster settings look at the photo in less detail.</string>
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>

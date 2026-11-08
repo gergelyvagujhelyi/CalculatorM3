@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Nie można wczytać modelu AI</string>
     <string name="model_unusable_description">%1$s może być uszkodzony lub niekompletny. Spróbuj ponownie albo pobierz go jeszcze raz (%2$s).</string>
     <string name="download_again">Pobierz ponownie</string>
+    <string name="scan_quality_fast">Szybko</string>
+    <string name="scan_quality_balanced">Zrównoważony</string>
+    <string name="scan_quality_accurate">Dokładnie</string>
+    <string name="scan_quality_hint">Szybsze ustawienia analizują zdjęcie mniej szczegółowo.</string>
     <string name="answer_found">Odpowiedź</string>
     <string name="recognized_in">Rozwiązano w %1$s</string>
     <string name="use_expression">Użyj</string>

@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Не удаётся загрузить ИИ-модель</string>
     <string name="model_unusable_description">Возможно, %1$s повреждена или загружена не полностью. Повторите попытку или скачайте её заново (%2$s).</string>
     <string name="download_again">Скачать снова</string>
+    <string name="scan_quality_fast">Быстро</string>
+    <string name="scan_quality_balanced">Баланс</string>
+    <string name="scan_quality_accurate">Точно</string>
+    <string name="scan_quality_hint">Более быстрые настройки рассматривают фото менее детально.</string>
     <string name="answer_found">Ответ</string>
     <string name="recognized_in">Решено за %1$s</string>
     <string name="use_expression">Использовать</string>

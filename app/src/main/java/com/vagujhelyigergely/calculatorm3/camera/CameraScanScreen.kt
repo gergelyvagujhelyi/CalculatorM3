@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
@@ -85,6 +86,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
+import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -266,6 +268,8 @@ fun CameraScanScreen(
                             )
                             is ScanUiState.Capturing -> CameraContent(
                                 modelName = viewModel.selectedModelName,
+                                scanQuality = viewModel.scanQuality.takeIf { viewModel.scanQualityApplies },
+                                onScanQualityChange = { viewModel.updateScanQuality(it) },
                                 onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
                                 onCaptureError = { msg -> viewModel.onCaptureError(msg) },
                                 onSwitchModel = { viewModel.showModelSelection() },
@@ -590,6 +594,9 @@ private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTo
 @Composable
 private fun CameraContent(
     modelName: String,
+    /** The speed/quality setting, or null when the selected model doesn't support it (hidden). */
+    scanQuality: ScanQuality?,
+    onScanQualityChange: (ScanQuality) -> Unit,
     onPhotoCaptured: (String) -> Unit,
     onCaptureError: (String) -> Unit,
     onSwitchModel: () -> Unit,
@@ -690,7 +697,50 @@ private fun CameraContent(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(text = stringResource(R.string.choose_from_gallery))
             }
+            if (scanQuality != null) {
+                ScanQualitySwitch(scanQuality, onScanQualityChange)
+            }
         }
+    }
+}
+
+/**
+ * Fast / Balanced / Accurate: how much detail the model takes from the photo
+ * ([ScanQuality]). Applies from the next scan.
+ */
+@Composable
+internal fun ScanQualitySwitch(quality: ScanQuality, onChange: (ScanQuality) -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        val options = listOf(
+            ScanQuality.FAST to R.string.scan_quality_fast,
+            ScanQuality.BALANCED to R.string.scan_quality_balanced,
+            ScanQuality.ACCURATE to R.string.scan_quality_accurate,
+        )
+        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+            options.forEachIndexed { index, (option, label) ->
+                SegmentedButton(
+                    selected = option == quality,
+                    onClick = { onChange(option) },
+                    shape = SegmentedButtonDefaults.itemShape(index, options.size)
+                ) {
+                    // Shrinks rather than clipping a long label (e.g. a selected one with its check mark).
+                    Text(
+                        stringResource(label),
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp)
+                    )
+                }
+            }
+        }
+        Text(
+            text = stringResource(R.string.scan_quality_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }
 

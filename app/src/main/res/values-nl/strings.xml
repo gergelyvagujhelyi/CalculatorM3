@@ -46,6 +46,10 @@
     <string name="model_unusable_title">Het AI-model kan niet worden geladen</string>
     <string name="model_unusable_description">%1$s is mogelijk beschadigd of onvolledig. Probeer het opnieuw of download het opnieuw (%2$s).</string>
     <string name="download_again">Opnieuw downloaden</string>
+    <string name="scan_quality_fast">Snel</string>
+    <string name="scan_quality_balanced">Gebalanceerd</string>
+    <string name="scan_quality_accurate">Nauwkeurig</string>
+    <string name="scan_quality_hint">Snellere instellingen bekijken de foto met minder detail.</string>
     <string name="answer_found">Antwoord</string>
     <string name="recognized_in">Opgelost in %1$s</string>
     <string name="use_expression">Gebruiken</string>

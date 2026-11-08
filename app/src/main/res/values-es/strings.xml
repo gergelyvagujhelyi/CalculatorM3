@@ -46,6 +46,10 @@
     <string name="model_unusable_title">No se puede cargar el modelo de IA</string>
     <string name="model_unusable_description">Es posible que %1$s esté dañado o incompleto. Inténtalo de nuevo o vuelve a descargarlo (%2$s).</string>
     <string name="download_again">Descargar de nuevo</string>
+    <string name="scan_quality_fast">Rápido</string>
+    <string name="scan_quality_balanced">Equilibrado</string>
+    <string name="scan_quality_accurate">Preciso</string>
+    <string name="scan_quality_hint">Los ajustes más rápidos analizan la foto con menos detalle.</string>
     <string name="answer_found">Respuesta</string>
     <string name="recognized_in">Resuelto en %1$s</string>
     <string name="use_expression">Usar</string>

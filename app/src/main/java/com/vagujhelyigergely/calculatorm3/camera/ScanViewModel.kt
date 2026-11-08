@@ -16,6 +16,7 @@ import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
+import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -101,6 +102,24 @@ class ScanViewModel(
         private set
 
     private var loadedModelId: String? = null
+    /** Image-token budget the loaded model was built with; a different setting needs a reload. */
+    private var loadedBudget: Int? = null
+
+    /** The speed/quality switch on the capture screen (Gemma 4 models only). */
+    var scanQuality by mutableStateOf(modelManager.scanQuality)
+        private set
+
+    /** Whether [scanQuality] applies to the selected model, i.e. whether to show the switch. */
+    val scanQualityApplies: Boolean get() = modelManager.selectedModel.supportsScanQuality
+
+    /** Takes effect on the next scan: the model is loaded per scan, with the current budget. */
+    fun updateScanQuality(quality: ScanQuality) {
+        modelManager.scanQuality = quality
+        scanQuality = quality
+    }
+
+    private fun budgetFor(model: AiModel): Int? =
+        if (model.supportsScanQuality) modelManager.scanQuality.visualTokenBudget else null
     private var downloadObserver: Job? = null
     private var inferenceJob: Job? = null
     private var preparationJob: Job? = null
@@ -157,6 +176,7 @@ class ScanViewModel(
             try {
                 withContext(Dispatchers.IO) {
                     try {
+                        solver.setVisualTokenBudget(budgetFor(model))
                         solver.loadModel(modelManager.modelPath(model))
                     } finally {
                         // Free whatever the failed or finished load left behind.
@@ -185,7 +205,8 @@ class ScanViewModel(
         // The previous scan's release may still be running. Let it finish first; otherwise it
         // takes the solver lock after this load and closes the engine this scan is about to use.
         releaseJob?.join()
-        if (solver.isModelLoaded && loadedModelId == model.id) return true
+        val budget = budgetFor(model)
+        if (solver.isModelLoaded && loadedModelId == model.id && loadedBudget == budget) return true
         if (!modelManager.areModelsAvailable(model)) {
             // Deleted outside the app while the window was open.
             uiState = ScanUiState.ModelUnusable(model, missing = true)
@@ -193,8 +214,10 @@ class ScanViewModel(
         }
         uiState = ScanUiState.ModelLoading()
         return try {
+            solver.setVisualTokenBudget(budget)
             solver.loadModel(modelManager.modelPath(model))
             loadedModelId = model.id
+            loadedBudget = budget
             true
         } catch (e: Exception) {
             // A stop during the load cancels this coroutine; let it propagate (the caller's
