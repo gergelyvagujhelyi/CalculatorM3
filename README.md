@@ -56,6 +56,7 @@
 - Automatic light and dark mode
 - Adaptive layout — portrait, landscape, and foldable support
 - Haptic feedback and smooth animations
+- 18 languages — follows your device language
 
 ---
 
@@ -86,7 +87,7 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 **Requirements:**
 - Android device with 6+ GB RAM — the smallest model (Gemma 4 E2B) needs 6 GB and the larger E4B models need 8 GB; on devices with less, the solver shows a "not enough RAM" notice
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
-- Internet for the one-time model download (Wi-Fi recommended)
+- Internet for the one-time model download (Wi-Fi by default; the app asks before using mobile data)
 - Gemma 3n models require a free [HuggingFace](https://huggingface.co) account — you sign in once, in-app, and accept the model license; Gemma 4 models need no account ([setup](docs/huggingface-oauth-setup.md))
 
 **Powered by:**

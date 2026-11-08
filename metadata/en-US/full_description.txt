@@ -7,6 +7,7 @@ Unlike other calculators, this app doesn't phone home. No usage tracking, no tel
 ✓ Scientific functions
 ✓ Calculation history
 ✓ Material 3 dynamic theming
+✓ 18 languages, following your device language
 ✓ Works offline (with an optional on-device AI math solver)
 
 🔢 FULL EXPRESSION EVALUATION
@@ -47,7 +48,7 @@ An experimental extra for higher-RAM devices: photograph a handwritten math expr
 - Choose from several open vision models (Gemma 4, Gemma 3n)
 - Models run fully on-device, GPU-accelerated where supported
 - The solution is shown with cleanly formatted math — fractions, roots, and exponents
-- Internet is used only once, to download the model you choose
+- Internet is used only once, to download the model you choose — over Wi-Fi by default; the app asks before using mobile data
 - No photo, calculation, or usage data ever leaves your device
 
 🎨 MATERIAL 3 DESIGN
