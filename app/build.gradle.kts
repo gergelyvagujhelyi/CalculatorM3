@@ -53,6 +53,12 @@ android {
     }
 
     buildTypes {
+        debug {
+            // `-PdeviceTest` builds the debug app as a separate package (….devicetest), so
+            // on-device integration tests that write app data run in their own sandbox and never
+            // touch the real app's login, history or models on a personal phone.
+            if (project.hasProperty("deviceTest")) applicationIdSuffix = ".devicetest"
+        }
         release {
             isMinifyEnabled = true
             // Sign only when keystore.properties exists (local release builds, and the release

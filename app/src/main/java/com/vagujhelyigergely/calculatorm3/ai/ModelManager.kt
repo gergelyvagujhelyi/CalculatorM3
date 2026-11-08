@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
+import androidx.work.OneTimeWorkRequest
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
@@ -465,16 +466,21 @@ class ModelManager(private val context: Context) {
      */
     fun enqueueDownload(model: AiModel, allowMeteredNetwork: Boolean) {
         downloadNoProgressStreak = 0
+        val request = downloadRequest(model, allowMeteredNetwork)
+        workManager.enqueueUniqueWork(
+            ModelDownloadWorker.WORK_NAME, ExistingWorkPolicy.REPLACE, request
+        )
+    }
+
+    /** The work request [enqueueDownload] enqueues; separate so its constraints can be tested. */
+    internal fun downloadRequest(model: AiModel, allowMeteredNetwork: Boolean): OneTimeWorkRequest {
         val networkType = if (allowMeteredNetwork) NetworkType.CONNECTED else NetworkType.UNMETERED
-        val request = OneTimeWorkRequestBuilder<ModelDownloadWorker>()
+        return OneTimeWorkRequestBuilder<ModelDownloadWorker>()
             .setInputData(workDataOf(ModelDownloadWorker.KEY_MODEL_ID to model.id))
             .setConstraints(
                 Constraints.Builder().setRequiredNetworkType(networkType).build()
             )
             .build()
-        workManager.enqueueUniqueWork(
-            ModelDownloadWorker.WORK_NAME, ExistingWorkPolicy.REPLACE, request
-        )
     }
 
     fun cancelDownload() {
