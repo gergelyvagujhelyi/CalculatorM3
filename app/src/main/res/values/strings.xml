@@ -55,7 +55,6 @@
     <string name="close">Close</string>
     <string name="recognition_error">Recognition failed</string>
     <string name="error_no_numerical_answer">Could not extract a numerical answer</string>
-    <string name="error_model_load">Failed to load AI model: %1$s</string>
     <string name="error_signin_failed">Sign-in failed: %1$s</string>
     <string name="please_try_again">please try again</string>
     <string name="error_download_failed">Download failed: %1$s</string>

@@ -99,7 +99,6 @@
         <item quantity="other">Nog %1$d tikken om de AI-functies te ontgrendelen</item>
     </plurals>
     <string name="error_no_numerical_answer">Kon geen numeriek antwoord herkennen</string>
-    <string name="error_model_load">Kan AI-model niet laden: %1$s</string>
     <string name="error_signin_failed">Aanmelden mislukt: %1$s</string>
     <string name="please_try_again">probeer het opnieuw</string>
     <string name="error_download_failed">Download mislukt: %1$s</string>

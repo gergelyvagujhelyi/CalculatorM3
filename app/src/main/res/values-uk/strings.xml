@@ -101,7 +101,6 @@
         <item quantity="other">Залишилося %1$d натискань до розблокування функцій ШІ</item>
     </plurals>
     <string name="error_no_numerical_answer">Не вдалося розпізнати числову відповідь</string>
-    <string name="error_model_load">Не вдалося завантажити модель ШІ: %1$s</string>
     <string name="error_signin_failed">Не вдалося ввійти: %1$s</string>
     <string name="please_try_again">повторіть спробу</string>
     <string name="error_download_failed">Не вдалося завантажити: %1$s</string>

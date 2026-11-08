@@ -98,7 +98,6 @@
         <item quantity="other">AI機能のロック解除まであと %1$d 回</item>
     </plurals>
     <string name="error_no_numerical_answer">数値の答えを読み取れませんでした</string>
-    <string name="error_model_load">AIモデルの読み込みに失敗しました: %1$s</string>
     <string name="error_signin_failed">サインインに失敗しました: %1$s</string>
     <string name="please_try_again">もう一度お試しください</string>
     <string name="error_download_failed">ダウンロードに失敗しました: %1$s</string>
