@@ -1,4 +1,4 @@
-- Now in 17 languages, following your device language
+- Now in 18 languages, following your device language
 - Typing a number after = starts a new calculation
 - Correct results for -8^-2, 10^100+1-10^100 and tiny powers like 10^-1000
 - History keeps the full result, and the preview always matches what you typed
