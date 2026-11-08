@@ -1017,7 +1017,9 @@ class CalculatorUiTest {
     fun signTogglePowerAppliesSignAfterExponent() {
         launch()
         tap("8", "+/−", "^", "2", "+/−", "=")
-        expressionShows("-0.015625")
+        // displayNodes, not expressionShows: #85 replaces that helper, and this test must
+        // compile whichever of the two PRs merges first.
+        displayNodes("-0.015625").onFirst().assertIsDisplayed()
     }
 
     @Test
