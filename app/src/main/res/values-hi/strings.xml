@@ -38,6 +38,9 @@
     <string name="initializing">आरंभ हो रहा है…</string>
     <string name="model_loading">AI मॉडल लोड हो रहा है…</string>
     <string name="model_loading_hint">विज़न मॉडल को मेमोरी में लोड किया जा रहा है। पहली बार उपयोग में इसमें एक मिनट तक लग सकता है।</string>
+    <string name="model_format_update_title">नए मॉडल फ़ॉर्मैट में अपडेट हो रहा है</string>
+    <string name="model_preparing_title">AI मॉडल तैयार किया जा रहा है</string>
+    <string name="model_preparing_hint">यह केवल एक बार होता है और इसमें लगभग एक मिनट लग सकता है।</string>
     <string name="answer_found">उत्तर</string>
     <string name="recognized_in">%1$s में हल किया गया</string>
     <string name="use_expression">उपयोग करें</string>

@@ -38,6 +38,9 @@
     <string name="initializing">Wird initialisiert…</string>
     <string name="model_loading">KI-Modell wird geladen…</string>
     <string name="model_loading_hint">Das Vision-Modell wird in den Speicher geladen. Bei der ersten Nutzung kann das bis zu einer Minute dauern.</string>
+    <string name="model_format_update_title">Aktualisierung auf das neue Modellformat</string>
+    <string name="model_preparing_title">KI-Modell wird vorbereitet</string>
+    <string name="model_preparing_hint">Das passiert nur einmal und kann etwa eine Minute dauern.</string>
     <string name="answer_found">Antwort</string>
     <string name="recognized_in">Gelöst in %1$s</string>
     <string name="use_expression">Verwenden</string>

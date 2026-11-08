@@ -38,6 +38,9 @@
     <string name="initializing">Başlatılıyor…</string>
     <string name="model_loading">Yapay zeka modeli yükleniyor…</string>
     <string name="model_loading_hint">Görüntü modeli belleğe yükleniyor. İlk kullanımda bu bir dakika kadar sürebilir.</string>
+    <string name="model_format_update_title">Yeni model biçimine güncelleniyor</string>
+    <string name="model_preparing_title">Yapay zeka modeli hazırlanıyor</string>
+    <string name="model_preparing_hint">Bu yalnızca bir kez yapılır ve yaklaşık bir dakika sürebilir.</string>
     <string name="answer_found">Yanıt</string>
     <string name="recognized_in">%1$s içinde çözüldü</string>
     <string name="use_expression">Kullan</string>

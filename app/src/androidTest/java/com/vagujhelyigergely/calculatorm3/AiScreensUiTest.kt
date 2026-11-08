@@ -13,6 +13,7 @@ import com.vagujhelyigergely.calculatorm3.camera.DownloadingContent
 import com.vagujhelyigergely.calculatorm3.camera.ErrorContent
 import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
 import com.vagujhelyigergely.calculatorm3.camera.ModelCard
+import com.vagujhelyigergely.calculatorm3.camera.ModelPreparingContent
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.camera.SuccessContent
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
@@ -189,6 +190,22 @@ class AiScreensUiTest {
         composeTestRule.onNodeWithText("(50%)", substring = true).assertIsDisplayed()
         button(str(R.string.cancel)).performClick()
         assertEquals(1, cancelled)
+    }
+
+    // ── One-time model preparation (new engine version / fresh download) ──
+
+    @Test
+    fun engineUpdateShowsTheNewModelFormatMessage() {
+        show { ModelPreparingContent(isUpdate = true, startTimeMs = System.currentTimeMillis(), onDismiss = {}) }
+        composeTestRule.onNodeWithText(str(R.string.model_format_update_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.model_preparing_hint)).assertIsDisplayed()
+    }
+
+    @Test
+    fun freshDownloadShowsThePreparingMessage() {
+        show { ModelPreparingContent(isUpdate = false, startTimeMs = System.currentTimeMillis(), onDismiss = {}) }
+        composeTestRule.onNodeWithText(str(R.string.model_preparing_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.model_format_update_title)).assertDoesNotExist()
     }
 
     // ── The 7× AC unlock (writes the real AI-unlock setting) ────────────────

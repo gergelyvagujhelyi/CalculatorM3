@@ -38,6 +38,9 @@
     <string name="initializing">Inicjowanie…</string>
     <string name="model_loading">Ładowanie modelu AI…</string>
     <string name="model_loading_hint">Ładowanie modelu wizyjnego do pamięci. Przy pierwszym użyciu może to potrwać do minuty.</string>
+    <string name="model_format_update_title">Aktualizowanie do nowego formatu modelu</string>
+    <string name="model_preparing_title">Przygotowywanie modelu AI</string>
+    <string name="model_preparing_hint">To dzieje się tylko raz i może potrwać około minuty.</string>
     <string name="answer_found">Odpowiedź</string>
     <string name="recognized_in">Rozwiązano w %1$s</string>
     <string name="use_expression">Użyj</string>

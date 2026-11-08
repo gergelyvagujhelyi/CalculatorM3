@@ -38,6 +38,9 @@
     <string name="initializing">正在初始化…</string>
     <string name="model_loading">正在加载 AI 模型…</string>
     <string name="model_loading_hint">正在将视觉模型加载到内存中。首次使用时可能需要最多一分钟。</string>
+    <string name="model_format_update_title">正在更新为新的模型格式</string>
+    <string name="model_preparing_title">正在准备 AI 模型</string>
+    <string name="model_preparing_hint">此操作只需进行一次，可能需要约一分钟。</string>
     <string name="answer_found">答案</string>
     <string name="recognized_in">用时 %1$s 求解</string>
     <string name="use_expression">使用</string>

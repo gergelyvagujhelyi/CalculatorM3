@@ -38,6 +38,9 @@
     <string name="initializing">Ініціалізація…</string>
     <string name="model_loading">Завантаження моделі ШІ…</string>
     <string name="model_loading_hint">Завантаження моделі зору в пам’ять. Під час першого використання це може зайняти до хвилини.</string>
+    <string name="model_format_update_title">Оновлення до нового формату моделі</string>
+    <string name="model_preparing_title">Підготовка моделі ШІ</string>
+    <string name="model_preparing_hint">Це відбувається лише один раз і може тривати близько хвилини.</string>
     <string name="answer_found">Відповідь</string>
     <string name="recognized_in">Розв’язано за %1$s</string>
     <string name="use_expression">Використати</string>
