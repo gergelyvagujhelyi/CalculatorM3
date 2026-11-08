@@ -456,22 +456,22 @@ class ScanViewModel(
     /** Rotate/flip [bitmap] to upright per the source file's EXIF orientation tag. */
     private fun applyExifOrientation(imagePath: String, bitmap: Bitmap): Bitmap {
         val orientation = try {
-            android.media.ExifInterface(imagePath).getAttributeInt(
-                android.media.ExifInterface.TAG_ORIENTATION,
-                android.media.ExifInterface.ORIENTATION_NORMAL
+            androidx.exifinterface.media.ExifInterface(imagePath).getAttributeInt(
+                androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,
+                androidx.exifinterface.media.ExifInterface.ORIENTATION_NORMAL
             )
         } catch (e: Exception) {
             return bitmap
         }
         val matrix = android.graphics.Matrix()
         when (orientation) {
-            android.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-            android.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-            android.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-            android.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-            android.media.ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
-            android.media.ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
-            android.media.ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_TRANSPOSE -> { matrix.postRotate(90f); matrix.postScale(-1f, 1f) }
+            androidx.exifinterface.media.ExifInterface.ORIENTATION_TRANSVERSE -> { matrix.postRotate(-90f); matrix.postScale(-1f, 1f) }
             else -> return bitmap
         }
         return try {

@@ -161,7 +161,13 @@ fun CameraScanScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showNotifRationale = false
-                    notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    // The rationale is only shown on Android 13+ (startDownloadWithNotifPrompt),
+                    // where POST_NOTIFICATIONS exists; the else is a defensive fallback.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        proceedWithoutPermission()
+                    }
                 }) { Text(stringResource(R.string.notif_permission_allow)) }
             },
             dismissButton = {

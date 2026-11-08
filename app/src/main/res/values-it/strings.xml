@@ -89,6 +89,7 @@
     <plurals name="ai_unlock_countdown">
         <item quantity="one">Manca %1$d pressione per sbloccare le funzioni IA</item>
         <item quantity="other">Mancano %1$d pressioni per sbloccare le funzioni IA</item>
+        <item quantity="many">Mancano %1$d pressioni per sbloccare le funzioni IA</item>
     </plurals>
     <string name="error_no_numerical_answer">Impossibile estrarre una risposta numerica</string>
     <string name="error_model_load">Impossibile caricare il modello IA: %1$s</string>

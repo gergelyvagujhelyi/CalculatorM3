@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup rules for Android 11 and lower (android:fullBackupContent). allowBackup="false" in the
+  manifest already disables backup and transfer there; this keeps the HuggingFace login
+  (ModelManager.AUTH_PREFS) excluded even if backup is ever enabled. Android 12+ uses
+  data_extraction_rules.xml instead.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="hf_auth.xml" />
+</full-backup-content>

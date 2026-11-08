@@ -79,6 +79,11 @@ android {
     buildFeatures {
         compose = true
     }
+    lint {
+        // ChromeOsAbiSupport asks for an x86_64 build. LiteRT-LM (the on-device AI engine) ships
+        // only arm64-v8a native libraries, so x86_64 isn't possible (see abiFilters above).
+        disable += "ChromeOsAbiSupport"
+    }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -111,6 +116,9 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // EXIF orientation of scanned photos; the framework android.media.ExifInterface has known
+    // parsing bugs on older Android versions (minSdk is 26).
+    implementation("androidx.exifinterface:exifinterface:1.4.2")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     // HuggingFace OAuth (authorization-code + PKCE) for gated model downloads.
     // Handles the Custom Tab, redirect capture, and code→token exchange; pulls in androidx.browser.
