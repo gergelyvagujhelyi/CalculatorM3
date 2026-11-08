@@ -189,9 +189,9 @@ class ScanViewModel(
         }
     }
 
-    /** Force download even on mobile data. */
+    /** The user accepted the mobile-data warning: allow metered networks for this download. */
     fun confirmMobileDataDownload(model: AiModel) {
-        forceDownload(model)
+        forceDownload(model, allowMeteredNetwork = true)
     }
 
     fun startDownload(model: AiModel) {
@@ -203,11 +203,15 @@ class ScanViewModel(
             uiState = ScanUiState.SignInRequired(model)
             return
         }
-        if (!modelManager.isOnWifi && !modelManager.areModelsAvailable(model)) {
+        val alreadyDownloaded = modelManager.areModelsAvailable(model)
+        if (!modelManager.isOnUnmeteredNetwork && !alreadyDownloaded) {
             uiState = ScanUiState.MobileDataWarning(model)
             return
         }
-        forceDownload(model)
+        // No consent to mobile data was given, so the download stays on unmetered networks —
+        // unless there's nothing left to fetch, in which case no network constraint should block
+        // the (instant) worker run.
+        forceDownload(model, allowMeteredNetwork = alreadyDownloaded)
     }
 
     fun cancelDownload() {
@@ -217,9 +221,9 @@ class ScanViewModel(
         showModelSelection()
     }
 
-    private fun forceDownload(model: AiModel) {
+    private fun forceDownload(model: AiModel, allowMeteredNetwork: Boolean) {
         modelManager.selectedModel = model
-        modelManager.enqueueDownload(model)
+        modelManager.enqueueDownload(model, allowMeteredNetwork)
         observeDownload()
     }
 

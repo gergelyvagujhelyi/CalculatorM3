@@ -39,27 +39,25 @@ class ModelDownloadWorker(
             android.util.Log.w("ModelDownloadWorker", "setForeground failed; continuing in background", e)
         }
 
+        // Whether this run downloaded anything; a run that makes progress resets the retry limit.
+        var madeProgress = false
+        var retryAfterWaits = 0
         return try {
-            model.files.forEachIndexed { index, file ->
-                if (!modelManager.isFileDownloaded(model, file)) {
-                    setProgressAsync(progressData(modelId, index, model.files.size, 0, -1))
-                    var lastPct = -1
-                    var lastTs = 0L
-                    modelManager.downloadFile(model, file.url, file.filename) { downloaded, total ->
-                        val pct = if (total > 0) (downloaded * 100 / total).toInt() else -1
-                        val now = System.currentTimeMillis()
-                        if (pct != lastPct || now - lastTs > 500L) {
-                            lastPct = pct
-                            lastTs = now
-                            setProgressAsync(progressData(modelId, index, model.files.size, downloaded, total))
-                            notificationManager.notify(
-                                NOTIFICATION_ID,
-                                buildNotification(model, index, downloaded, total)
-                            )
-                        }
-                    }
+            while (true) {
+                try {
+                    downloadAllFiles(model, modelId) { madeProgress = true }
+                    break
+                } catch (e: RetryableHttpException) {
+                    // Honour the server's Retry-After here and try again in this run, instead of
+                    // waiting and then also stacking WorkManager's backoff on top. Without a
+                    // Retry-After, or after a couple of waits, fall through to WorkManager.
+                    val wait = e.retryAfterMs
+                    if (wait == null || retryAfterWaits >= DownloadPolicy.MAX_RETRY_AFTER_WAITS_PER_RUN) throw e
+                    retryAfterWaits++
+                    kotlinx.coroutines.delay(wait)
                 }
             }
+            modelManager.downloadNoProgressStreak = 0
             Result.success(workDataOf(KEY_MODEL_ID to modelId))
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -71,10 +69,15 @@ class ModelDownloadWorker(
                     KEY_MODEL_ID to modelId
                 )
             )
+        } catch (e: DownloadStorageException) {
+            // Disk full / write failure: retrying would only repeat it. The .tmp is kept, so
+            // starting the download again after freeing space resumes where it stopped.
+            failure(modelId, e.message ?: "Not enough free storage")
         } catch (e: java.io.IOException) {
-            // Transient network error — let WorkManager reschedule; the partial
-            // .tmp resumes via HTTP Range on the next run.
-            Result.retry()
+            // Transient network error, or a throttled/server error (RetryableHttpException) whose
+            // in-run Retry-After waits are used up: let WorkManager reschedule with its backoff;
+            // the partial .tmp resumes via HTTP Range on the next run.
+            retryOrGiveUp(modelId, madeProgress, e)
         } catch (e: Exception) {
             Result.failure(
                 workDataOf(
@@ -90,6 +93,55 @@ class ModelDownloadWorker(
             notificationManager.cancel(NOTIFICATION_ID)
         }
     }
+
+    /** Download every file of [model] that isn't on disk yet; [onBytes] fires as data arrives. */
+    private suspend fun downloadAllFiles(model: AiModel, modelId: String, onBytes: () -> Unit) {
+        model.files.forEachIndexed { index, file ->
+            if (!modelManager.isFileDownloaded(model, file)) {
+                setProgressAsync(progressData(modelId, index, model.files.size, 0, -1))
+                var lastPct = -1
+                var lastTs = 0L
+                modelManager.downloadFile(model, file.url, file.filename) { downloaded, total ->
+                    onBytes()
+                    val pct = if (total > 0) (downloaded * 100 / total).toInt() else -1
+                    val now = System.currentTimeMillis()
+                    if (pct != lastPct || now - lastTs > 500L) {
+                        lastPct = pct
+                        lastTs = now
+                        setProgressAsync(progressData(modelId, index, model.files.size, downloaded, total))
+                        notificationManager.notify(
+                            NOTIFICATION_ID,
+                            buildNotification(model, index, downloaded, total)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Retry, unless this is the [DownloadPolicy.MAX_ATTEMPTS_WITHOUT_PROGRESS]th consecutive run
+     * that received no bytes. A run that made progress resets the streak, so a long download on
+     * a flaky network keeps resuming however many retries it takes.
+     */
+    private fun retryOrGiveUp(modelId: String, madeProgress: Boolean, e: Exception): Result {
+        val streak = DownloadPolicy.nextNoProgressStreak(modelManager.downloadNoProgressStreak, madeProgress)
+        return if (DownloadPolicy.shouldGiveUp(streak)) {
+            modelManager.downloadNoProgressStreak = 0
+            failure(modelId, "Download kept failing: ${e.message ?: "network error"}")
+        } else {
+            modelManager.downloadNoProgressStreak = streak
+            Result.retry()
+        }
+    }
+
+    private fun failure(modelId: String, message: String) = Result.failure(
+        workDataOf(
+            KEY_ERROR to ERROR_GENERIC,
+            KEY_MESSAGE to message,
+            KEY_MODEL_ID to modelId
+        )
+    )
 
     private fun progressData(modelId: String, index: Int, count: Int, downloaded: Long, total: Long) =
         workDataOf(
