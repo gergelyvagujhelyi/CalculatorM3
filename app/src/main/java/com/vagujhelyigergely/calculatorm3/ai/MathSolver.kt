@@ -108,7 +108,7 @@ object SolverPrompts {
         val candidateText = answerLine.substringAfterLast('=')
 
         val standalone = numberPattern.findAll(candidateText)
-            .filter { isStandalone(candidateText, it.range) }
+            .filter { isStandalone(candidateText, it.range, lineHasEquals = '=' in answerLine) }
             .toList()
         // Exactly one complete number, or nothing: "4 or 5" and "1,5" are ambiguous.
         val match = standalone.singleOrNull() ?: return ""
@@ -117,11 +117,13 @@ object SolverPrompts {
     }
 
     /** True if the number at [range] isn't an operand of an operator or LaTeX group. */
-    private fun isStandalone(text: String, range: IntRange): Boolean {
+    private fun isStandalone(text: String, range: IntRange, lineHasEquals: Boolean): Boolean {
         val before = text.substring(0, range.first).trimEnd().lastOrNull()
         val after = text.substring(range.last + 1).trimStart().firstOrNull()
         if (before != null && before in OPERAND_NEIGHBORS) return false
-        if (after != null && after in OPERAND_NEIGHBORS) return false
+        if (after != null && after in OPERAND_NEIGHBORS &&
+            !isSentenceExclamation(text, range, lineHasEquals)
+        ) return false
         // A leading '-' glued to a previous digit is a binary minus ("10-3"); the pattern
         // includes it in this match, so look one character further back.
         if (text[range.first] == '-' && before != null && (before.isDigit() || before == ')')) return false
@@ -133,5 +135,22 @@ object SolverPrompts {
         // Digits glued to letters are identifiers or units without a space, not answers ("x2").
         if (before != null && before.isLetter() && range.first > 0 && !text[range.first - 1].isWhitespace()) return false
         return true
+    }
+
+    /**
+     * "The answer is 42!": a '!' that ends a sentence of prose is punctuation, not a factorial.
+     * Only when the '!' is glued to the number and followed by the end of the line or a new
+     * word, the line has no '=', and words come before the number. Math such as "= 5!", a bare
+     * "5!", "3!!" or "4! + 1" stays a factorial, so it's rejected rather than read as 5, 3 or 4.
+     */
+    private fun isSentenceExclamation(text: String, range: IntRange, lineHasEquals: Boolean): Boolean {
+        if (lineHasEquals) return false
+        val bang = range.last + 1
+        if (bang >= text.length || text[bang] != '!') return false
+        val next = text.getOrNull(bang + 1)
+        if (next != null && !next.isWhitespace()) return false // "5!3", "3!!"
+        val rest = text.substring(bang + 1).trimStart()
+        if (rest.isNotEmpty() && !rest.first().isLetter()) return false // "4! + 1"
+        return text.substring(0, range.first).any { it.isLetter() } // prose before the number
     }
 }

@@ -248,4 +248,24 @@ class SolverPromptsTest {
         assertEquals("-2.5", SolverPrompts.extractAnswer("x = —2.5"))
         assertEquals("-7", SolverPrompts.extractAnswer("−7")) // U+2212 is always a minus
     }
+
+    // ── "!" in prose vs factorial ────────────────────────────────────
+
+    @Test
+    fun `exclamation mark ending a sentence is punctuation`() {
+        assertEquals("42", SolverPrompts.extractAnswer("The answer is 42!"))
+        assertEquals("42", SolverPrompts.extractAnswer("The answer is 42! Great job."))
+        assertEquals("-7", SolverPrompts.extractAnswer("So the result is −7!"))
+        assertEquals("3.5", SolverPrompts.extractAnswer("Done, it's 3.5!"))
+    }
+
+    @Test
+    fun `factorial in math context is still rejected`() {
+        assertEquals("", SolverPrompts.extractAnswer("= 5!"))
+        assertEquals("", SolverPrompts.extractAnswer("x = 5!"))
+        assertEquals("", SolverPrompts.extractAnswer("5!"))
+        assertEquals("", SolverPrompts.extractAnswer("The answer is 5!3"))
+        assertEquals("", SolverPrompts.extractAnswer("The answer is 3!!"))
+        assertEquals("", SolverPrompts.extractAnswer("The answer is 4! + 1"))
+    }
 }
