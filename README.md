@@ -76,7 +76,7 @@ Point your camera at a handwritten math expression and let an on-device AI model
 **Speed or quality:** with the Gemma 4 models, a **Fast / Balanced / Accurate** switch under the photo buttons sets how much detail the model takes from the photo. Fast can answer in about half the time; Accurate (the default) reads the most detail. The choice is remembered and applies from the next scan.
 
 **Good to know:**
-- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working; otherwise the full response is shown instead, so a wrong number never slips into the calculator
+- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. Otherwise (for example when the result is a fraction like 5/4) the screen says **"Check the model's answer below"** and opens the model's full working, scrolled to its result
 - After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
 - If the model is deleted outside the app or can't be loaded, the app says so and offers **Download again**
 
