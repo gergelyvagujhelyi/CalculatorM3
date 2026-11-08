@@ -104,6 +104,8 @@ class ScanViewModel(
     private var downloadObserver: Job? = null
     private var inferenceJob: Job? = null
     private var preparationJob: Job? = null
+    /** The background release started by [releaseAll]; the next load must wait for it. */
+    private var releaseJob: Job? = null
 
     fun initialize() {
         // A preparation started earlier is still running (the window was closed and reopened):
@@ -180,6 +182,9 @@ class ScanViewModel(
      * Returns true if the model is ready, false (and sets an Error state) on failure.
      */
     private suspend fun ensureModelLoaded(model: AiModel): Boolean {
+        // The previous scan's release may still be running. Let it finish first; otherwise it
+        // takes the solver lock after this load and closes the engine this scan is about to use.
+        releaseJob?.join()
         if (solver.isModelLoaded && loadedModelId == model.id) return true
         if (!modelManager.areModelsAvailable(model)) {
             // Deleted outside the app while the window was open.
@@ -513,7 +518,7 @@ class ScanViewModel(
      * (so handwriting isn't sideways) and downscale so the longest edge is ≤ [maxEdge] px.
      * Returns the path to a new JPEG, or null on failure (caller falls back to the original).
      */
-    private fun prepareImage(imagePath: String, maxEdge: Int): String? {
+    internal fun prepareImage(imagePath: String, maxEdge: Int): String? {
         val opts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(imagePath, opts)
         val w = opts.outWidth
@@ -614,7 +619,11 @@ class ScanViewModel(
         // the solver mutex which may be held by an in-flight inference whose
         // onToken callback dispatches to Dispatchers.Main.  Blocking main here
         // with runBlocking would deadlock.
-        CoroutineScope(Dispatchers.IO).launch {
+        // Chained so overlapping releases finish in order, and kept so ensureModelLoaded can
+        // wait for the last one.
+        val previous = releaseJob
+        releaseJob = CoroutineScope(Dispatchers.IO).launch {
+            previous?.join()
             solver.release()
         }
     }

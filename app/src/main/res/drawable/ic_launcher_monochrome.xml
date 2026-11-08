@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Monochrome layer for Android 13+ themed icons. The launcher uses only this drawable's alpha
+  and paints it in the theme color, so it's a single-color silhouette of ic_launcher_foreground:
+  the calculator body filled, with the display and the twelve keys cut out (even-odd fill).
+  Same 108dp canvas and coordinates as the foreground, so it lines up with the normal icon.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M40,24h28c4,0 6,3 6,7v46c0,4 -2,7 -6,7h-28c-4,0 -6,-3 -6,-7v-46c0,-4 2,-7 6,-7z M39,29h30c1.5,0 2.5,1 2.5,3v10c0,2 -1,3 -2.5,3h-30c-1.5,0 -2.5,-1 -2.5,-3v-10c0,-2 1,-3 2.5,-3z M42,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M50,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M58,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M66,50m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M42,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M50,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M58,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M66,62m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M42,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M50,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M58,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0 M66,74m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"/>
+</vector>
