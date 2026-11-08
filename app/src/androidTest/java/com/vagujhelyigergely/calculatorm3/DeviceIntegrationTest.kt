@@ -16,7 +16,11 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.ai.RetryableHttpException
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -34,6 +38,9 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 /**
@@ -67,7 +74,10 @@ class DeviceIntegrationTest {
         val status: String,
         val headers: Map<String, String> = emptyMap(),
         val bodyBytes: ByteArray = ByteArray(0),
-        val contentLength: Long = bodyBytes.size.toLong()
+        val contentLength: Long = bodyBytes.size.toLong(),
+        /** If set, send this many body bytes, wait for [resume], then send the rest. */
+        val pauseAfter: Int? = null,
+        val resume: CountDownLatch? = null
     )
 
     /** Serves one request per connection on 127.0.0.1, recording each request's headers. */
@@ -106,7 +116,18 @@ class DeviceIntegrationTest {
                 append("\r\n")
             }
             out.write(head.toByteArray())
-            out.write(r.bodyBytes)
+            if (r.pauseAfter != null && r.resume != null) {
+                out.write(r.bodyBytes, 0, r.pauseAfter)
+                out.flush()
+                r.resume.await(30, TimeUnit.SECONDS)
+                try {
+                    out.write(r.bodyBytes, r.pauseAfter, r.bodyBytes.size - r.pauseAfter)
+                } catch (_: IOException) {
+                    return // the client hung up (a cancelled download), as it should
+                }
+            } else {
+                out.write(r.bodyBytes)
+            }
             out.flush()
         }
 
@@ -231,6 +252,41 @@ class DeviceIntegrationTest {
                 assertFalse(destFile().exists())
                 assertEquals(sent.toLong(), tmpFile().length())
             }
+    }
+
+    @Test
+    fun cancelledDownloadStopsWritingAndARestartProducesAnIntactFile() {
+        val stalled = 64 * 1024
+        val releaseStalled = CountDownLatch(1)
+        val connections = AtomicInteger()
+        FakeServer { headers ->
+            if (connections.incrementAndGet() == 1) {
+                // First attempt: send 64 KB, then stall mid-body (a slow or hung connection).
+                Response("200 OK", bodyBytes = payload, pauseAfter = stalled, resume = releaseStalled)
+            } else {
+                val from = headers["range"]!!.removePrefix("bytes=").removeSuffix("-").toInt()
+                Response("206 Partial Content",
+                    mapOf("Content-Range" to "bytes $from-${payload.size - 1}/${payload.size}"),
+                    payload.copyOfRange(from, payload.size))
+            }
+        }.use { server ->
+            val first = CoroutineScope(Dispatchers.IO).launch {
+                modelManager.downloadFile(model, server.url, fileName) { _, _ -> }
+            }
+            val deadline = System.currentTimeMillis() + 10_000
+            while (tmpFile().length() < stalled && System.currentTimeMillis() < deadline) Thread.sleep(50)
+            assertEquals(stalled.toLong(), tmpFile().length())
+
+            // Cancel while it's blocked reading: it must actually stop, not linger in the read.
+            first.cancel()
+            val stopped = runBlocking { withTimeoutOrNull(5_000) { first.join() } } != null
+            // Let the stalled connection send the rest; a still-running first attempt would write it.
+            releaseStalled.countDown()
+            assertTrue("cancelled download was still blocked in a read 5 s after cancel", stopped)
+
+            download(server.url) // the replacement resumes from the partial file
+            assertArrayEquals("model file corrupted by the cancelled attempt", payload, destFile().readBytes())
+        }
     }
 
     @Test
