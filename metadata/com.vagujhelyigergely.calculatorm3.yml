@@ -30,9 +30,23 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.5.1
+    versionCode: 12
+    commit: 00f686f9e5cc6b60cf0eb98a6eaba5369c68a603
+    subdir: app
+    gradle:
+      - yes
+
+  - versionName: 1.5.2
+    versionCode: 13
+    commit: b3732fa6740ce2d141034fc0ce1044bfb6571cb7
+    subdir: app
+    gradle:
+      - yes
+
   - versionName: 1.6.0
     versionCode: 14
-    commit: v1.6.0
+    commit: c03704ae4068b01cc0cc43928b3f3688093c6ebc
     subdir: app
     gradle:
       - yes
