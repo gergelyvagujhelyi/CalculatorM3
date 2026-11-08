@@ -32,6 +32,17 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504;
+      # retry that one-off download instead of failing the whole job.
+      - name: Download Gradle (with retries)
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew --version && exit 0
+            echo "Gradle download failed (attempt $attempt); retrying in 30s"
+            sleep 30
+          done
+          exit 1
+
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
@@ -63,12 +74,27 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504;
+      # retry that one-off download instead of failing the whole job.
+      - name: Download Gradle (with retries)
+        run: |
+          for attempt in 1 2 3; do
+            ./gradlew --version && exit 0
+            echo "Gradle download failed (attempt $attempt); retrying in 30s"
+            sleep 30
+          done
+          exit 1
+
       # Hardware acceleration for the x86_64 emulator on GitHub's Linux runners.
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+
+      # Build both APKs before booting the emulator, so emulator time is spent only on tests.
+      - name: Build debug APK and test APK
+        run: ./gradlew assembleDebug assembleDebugAndroidTest
 
       # API 34: CalculatorUiTest notes an AndroidX Test incompatibility on API 35.
       # The emulator is throwaway, so connectedDebugAndroidTest's install/uninstall is harmless.
