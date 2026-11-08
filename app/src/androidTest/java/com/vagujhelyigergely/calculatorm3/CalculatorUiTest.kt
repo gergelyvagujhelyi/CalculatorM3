@@ -1040,4 +1040,44 @@ class CalculatorUiTest {
         composeTestRule.onNodeWithTag(CalculatorTestTags.EXPRESSION).assertTextEquals("0")
         composeTestRule.onNode(hasText("7") and hasClickAction()).assertIsDisplayed()
     }
+
+    // ── Regressions: #81, #41, #80 ──────────────────────────────────
+
+    /** Exact-text match on non-clickable (display) nodes, so keypad buttons can't satisfy it. */
+    private fun displayNodes(text: String) =
+        composeTestRule.onAllNodes(hasText(text) and !hasClickAction())
+
+    @Test
+    fun digitAfterEqualsStartsNewCalculation() {
+        launch()
+        tap("1", "2", "+", "3", "=")
+        tap("4")
+        displayNodes("4").onFirst().assertIsDisplayed()
+        composeTestRule.onAllNodesWithText("154", substring = true).assertCountEquals(0)
+    }
+
+    @Test
+    fun operatorAfterEqualsContinuesFromAnswer() {
+        launch()
+        tap("1", "2", "+", "3", "=")
+        tap("+", "4", "=")
+        displayNodes("19").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun signTogglePowerAppliesSignAfterExponent() {
+        launch()
+        tap("8", "+/−", "^", "2", "+/−", "=")
+        // displayNodes, not expressionShows: #85 replaces that helper, and this test must
+        // compile whichever of the two PRs merges first.
+        displayNodes("-0.015625").onFirst().assertIsDisplayed()
+    }
+
+    @Test
+    fun largeNumberCancellationKeepsSmallTerm() {
+        launch()
+        tap("1", "0", "^", "1", "0", "0", "+", "1", "−", "1", "0", "^", "1", "0", "0", "=")
+        displayNodes("1").onFirst().assertIsDisplayed()
+        displayNodes("0").assertCountEquals(0)
+    }
 }
