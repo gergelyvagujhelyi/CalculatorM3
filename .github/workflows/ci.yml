@@ -64,8 +64,13 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # The slow emulator job (10-20 min) gates pull requests only. After a merge, develop runs just
+  # unit tests and lint: the PR already ran the UI tests on nearly the same code, and those fast
+  # jobs still refresh the shared Gradle cache (the wrapper distribution entry is shared by all
+  # jobs) and catch a combination of PRs that no longer compiles. Manual runs include it.
   ui-tests:
     name: UI tests (emulator, API 34)
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
