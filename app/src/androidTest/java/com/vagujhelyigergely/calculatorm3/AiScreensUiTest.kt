@@ -1,0 +1,225 @@
+package com.vagujhelyigergely.calculatorm3
+
+import androidx.annotation.StringRes
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
+import com.vagujhelyigergely.calculatorm3.ai.AiModel
+import com.vagujhelyigergely.calculatorm3.ai.MathSolver
+import com.vagujhelyigergely.calculatorm3.ai.ModelManager
+import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
+import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
+import com.vagujhelyigergely.calculatorm3.camera.DownloadingContent
+import com.vagujhelyigergely.calculatorm3.camera.ErrorContent
+import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
+import com.vagujhelyigergely.calculatorm3.camera.ModelCard
+import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
+import com.vagujhelyigergely.calculatorm3.camera.SuccessContent
+import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
+import org.junit.Assert.assertEquals
+import org.junit.Assume.assumeTrue
+import org.junit.Rule
+import org.junit.Test
+
+/**
+ * The AI Math Solver screens, rendered state by state with fake data: no model, network or
+ * camera is involved, so the results don't depend on what's installed on the device.
+ *
+ * Tests that would write the app's real settings run only when the instrumentation argument
+ * `allowDataWrites=true` is passed (CI does, on a throwaway emulator); on a personal phone
+ * they're skipped.
+ */
+class AiScreensUiTest {
+
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+    private fun str(@StringRes id: Int, vararg args: Any) = context.getString(id, *args)
+
+    private fun allowDataWrites() =
+        InstrumentationRegistry.getArguments().getString("allowDataWrites") == "true"
+
+    private fun show(content: @androidx.compose.runtime.Composable () -> Unit) {
+        composeTestRule.setContent { CalculatorM3Theme { content() } }
+    }
+
+    private fun button(text: String) = composeTestRule.onNode(hasText(text) and hasClickAction())
+
+    // ── Mobile-data warning ─────────────────────────────────────────────────
+
+    @Test
+    fun mobileDataWarningNamesTheSizeAndRoutesBothChoices() {
+        val model = AiModel.GEMMA4_E2B
+        var continued = 0
+        var cancelled = 0
+        show {
+            MobileDataWarningContent(
+                model = model,
+                onContinue = { continued++ },
+                onCancel = { cancelled++ },
+                onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.mobile_data_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.mobile_data_description, model.totalSizeDisplay))
+            .assertIsDisplayed()
+
+        button(str(R.string.download_anyway)).performClick()
+        assertEquals(1, continued)
+        button(str(R.string.cancel)).performClick()
+        assertEquals(1, cancelled)
+    }
+
+    // ── Model cards ─────────────────────────────────────────────────────────
+
+    private fun showCard(
+        model: AiModel,
+        isDownloaded: Boolean,
+        tooLarge: Boolean,
+        deviceRamGb: Int,
+        onSelect: (AiModel) -> Unit = {},
+        onDownload: (AiModel) -> Unit = {}
+    ) = show {
+        ModelCard(
+            model = model,
+            isDownloaded = isDownloaded,
+            isSelected = false,
+            tooLarge = tooLarge,
+            deviceRamGb = deviceRamGb,
+            onSelectModel = onSelect,
+            onDownloadModel = onDownload
+        )
+    }
+
+    @Test
+    fun modelTooLargeForTheDeviceSaysWhyAndDoesNothingWhenTapped() {
+        val model = AiModel.GEMMA4_E2B
+        val calls = mutableListOf<String>()
+        showCard(model, isDownloaded = false, tooLarge = true, deviceRamGb = model.minRamGb - 2,
+            onSelect = { calls += "select" }, onDownload = { calls += "download" })
+
+        composeTestRule.onNodeWithText(str(R.string.model_too_large, model.minRamGb, model.minRamGb - 2))
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(model.displayName).performClick()
+        assertEquals(emptyList<String>(), calls)
+    }
+
+    @Test
+    fun modelNotYetDownloadedStartsADownloadWhenTapped() {
+        val model = AiModel.GEMMA4_E2B
+        var downloaded: AiModel? = null
+        showCard(model, isDownloaded = false, tooLarge = false, deviceRamGb = 12,
+            onDownload = { downloaded = it })
+        composeTestRule.onNodeWithText("${model.totalSizeDisplay} · ${model.minRamGb} GB+ RAM").assertIsDisplayed()
+        composeTestRule.onNodeWithText(model.displayName).performClick()
+        assertEquals(model, downloaded)
+    }
+
+    @Test
+    fun downloadedModelIsSelectedWhenTapped() {
+        val model = AiModel.GEMMA4_E2B
+        var selected: AiModel? = null
+        showCard(model, isDownloaded = true, tooLarge = false, deviceRamGb = 12,
+            onSelect = { selected = it })
+        composeTestRule.onNodeWithContentDescription(str(R.string.downloaded)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(model.displayName).performClick()
+        assertEquals(model, selected)
+    }
+
+    // ── Result and error screens ────────────────────────────────────────────
+
+    @Test
+    fun answerScreenOffersTheAnswerAndRetry() {
+        var used = 0
+        var retried = 0
+        show {
+            SuccessContent(
+                answer = "42", rawResponse = "6 × 7 = 42\n42", elapsedMs = 1500, tokenCount = 12,
+                backend = "GPU", ttftMs = 800, decodeTokensPerSec = 20.0,
+                onUse = { used++ }, onRetry = { retried++ }, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.answer_found)).assertIsDisplayed()
+        button(str(R.string.use_answer, "42")).performClick()
+        assertEquals(1, used)
+        button(str(R.string.retry)).performClick()
+        assertEquals(1, retried)
+    }
+
+    @Test
+    fun errorScreenRetriesAndRevealsTheRawModelOutput() {
+        var retried = 0
+        val raw = "I see 1 / 0\nDivision by zero is undefined"
+        show {
+            ErrorContent(
+                message = str(R.string.error_no_numerical_answer),
+                rawResponse = raw,
+                onRetry = { retried++ },
+                onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.recognition_error)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(raw).assertDoesNotExist()
+
+        button(str(R.string.raw_model_output)).performClick()
+        composeTestRule.onNodeWithText(raw).assertIsDisplayed()
+
+        button(str(R.string.retry)).performClick()
+        assertEquals(1, retried)
+    }
+
+    // ── Download progress ───────────────────────────────────────────────────
+
+    @Test
+    fun downloadProgressShowsFileCountPercentageAndCancels() {
+        var cancelled = 0
+        show {
+            DownloadingContent(
+                currentFile = "Gemma 4 E2B (2.6 GB)",
+                downloadedBytes = 512L * 1024 * 1024,
+                totalBytes = 1024L * 1024 * 1024,
+                fileIndex = 0,
+                fileCount = 2,
+                onCancel = { cancelled++ },
+                onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.download_file_progress, 1, 2)).assertIsDisplayed()
+        composeTestRule.onNodeWithText("(50%)", substring = true).assertIsDisplayed()
+        button(str(R.string.cancel)).performClick()
+        assertEquals(1, cancelled)
+    }
+
+    // ── The 7× AC unlock (writes the real AI-unlock setting) ────────────────
+
+    /** A solver that never runs: the unlock test only needs the camera button to appear. */
+    private class FakeSolver : MathSolver {
+        override val isModelLoaded = false
+        override val activeBackend = "—"
+        override suspend fun loadModel(modelPath: String) = Unit
+        override suspend fun solveFromImageStreaming(
+            imagePath: String,
+            onToken: suspend (partialRaw: String) -> Unit
+        ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException())
+        override suspend fun release() = Unit
+    }
+
+    @Test
+    fun sevenRapidAllClearTapsRevealTheCameraButton() {
+        assumeTrue("Writes the app's real AI-unlock setting; runs only with allowDataWrites=true (CI emulator)",
+            allowDataWrites())
+        val scanViewModel = ScanViewModel(FakeSolver(), ModelManager(context), HuggingFaceAuthManager(context), context)
+        show { CalculatorScreen(viewModel = CalculatorViewModel(), scanViewModel = scanViewModel) }
+        val camera = hasContentDescription(str(R.string.scan_expression))
+        assumeTrue("AI features already unlocked on this device",
+            composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isEmpty())
+
+        repeat(7) { button("AC").performClick() }
+
+        composeTestRule.waitUntil(timeoutMillis = 5_000) {
+            composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isNotEmpty()
+        }
+        composeTestRule.onNode(camera).assertIsDisplayed()
+    }
+}
