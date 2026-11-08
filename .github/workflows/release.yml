@@ -30,6 +30,37 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Resolve the release tag once, then verify it describes what is about to be built: the
+      # tag must be v<versionName>, and if it already exists it must point at this commit.
+      # Otherwise a manual run could publish this build under another version's tag/name.
+      - name: Resolve and verify release version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_VERSION"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION_NAME=$(sed -n 's/^[[:space:]]*versionName[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
+          if [ -z "$VERSION_NAME" ]; then
+            echo "::error::Could not read versionName from app/build.gradle.kts"; exit 1
+          fi
+          if [ "$TAG" != "v$VERSION_NAME" ]; then
+            echo "::error::Release tag '$TAG' does not match versionName '$VERSION_NAME' (expected 'v$VERSION_NAME')"; exit 1
+          fi
+          TAG_COMMIT=$(git ls-remote --tags origin "refs/tags/$TAG^{}" | awk '{print $1}')
+          [ -z "$TAG_COMMIT" ] && TAG_COMMIT=$(git ls-remote --tags origin "refs/tags/$TAG" | awk '{print $1}')
+          if [ -n "$TAG_COMMIT" ] && [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
+            echo "::error::Tag '$TAG' already exists at $TAG_COMMIT, but this run built $GITHUB_SHA"; exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
       - name: Decode keystore
         if: ${{ env.KEYSTORE_BASE64 != '' }}
         env:
@@ -52,25 +83,27 @@ jobs:
       - name: Build release APK and AAB
         run: ./gradlew assembleRelease bundleRelease
 
-      - name: Build debug APK (fallback)
+      # A failed release build publishes nothing. For diagnosis only, build a debug APK and keep
+      # it as a workflow artifact — never as a release asset.
+      - name: Build diagnostic debug APK
         if: failure()
         run: ./gradlew assembleDebug
 
-      - name: Get version name
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
+      - name: Upload diagnostic debug APK
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostic-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Generate checksums
         id: checksums
         run: |
           APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
           if [ -z "$APK" ]; then
-            APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
+            echo "::error::No release APK was built"; exit 1
           fi
           echo "md5=$(md5sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "sha1=$(sha1sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
@@ -80,6 +113,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
+          # Create a new tag at the commit that was built, not the default branch's head.
+          target_commitish: ${{ github.sha }}
           name: Calculator M3 ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           append_body: true
@@ -94,7 +129,6 @@ jobs:
             | **SHA-256**| `${{ steps.checksums.outputs.sha256 }}` |
           files: |
             app/build/outputs/apk/release/*.apk
-            app/build/outputs/apk/debug/*.apk
             app/build/outputs/bundle/release/*.aab
 
       - name: Upload to Google Play

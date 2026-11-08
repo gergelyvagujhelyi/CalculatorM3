@@ -1,0 +1,49 @@
+name: Set up JDK and Gradle
+description: >-
+  Shared CI setup: JDK 17, setup-gradle (cache restore), patient dependency-download retries and a
+  retried Gradle distribution download. Used by every job in ci.yml so the copies can't drift.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Restores the Gradle User Home cache (wrapper distribution + dependencies). Per the
+    # setup-gradle docs only the default branch (develop) writes it; PRs restore develop's
+    # entry. PR writes stay off on purpose: they'd count toward the repo's 10 GB cache limit
+    # and could evict the shared entry. Gradle itself and some Maven artifacts are served
+    # from GitHub release downloads, which have no independent mirror, so a warm cache is
+    # what keeps a release-download outage from failing CI.
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+
+    # Gradle's own dependency-download retry gives up within a second; outages last minutes.
+    # CI-only (user-level gradle.properties): 8 retries with exponential backoff from 2s.
+    - name: Make dependency downloads retry patiently
+      shell: bash
+      run: |
+        mkdir -p ~/.gradle
+        {
+          echo "systemProp.org.gradle.internal.repository.max.retries=8"
+          echo "systemProp.org.gradle.internal.repository.initial.backoff=2000"
+        } >> ~/.gradle/gradle.properties
+
+    # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504 or
+    # time out; retry that one-off download with a growing pause (~7.5 min worst case) instead
+    # of failing the whole job. Once a develop run has cached it, setup-gradle restores it.
+    - name: Download Gradle (with retries)
+      shell: bash
+      run: |
+        # The wrapper's 10 s network timeout trips on slow GitHub release downloads; CI-only.
+        sed -i 's/^networkTimeout=.*/networkTimeout=60000/' gradle/wrapper/gradle-wrapper.properties
+        for attempt in 1 2 3 4 5; do
+          ./gradlew --version && exit 0
+          pause=$((attempt * 30))
+          echo "Gradle download failed (attempt $attempt of 5); retrying in ${pause}s"
+          sleep "$pause"
+        done
+        exit 1
