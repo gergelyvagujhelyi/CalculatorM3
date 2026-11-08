@@ -176,6 +176,11 @@ jobs:
           append_body: true
           body: |
 
+            ## 📦 Install
+
+            - **F-Droid:** https://f-droid.org/packages/com.vagujhelyigergely.calculatorm3/ (F-Droid builds each version itself, so it can appear there later than here)
+            - **APK:** `app-release.apk` below
+
             ## 🔑 Checksums
 
             | Algorithm  | Value |
