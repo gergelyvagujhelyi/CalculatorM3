@@ -72,6 +72,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
@@ -725,7 +726,12 @@ internal fun ScanQualitySwitch(quality: ScanQuality, onChange: (ScanQuality) -> 
                     onClick = { onChange(option) },
                     shape = SegmentedButtonDefaults.itemShape(index, options.size)
                 ) {
-                    Text(stringResource(label), maxLines = 1)
+                    // Shrinks rather than clipping a long label (e.g. a selected one with its check mark).
+                    Text(
+                        stringResource(label),
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = 14.sp)
+                    )
                 }
             }
         }
