@@ -29,14 +29,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Restores the Gradle User Home cache (wrapper distribution + dependencies). Per the
+      # setup-gradle docs only the default branch (develop) writes it; PRs restore develop's
+      # entry. PR writes stay off on purpose: they'd count toward the repo's 10 GB cache limit
+      # and could evict the shared entry. Gradle itself and some Maven artifacts are served
+      # from GitHub release downloads, which have no independent mirror, so a warm cache is
+      # what keeps a release-download outage from failing CI.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          # By default only develop/main runs save the cache, so every PR run starts cold and
-          # re-downloads everything. Let PR runs save too: a re-run after a failed download
-          # (GitHub release downloads, which serve Gradle and some Maven artifacts, sometimes
-          # return 504) then starts warm.
-          cache-read-only: false
 
       # Gradle's own dependency-download retry gives up within a second; outages last minutes.
       # CI-only (user-level gradle.properties): 8 retries with exponential backoff from 2s.
@@ -89,14 +89,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      # Restores the Gradle User Home cache (wrapper distribution + dependencies). Per the
+      # setup-gradle docs only the default branch (develop) writes it; PRs restore develop's
+      # entry. PR writes stay off on purpose: they'd count toward the repo's 10 GB cache limit
+      # and could evict the shared entry. Gradle itself and some Maven artifacts are served
+      # from GitHub release downloads, which have no independent mirror, so a warm cache is
+      # what keeps a release-download outage from failing CI.
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          # By default only develop/main runs save the cache, so every PR run starts cold and
-          # re-downloads everything. Let PR runs save too: a re-run after a failed download
-          # (GitHub release downloads, which serve Gradle and some Maven artifacts, sometimes
-          # return 504) then starts warm.
-          cache-read-only: false
 
       # Gradle's own dependency-download retry gives up within a second; outages last minutes.
       # CI-only (user-level gradle.properties): 8 retries with exponential backoff from 2s.
