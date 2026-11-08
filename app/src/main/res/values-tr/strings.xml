@@ -103,6 +103,8 @@
         <item quantity="other">Yapay zeka özelliklerinin kilidini açmaya %1$d dokunuş kaldı</item>
     </plurals>
     <string name="error_no_numerical_answer">Sayısal bir yanıt çıkarılamadı</string>
+    <string name="check_output_title">Modelin cevabını aşağıda kontrol edin</string>
+    <string name="check_output_hint">Kullanılacak tek bir sayıyla bitmedi. Çözümün tamamı aşağıda.</string>
     <string name="error_signin_failed">Oturum açılamadı: %1$s</string>
     <string name="please_try_again">lütfen tekrar deneyin</string>
     <string name="error_download_failed">İndirme başarısız: %1$s</string>

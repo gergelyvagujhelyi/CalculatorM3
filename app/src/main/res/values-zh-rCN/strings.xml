@@ -102,6 +102,8 @@
         <item quantity="other">还需按 %1$d 次即可解锁 AI 功能</item>
     </plurals>
     <string name="error_no_numerical_answer">无法识别出数字答案</string>
+    <string name="check_output_title">请查看下方模型的回答</string>
+    <string name="check_output_hint">它没有以可直接使用的单个数字结尾。完整的解题过程在下方。</string>
     <string name="error_signin_failed">登录失败：%1$s</string>
     <string name="please_try_again">请重试</string>
     <string name="error_download_failed">下载失败：%1$s</string>

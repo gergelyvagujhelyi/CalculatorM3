@@ -102,6 +102,8 @@
         <item quantity="other">Còn %1$d lần nhấn nữa để mở khóa tính năng AI</item>
     </plurals>
     <string name="error_no_numerical_answer">Không thể trích xuất câu trả lời dạng số</string>
+    <string name="check_output_title">Xem câu trả lời của mô hình bên dưới</string>
+    <string name="check_output_hint">Câu trả lời không kết thúc bằng một số duy nhất để dùng. Toàn bộ lời giải ở bên dưới.</string>
     <string name="error_signin_failed">Đăng nhập thất bại: %1$s</string>
     <string name="please_try_again">vui lòng thử lại</string>
     <string name="error_download_failed">Tải xuống thất bại: %1$s</string>

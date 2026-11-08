@@ -103,6 +103,8 @@
         <item quantity="other">Még %1$d megnyomás az MI-funkciók feloldásához</item>
     </plurals>
     <string name="error_no_numerical_answer">Nem sikerült számszerű választ kinyerni</string>
+    <string name="check_output_title">Nézd meg lent a modell válaszát</string>
+    <string name="check_output_hint">Nem egyetlen használható számmal zárult. A teljes levezetés lent látható.</string>
     <string name="error_signin_failed">A bejelentkezés sikertelen: %1$s</string>
     <string name="please_try_again">kérjük, próbáld újra</string>
     <string name="error_download_failed">A letöltés sikertelen: %1$s</string>

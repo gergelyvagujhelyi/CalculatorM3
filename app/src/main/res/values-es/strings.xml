@@ -104,6 +104,8 @@
         <item quantity="many">Te quedan %1$d pulsaciones para desbloquear las funciones de IA</item>
     </plurals>
     <string name="error_no_numerical_answer">No se pudo extraer una respuesta numérica</string>
+    <string name="check_output_title">Revisa la respuesta del modelo abajo</string>
+    <string name="check_output_hint">No terminó con un único número para usar. Su desarrollo completo está abajo.</string>
     <string name="error_signin_failed">Error al iniciar sesión: %1$s</string>
     <string name="please_try_again">inténtalo de nuevo</string>
     <string name="error_download_failed">Error en la descarga: %1$s</string>

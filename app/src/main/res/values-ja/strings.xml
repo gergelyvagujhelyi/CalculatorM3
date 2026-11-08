@@ -102,6 +102,8 @@
         <item quantity="other">AI機能のロック解除まであと %1$d 回</item>
     </plurals>
     <string name="error_no_numerical_answer">数値の答えを読み取れませんでした</string>
+    <string name="check_output_title">下のモデルの回答を確認してください</string>
+    <string name="check_output_hint">使用できる単一の数値で終わっていません。解き方の全文は下にあります。</string>
     <string name="error_signin_failed">サインインに失敗しました: %1$s</string>
     <string name="please_try_again">もう一度お試しください</string>
     <string name="error_download_failed">ダウンロードに失敗しました: %1$s</string>

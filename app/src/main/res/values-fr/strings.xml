@@ -104,6 +104,8 @@
         <item quantity="many">Encore %1$d appuis pour débloquer les fonctions IA</item>
     </plurals>
     <string name="error_no_numerical_answer">Impossible d\'extraire une réponse numérique</string>
+    <string name="check_output_title">Vérifiez la réponse du modèle ci-dessous</string>
+    <string name="check_output_hint">Elle ne se termine pas par un seul nombre à utiliser. Le raisonnement complet est ci-dessous.</string>
     <string name="error_signin_failed">Échec de la connexion : %1$s</string>
     <string name="please_try_again">veuillez réessayer</string>
     <string name="error_download_failed">Échec du téléchargement : %1$s</string>
