@@ -38,6 +38,9 @@
     <string name="initializing">Đang khởi tạo…</string>
     <string name="model_loading">Đang tải mô hình AI…</string>
     <string name="model_loading_hint">Đang tải mô hình thị giác vào bộ nhớ. Lần đầu sử dụng có thể mất đến một phút.</string>
+    <string name="model_format_update_title">Đang cập nhật sang định dạng mô hình mới</string>
+    <string name="model_preparing_title">Đang chuẩn bị mô hình AI</string>
+    <string name="model_preparing_hint">Việc này chỉ diễn ra một lần và có thể mất khoảng một phút.</string>
     <string name="answer_found">Đáp án</string>
     <string name="recognized_in">Đã giải trong %1$s</string>
     <string name="use_expression">Dùng</string>

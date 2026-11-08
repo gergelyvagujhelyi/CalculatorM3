@@ -38,6 +38,9 @@
     <string name="initializing">Инициализация…</string>
     <string name="model_loading">Загрузка модели ИИ…</string>
     <string name="model_loading_hint">Загрузка модели зрения в память. При первом использовании это может занять до минуты.</string>
+    <string name="model_format_update_title">Обновление до нового формата модели</string>
+    <string name="model_preparing_title">Подготовка модели ИИ</string>
+    <string name="model_preparing_hint">Это происходит только один раз и может занять около минуты.</string>
     <string name="answer_found">Ответ</string>
     <string name="recognized_in">Решено за %1$s</string>
     <string name="use_expression">Использовать</string>

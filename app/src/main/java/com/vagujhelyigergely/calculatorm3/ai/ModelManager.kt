@@ -1,5 +1,7 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import com.vagujhelyigergely.calculatorm3.BuildConfig
+
 import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
@@ -272,6 +274,21 @@ class ModelManager(private val context: Context) {
         // process may be killed before an async apply() lands. It runs on a background thread.
         @SuppressLint("ApplySharedPref")
         set(value) { prefs.edit().putInt("download_no_progress_streak", value).commit() }
+
+    /**
+     * True if [model] hasn't been loaded with the current LiteRT-LM version on this device yet.
+     * A new engine version does a slow one-time preparation of the model on its first load
+     * (measured: ~56 s instead of ~10 s on a Galaxy Note 9 for 0.13.1 -> 0.19.1).
+     */
+    fun needsPreparation(model: AiModel): Boolean =
+        prefs.getString(preparedKey(model), null) != BuildConfig.LITERT_LM_VERSION
+
+    /** Record that [model] has been loaded (prepared) with the current LiteRT-LM version. */
+    fun markPrepared(model: AiModel) {
+        prefs.edit().putString(preparedKey(model), BuildConfig.LITERT_LM_VERSION).apply()
+    }
+
+    private fun preparedKey(model: AiModel) = "prepared_engine_version_${model.id}"
 
     /**
      * HuggingFace access token for gated models (Gemma). Kept in its own preferences file

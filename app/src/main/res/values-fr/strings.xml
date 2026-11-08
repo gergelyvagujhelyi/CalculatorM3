@@ -38,6 +38,9 @@
     <string name="initializing">Initialisation…</string>
     <string name="model_loading">Chargement du modèle d\'IA…</string>
     <string name="model_loading_hint">Chargement du modèle de vision en mémoire. Cela peut prendre jusqu\'à une minute lors de la première utilisation.</string>
+    <string name="model_format_update_title">Mise à jour vers le nouveau format de modèle</string>
+    <string name="model_preparing_title">Préparation du modèle d\'IA</string>
+    <string name="model_preparing_hint">Cela ne se produit qu\'une seule fois et peut prendre environ une minute.</string>
     <string name="answer_found">Réponse</string>
     <string name="recognized_in">Résolu en %1$s</string>
     <string name="use_expression">Utiliser</string>

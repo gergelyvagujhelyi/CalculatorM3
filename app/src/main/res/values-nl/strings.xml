@@ -38,6 +38,9 @@
     <string name="initializing">Initialiseren…</string>
     <string name="model_loading">AI-model laden…</string>
     <string name="model_loading_hint">Het visiemodel wordt in het geheugen geladen. Bij het eerste gebruik kan dit tot een minuut duren.</string>
+    <string name="model_format_update_title">Bijwerken naar het nieuwe modelformaat</string>
+    <string name="model_preparing_title">AI-model wordt voorbereid</string>
+    <string name="model_preparing_hint">Dit gebeurt maar één keer en kan ongeveer een minuut duren.</string>
     <string name="answer_found">Antwoord</string>
     <string name="recognized_in">Opgelost in %1$s</string>
     <string name="use_expression">Gebruiken</string>

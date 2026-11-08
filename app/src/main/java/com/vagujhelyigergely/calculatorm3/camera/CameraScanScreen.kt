@@ -182,6 +182,7 @@ fun CameraScanScreen(
     // Downloads run in a WorkManager foreground service with their own notification,
     // so they survive the screen turning off and don't need this.
     val keepScreenOn = viewModel.uiState is ScanUiState.ModelLoading ||
+        viewModel.uiState is ScanUiState.PreparingModel ||
         viewModel.uiState is ScanUiState.Processing
     val activity = context as? android.app.Activity
     DisposableEffect(keepScreenOn) {
@@ -255,6 +256,11 @@ fun CameraScanScreen(
                                 onDismiss = onDismiss
                             )
                             is ScanUiState.ModelLoading -> ModelLoadingContent(
+                                startTimeMs = state.startTimeMs,
+                                onDismiss = onDismiss
+                            )
+                            is ScanUiState.PreparingModel -> ModelPreparingContent(
+                                isUpdate = state.isUpdate,
                                 startTimeMs = state.startTimeMs,
                                 onDismiss = onDismiss
                             )
@@ -363,6 +369,7 @@ fun CameraScanScreen(
 private fun ScanUiState.screenKey(): Any = when (this) {
     is ScanUiState.Idle -> "idle"
     is ScanUiState.ModelLoading -> "modelLoading"
+    is ScanUiState.PreparingModel -> "preparingModel"
     is ScanUiState.Capturing -> "capturing"
     is ScanUiState.Processing -> "processing"
     is ScanUiState.Success -> "success"
@@ -413,6 +420,29 @@ private fun StatusContent(
                 .align(Alignment.Center)
                 .padding(32.dp)
         )
+    }
+}
+
+/** The one-time model preparation after an AI engine update (or a fresh download). */
+@Composable
+internal fun ModelPreparingContent(isUpdate: Boolean, startTimeMs: Long, onDismiss: () -> Unit) {
+    AiStateScaffold(onDismiss = onDismiss) {
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            AiHero(
+                title = stringResource(
+                    if (isUpdate) R.string.model_format_update_title else R.string.model_preparing_title
+                ),
+                subtitle = stringResource(R.string.model_preparing_hint),
+                loading = true
+            )
+            ElapsedTimeText(startTimeMs = startTimeMs)
+        }
     }
 }
 

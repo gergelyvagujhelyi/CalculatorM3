@@ -38,6 +38,9 @@
     <string name="initializing">Initializing\u2026</string>
     <string name="model_loading">Loading AI model\u2026</string>
     <string name="model_loading_hint">Loading the vision model into memory. This may take up to a minute on first use.</string>
+    <string name="model_format_update_title">Updating to the new model format</string>
+    <string name="model_preparing_title">Preparing the AI model</string>
+    <string name="model_preparing_hint">This happens only once and can take about a minute.</string>
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>

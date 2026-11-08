@@ -38,6 +38,9 @@
     <string name="initializing">Inicializálás…</string>
     <string name="model_loading">MI-modell betöltése…</string>
     <string name="model_loading_hint">A vizuális modell betöltése a memóriába. Az első használatkor ez akár egy percig is eltarthat.</string>
+    <string name="model_format_update_title">Frissítés az új modellformátumra</string>
+    <string name="model_preparing_title">MI-modell előkészítése</string>
+    <string name="model_preparing_hint">Ez csak egyszer történik meg, és körülbelül egy percig tarthat.</string>
     <string name="answer_found">Válasz</string>
     <string name="recognized_in">Megoldva %1$s alatt</string>
     <string name="use_expression">Használat</string>

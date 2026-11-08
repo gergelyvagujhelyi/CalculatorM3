@@ -38,6 +38,9 @@
     <string name="initializing">Menginisialisasi…</string>
     <string name="model_loading">Memuat model AI…</string>
     <string name="model_loading_hint">Memuat model visi ke memori. Pada penggunaan pertama, ini bisa memakan waktu hingga satu menit.</string>
+    <string name="model_format_update_title">Memperbarui ke format model baru</string>
+    <string name="model_preparing_title">Menyiapkan model AI</string>
+    <string name="model_preparing_hint">Ini hanya terjadi sekali dan bisa memakan waktu sekitar satu menit.</string>
     <string name="answer_found">Jawaban</string>
     <string name="recognized_in">Diselesaikan dalam %1$s</string>
     <string name="use_expression">Gunakan</string>

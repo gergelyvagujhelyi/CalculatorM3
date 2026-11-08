@@ -27,6 +27,15 @@ import kotlinx.coroutines.withContext
 sealed interface ScanUiState {
     data object Idle : ScanUiState
     data class ModelLoading(val startTimeMs: Long = System.currentTimeMillis()) : ScanUiState
+    /**
+     * One-time preparation of the model for a new AI engine version (or a freshly downloaded
+     * model): it's loaded once, then released before the capture chooser appears. [isUpdate]
+     * picks the wording — "Updating to the new model format" vs "Preparing the AI model".
+     */
+    data class PreparingModel(
+        val isUpdate: Boolean,
+        val startTimeMs: Long = System.currentTimeMillis()
+    ) : ScanUiState
     data object Capturing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
@@ -84,8 +93,12 @@ class ScanViewModel(
     private var loadedModelId: String? = null
     private var downloadObserver: Job? = null
     private var inferenceJob: Job? = null
+    private var preparationJob: Job? = null
 
     fun initialize() {
+        // A preparation started earlier is still running (the window was closed and reopened):
+        // keep showing it rather than starting a second one.
+        if (preparationJob?.isActive == true) return
         viewModelScope.launch {
             // Re-attach to a download already running in the background (e.g. started
             // before the app was backgrounded) instead of showing the idle UI.
@@ -108,8 +121,38 @@ class ScanViewModel(
                 )
                 return@launch
             }
+            // A new AI engine version prepares the model on its first load, which is slow
+            // (about a minute). Do it now, with a message, instead of during the first scan.
+            if (modelManager.needsPreparation(selected)) {
+                prepareModel(selected, isUpdate = true)
+                return@launch
+            }
             // Don't load the model yet — show the capture chooser. The model is
             // loaded lazily in onPhotoCaptured, once a photo exists.
+            uiState = ScanUiState.Capturing
+        }
+    }
+
+    /**
+     * Load [model] once so the engine does its one-time preparation, then release it again so
+     * it isn't resident while the system camera opens; then show the capture chooser. Shows
+     * [ScanUiState.PreparingModel] until finished. A failure here isn't fatal: the first scan
+     * loads the model again and reports any error then.
+     */
+    private fun prepareModel(model: AiModel, isUpdate: Boolean) {
+        preparationJob = viewModelScope.launch {
+            uiState = ScanUiState.PreparingModel(isUpdate)
+            try {
+                withContext(Dispatchers.IO) {
+                    solver.loadModel(modelManager.modelPath(model))
+                    solver.release()
+                }
+                loadedModelId = null
+                modelManager.markPrepared(model)
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                android.util.Log.w("ScanViewModel", "Model preparation failed; first scan will retry", e)
+            }
             uiState = ScanUiState.Capturing
         }
     }
@@ -265,8 +308,13 @@ class ScanViewModel(
                             it.id == info.outputData.getString(ModelDownloadWorker.KEY_MODEL_ID)
                         } ?: modelManager.selectedModel
                         modelManager.selectedModel = m
-                        // Model loads lazily on first photo, not right after download.
-                        uiState = ScanUiState.Capturing
+                        // A fresh download still needs the engine's one-time preparation; do it
+                        // now, with a message, rather than making the first scan slow.
+                        if (modelManager.needsPreparation(m)) {
+                            prepareModel(m, isUpdate = false)
+                        } else {
+                            uiState = ScanUiState.Capturing
+                        }
                     }
                     WorkInfo.State.FAILED -> {
                         val out = info.outputData

@@ -20,6 +20,11 @@ kotlin {
     }
 }
 
+// LiteRT-LM (the on-device AI engine) version: the single source for the dependency below and for
+// BuildConfig.LITERT_LM_VERSION. A new engine version does a slow one-time preparation of each model
+// on its first load, which the AI screen shows as "Updating to the new model format".
+val litertLmVersion = "0.19.1"
+
 android {
     namespace = "com.vagujhelyigergely.calculatorm3"
     compileSdk = 35
@@ -41,6 +46,7 @@ android {
         targetSdk = 35
         versionCode = 15
         versionName = "1.6.1"
+        buildConfigField("String", "LITERT_LM_VERSION", "\"$litertLmVersion\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -82,6 +88,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     lint {
         // ChromeOsAbiSupport asks for an x86_64 build. LiteRT-LM (the on-device AI engine) ships
@@ -118,7 +125,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.5.0-alpha14")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.19.1")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:$litertLmVersion")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     // EXIF orientation of scanned photos; the framework android.media.ExifInterface has known
     // parsing bugs on older Android versions (minSdk is 26).
