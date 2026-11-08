@@ -1,5 +1,6 @@
 package com.vagujhelyigergely.calculatorm3
 
+import androidx.lifecycle.SavedStateHandle
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -1815,5 +1816,339 @@ class CalculatorViewModelTest {
         tap("5", "0", "%", "π")
         tapEquals()
         assertExpression("1.57079632679489661923132169164")
+    }
+
+    // ── Issue #81: new entry after equals ──────────────────────────────
+
+    private fun twelvePlusThreeEquals() {
+        tap("1", "2", "+", "3")
+        tapEquals()
+        assertExpression("15")
+    }
+
+    @Test
+    fun digitAfterEqualsStartsNewEntry() {
+        twelvePlusThreeEquals()
+        tap("4")
+        assertExpression("4")
+        assertEquals(1, vm.cursorPosition)
+    }
+
+    @Test
+    fun digitAfterEqualsClearsStaleHistoryLabel() {
+        twelvePlusThreeEquals()
+        tap("4")
+        assertEquals("", vm.history)
+        assertResult("4")
+    }
+
+    @Test
+    fun decimalAfterEqualsStartsNewEntry() {
+        twelvePlusThreeEquals()
+        tap(".")
+        assertExpression(".")
+        // Stale "15" preview and "12+3 =" label must not linger under "."
+        assertResult("")
+        assertEquals("", vm.history)
+        tap("5")
+        tapEquals()
+        assertExpression("0.5")
+    }
+
+    @Test
+    fun piAfterEqualsStartsNewEntry() {
+        twelvePlusThreeEquals()
+        tap("π")
+        assertExpression("π")
+    }
+
+    @Test
+    fun binaryOperatorAfterEqualsContinuesFromAnswer() {
+        twelvePlusThreeEquals()
+        tap("+", "4")
+        tapEquals()
+        assertExpression("19")
+    }
+
+    @Test
+    fun powerAfterEqualsContinuesFromAnswer() {
+        twelvePlusThreeEquals()
+        tap("^", "2")
+        tapEquals()
+        assertExpression("225")
+    }
+
+    @Test
+    fun unaryFunctionsAfterEqualsApplyToAnswer() {
+        tap("9", "+", "7")
+        tapEquals()
+        tap("√")
+        assertExpression("√(16)")
+
+        tap("AC", "2", "+", "1")
+        tapEquals()
+        tap("!")
+        assertExpression("3!")
+
+        tap("AC", "4", "0", "+", "1", "0")
+        tapEquals()
+        tap("%")
+        assertExpression("50%")
+
+        tap("AC")
+        twelvePlusThreeEquals()
+        tap("+/−")
+        assertExpression("-15")
+    }
+
+    @Test
+    fun digitAfterUnaryOnAnswerEditsInsteadOfClearing() {
+        twelvePlusThreeEquals()
+        tap("+/−", "4")
+        assertExpression("-154")
+    }
+
+    @Test
+    fun backspaceAfterEqualsEditsAnswer() {
+        twelvePlusThreeEquals()
+        tap("⌫", "4")
+        assertExpression("14")
+    }
+
+    @Test
+    fun cursorPlacementAfterEqualsEditsAnswer() {
+        twelvePlusThreeEquals()
+        vm.moveCursorTo(1)
+        tap("4")
+        assertExpression("145")
+    }
+
+    @Test
+    fun acAfterEqualsClearsCompletedState() {
+        twelvePlusThreeEquals()
+        tap("AC", "4", "5")
+        assertExpression("45")
+    }
+
+    @Test
+    fun secondDigitAfterEqualsAppends() {
+        twelvePlusThreeEquals()
+        tap("4", "5")
+        assertExpression("45")
+    }
+
+    @Test
+    fun errorThenDigitStartsFresh() {
+        tap("5", "÷", "0")
+        tapEquals()
+        tap("4")
+        assertExpression("4")
+    }
+
+    @Test
+    fun completedStateSurvivesSavedStateRestore() {
+        val handle = SavedStateHandle()
+        val first = CalculatorViewModel(savedState = handle)
+        listOf("1", "2", "+", "3", "=").forEach { first.onButtonPress(it) }
+        assertEquals("15", first.expression)
+
+        val restored = CalculatorViewModel(savedState = handle)
+        restored.onButtonPress("4")
+        assertEquals("4", restored.expression)
+    }
+
+    @Test
+    fun cursorPlacementClearsCompletedStateAcrossRestore() {
+        val handle = SavedStateHandle()
+        val first = CalculatorViewModel(savedState = handle)
+        listOf("1", "2", "+", "3", "=").forEach { first.onButtonPress(it) }
+        first.moveCursorTo(1)
+
+        val restored = CalculatorViewModel(savedState = handle)
+        restored.onButtonPress("4")
+        assertEquals("145", restored.expression)
+    }
+
+    @Test
+    fun historyLoadAfterEqualsAllowsNormalEditing() {
+        twelvePlusThreeEquals()
+        vm.loadHistoryEntry(vm.historyList[0])
+        tap("4")
+        assertExpression("154")
+    }
+
+    @Test
+    fun scanInputAfterEqualsAllowsNormalEditing() {
+        twelvePlusThreeEquals()
+        vm.setExpressionFromScan("7+")
+        tap("4")
+        assertExpression("7+4")
+    }
+
+    // ── Issue #41: unary sign precedence ───────────────────────────────
+
+    /** Parser cases go through scan input so keypad replacement rules don't interfere. */
+    private fun evalScan(expr: String): String {
+        vm.setExpressionFromScan(expr)
+        tapEquals()
+        return vm.result
+    }
+
+    @Test
+    fun unaryMinusBindsLooserThanPower() {
+        assertEquals("-0.015625", evalScan("-8^-2"))
+        assertEquals("-4", evalScan("-2^2"))
+    }
+
+    @Test
+    fun parenthesizedNegativeBaseForPower() {
+        assertEquals("0.015625", evalScan("(-8)^-2"))
+        assertEquals("4", evalScan("(-2)^2"))
+    }
+
+    @Test
+    fun negatedParenthesizedBaseForPower() {
+        assertEquals("-4", evalScan("-(2)^2"))
+    }
+
+    @Test
+    fun negativeExponent() {
+        assertEquals("0.125", evalScan("2^-3"))
+        assertEquals("0.125", evalScan("2^−3")) // Unicode minus from scan
+    }
+
+    @Test
+    fun powerRightAssociativeWithSignedExponent() {
+        assertEquals("0.0625", evalScan("2^-2^2"))
+        assertEquals("512", evalScan("2^3^2"))
+    }
+
+    @Test
+    fun unaryMinusBeforeParenthesisInProduct() {
+        assertEquals("-14", evalScan("2*-(3+4)"))
+        assertEquals("-14", evalScan("2×−(3+4)"))
+    }
+
+    @Test
+    fun unaryMinusBindsTighterThanMultiply() {
+        assertEquals("-6", evalScan("-2*3"))
+        assertEquals("6", evalScan("-2*-3"))
+        assertEquals("-1.5", evalScan("-3/2"))
+    }
+
+    @Test
+    fun negativeScientificNotationLiteral() {
+        assertEquals("-0.001", evalScan("-1E-3"))
+        assertEquals("-4997", evalScan("3-5E3"))
+        assertEquals("-200", evalScan("2*-1E2"))
+        assertEquals("0.01", evalScan("10^-2E0"))
+    }
+
+    @Test
+    fun doubleNegationAndUnaryPlus() {
+        assertEquals("2", evalScan("--2"))
+        assertEquals("5", evalScan("3--2"))
+        assertEquals("-2", evalScan("+-2"))
+    }
+
+    @Test
+    fun signedExponentTimesFactor() {
+        // (2^-3)×4, not 2^(-3×4)
+        assertEquals("0.5", evalScan("2^-3*4"))
+    }
+
+    @Test
+    fun sqrtGroupingWithPostfixFactorial() {
+        assertEquals("6", evalScan("√(9)!"))
+        assertEquals("-3", evalScan("-√(9)"))
+    }
+
+    @Test
+    fun negatedFactorial() {
+        assertEquals("-6", evalScan("-3!"))
+    }
+
+    @Test
+    fun negatedPercentKeepsConsumerPercent() {
+        assertEquals("180", evalScan("200+-10%"))
+        assertEquals("220", evalScan("200-(-10%)"))
+    }
+
+    @Test
+    fun keypadSignTogglePowerWithNegativeExponent() {
+        tap("8", "+/−", "^", "2", "+/−")
+        assertExpression("-8^-2")
+        tapEquals()
+        assertExpression("-0.015625")
+    }
+
+    @Test
+    fun keypadSignTogglePowerPositiveExponent() {
+        tap("2", "+/−", "^", "2")
+        tapEquals()
+        assertExpression("-4")
+    }
+
+    // ── Issue #80: large-number cancellation ───────────────────────────
+
+    @Test
+    fun largeCancellationKeepsSmallTerm() {
+        assertEquals("1", evalScan("10^100+1-10^100"))
+    }
+
+    @Test
+    fun largeCancellationKeepsSmallNegativeTerm() {
+        assertEquals("-1", evalScan("10^100-1-10^100"))
+    }
+
+    @Test
+    fun largeCancellationWithFraction() {
+        assertEquals("0.5", evalScan("10^100+0.5-10^100"))
+    }
+
+    @Test
+    fun largeCancellationAcrossEquals() {
+        tap("1", "0", "^", "1", "0", "0", "+", "1")
+        tapEquals()
+        tap("−", "1", "0", "^", "1", "0", "0")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun keypadLargeCancellation() {
+        tap("1", "0", "^", "1", "0", "0", "+", "1", "−", "1", "0", "^", "1", "0", "0")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun excessiveScaleAlignmentOverflowsSafely() {
+        assertEquals("Error: overflow", evalScan("1E+5000+1"))
+        assertEquals("Error: overflow", evalScan("1-1E+5000"))
+    }
+
+    @Test(timeout = 2000)
+    fun hugeScaleAlignmentFailsFastWithoutAllocating() {
+        assertEquals("Error: overflow", evalScan("1+1E-2000000000"))
+        assertEquals("Error: overflow", evalScan("1E+2000000000-1"))
+    }
+
+    @Test
+    fun exactAdditionWithinLimitStillWorks() {
+        // 1E+4000 + 1 needs 4001 aligned digits, within the 4096 limit;
+        // cancelling the big term must recover the 1.
+        assertEquals("1", evalScan("1E+4000+1-1E+4000"))
+    }
+
+    @Test
+    fun consumerPercentUnchangedWithExactAddition() {
+        assertEquals("110", evalScan("100+10%"))
+        assertEquals("90", evalScan("100-10%"))
+    }
+
+    @Test
+    fun addingZeroToHugeScaleIsFine() {
+        assertEquals("0", evalScan("0+0E-2000000000"))
     }
 }
