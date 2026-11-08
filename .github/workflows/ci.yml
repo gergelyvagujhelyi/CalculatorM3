@@ -31,6 +31,22 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # By default only develop/main runs save the cache, so every PR run starts cold and
+          # re-downloads everything. Let PR runs save too: a re-run after a failed download
+          # (GitHub release downloads, which serve Gradle and some Maven artifacts, sometimes
+          # return 504) then starts warm.
+          cache-read-only: false
+
+      # Gradle's own dependency-download retry gives up within a second; outages last minutes.
+      # CI-only (user-level gradle.properties): 8 retries with exponential backoff from 2s.
+      - name: Make dependency downloads retry patiently
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo "systemProp.org.gradle.internal.repository.max.retries=8"
+            echo "systemProp.org.gradle.internal.repository.initial.backoff=2000"
+          } >> ~/.gradle/gradle.properties
 
       # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504 or
       # time out; retry that one-off download with a growing pause (~7.5 min worst case) instead
@@ -75,6 +91,22 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          # By default only develop/main runs save the cache, so every PR run starts cold and
+          # re-downloads everything. Let PR runs save too: a re-run after a failed download
+          # (GitHub release downloads, which serve Gradle and some Maven artifacts, sometimes
+          # return 504) then starts warm.
+          cache-read-only: false
+
+      # Gradle's own dependency-download retry gives up within a second; outages last minutes.
+      # CI-only (user-level gradle.properties): 8 retries with exponential backoff from 2s.
+      - name: Make dependency downloads retry patiently
+        run: |
+          mkdir -p ~/.gradle
+          {
+            echo "systemProp.org.gradle.internal.repository.max.retries=8"
+            echo "systemProp.org.gradle.internal.repository.initial.backoff=2000"
+          } >> ~/.gradle/gradle.properties
 
       # The wrapper fetches Gradle from GitHub release downloads, which sometimes answer 504 or
       # time out; retry that one-off download with a growing pause (~7.5 min worst case) instead
