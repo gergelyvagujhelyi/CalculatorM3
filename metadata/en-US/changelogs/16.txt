@@ -1,0 +1,5 @@
+- AI Math Solver: newer AI engine, faster scans
+- After this update, the AI screen shows "Updating to the new model format" while the model is prepared once (about a minute)
+- If the AI model is deleted or damaged, the app offers to download it again
+- Themed app icon on Android 13+
+- Fixed a cancelled model download that could damage the file, and a scan that could fail when started right after the previous one
