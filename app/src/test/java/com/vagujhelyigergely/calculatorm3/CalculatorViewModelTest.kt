@@ -2130,7 +2130,9 @@ class CalculatorViewModelTest {
 
     @Test(timeout = 2000)
     fun hugeScaleAlignmentFailsFastWithoutAllocating() {
-        assertEquals("Error: overflow", evalScan("1+1E-2000000000"))
+        // Beyond the exact limit the sum is rounded (review on #82): a negligible term gives 1,
+        // a huge one is still caught by the output range guard. Both stay fast.
+        assertEquals("1", evalScan("1+1E-2000000000"))
         assertEquals("Error: overflow", evalScan("1E+2000000000-1"))
     }
 
@@ -2353,5 +2355,45 @@ class CalculatorViewModelTest {
         listOf("1", "2", "3").forEach { first.onButtonPress(it) }
         first.moveCursorTo(1)
         assertEquals(1, CalculatorViewModel(savedState = handle).cursorPosition)
+    }
+
+    // ── Review follow-ups (#82 / #86) ─────────────────────────────────
+
+    @Test(timeout = 3000)
+    fun tinyTermBeyondExactLimitRoundsInsteadOfOverflowing() {
+        // 10^-5000 is exact now; aligning it with 1 needs > 4096 digits, so the sum falls back
+        // to DECIMAL128 rounding (= 1) rather than reporting overflow.
+        assertEquals("1", evalScan("1+10^-5000"))
+        assertEquals("1", evalScan("1-10^-5000+10^-5000"))
+        assertEquals("1", evalScan("1+1E-2000000000"))
+    }
+
+    @Test(timeout = 3000)
+    fun hugeTermBeyondExactLimitStillReportsRangeError() {
+        // Rounding keeps 1E+5000 / 1E+2000000000, whose plain form is beyond the output limit.
+        assertEquals("Error: overflow", evalScan("1E+5000+1"))
+        assertEquals("Error: overflow", evalScan("1E+2000000000-1"))
+    }
+
+    @Test
+    fun answerAllowanceShrinksWhenTheAnswerIsDeleted() {
+        vm.setExpressionFromScan("10^999")
+        tapEquals()
+        assertEquals(1000, vm.expression.length)
+        repeat(1000) { tap("⌫") }
+        assertExpression("")
+        repeat(250) { tap("1") }
+        assertEquals(200, vm.expression.length)
+    }
+
+    @Test
+    fun answerAllowanceShrinksWithAPartialDelete() {
+        vm.setExpressionFromScan("10^999")
+        tapEquals()
+        repeat(500) { tap("⌫") }
+        assertEquals(500, vm.expression.length)
+        repeat(300) { tap("1") }
+        // Remaining 500 answer characters plus the normal 200-character typing budget.
+        assertEquals(700, vm.expression.length)
     }
 }

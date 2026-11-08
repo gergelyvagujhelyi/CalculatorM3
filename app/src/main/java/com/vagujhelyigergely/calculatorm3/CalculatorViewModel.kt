@@ -139,11 +139,10 @@ class CalculatorViewModel(
 
         /**
          * Upper bound on the coefficient digits an exact addition/subtraction may need after
-         * aligning the operands' scales (see [checkedExactAdd]). Keeps 10^100 + 1 − 10^100 exact
-         * while refusing alignments like 1 + 1E-2000000000 before BigDecimal allocates them.
+         * aligning the operands' scales (see [checkedExactAdd]). Keeps 10^100 + 1 − 10^100 exact;
+         * beyond it (1 + 1E-2000000000) the sum is rounded instead of allocating the alignment.
          */
         private const val MAX_EXACT_DIGITS = 4096L
-        private const val EXACT_LIMIT_MESSAGE = "Exact precision limit exceeded"
 
         // Locale-independent error codes used as the internal "result" sentinel
         // (detected via startsWith("Error")) and persisted across config changes.
@@ -375,6 +374,9 @@ class CalculatorViewModel(
                 insertAtCursor(label)
             }
         }
+        // The long-answer allowance covers only what's left of the answer: deleting it (or part of
+        // it) gives back the normal typing budget instead of silently raising it.
+        if (label != "=") answerAllowance = minOf(answerAllowance, expression.length)
         // Every edit refreshes the preview from the new expression ("=" sets the result itself).
         if (label != "=") updatePreview()
         saveState()
@@ -536,7 +538,6 @@ class CalculatorViewModel(
                 e.message?.contains("Negative sqrt") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Invalid factorial") == true -> ERROR_INVALID_OPERATION
                 e.message?.contains("Non-finite") == true -> ERROR_OVERFLOW
-                e.message == EXACT_LIMIT_MESSAGE -> ERROR_OVERFLOW
                 e.message == RANGE_LIMIT_MESSAGE -> ERROR_OVERFLOW
                 e.message?.contains("Nesting too deep") == true -> ERROR_INVALID_OPERATION
                 else -> ERROR_INVALID_OPERATION
@@ -752,9 +753,11 @@ class CalculatorViewModel(
     }
 
     /**
-     * Exact (unrounded) a + b, refused before any scale alignment if the aligned coefficients
-     * would exceed [MAX_EXACT_DIGITS]. Only + and − are exact; ×, ÷, ^, √ and ! still round
-     * to DECIMAL128, so the calculator as a whole is not exact or symbolic arithmetic.
+     * a + b, exact when the aligned coefficients fit in [MAX_EXACT_DIGITS], otherwise rounded to
+     * DECIMAL128 as before exact addition existed. The check runs before any scale alignment,
+     * and BigDecimal's rounded add skips the alignment when one operand is far below the other's
+     * precision, so neither path allocates a huge coefficient. Only + and − are exact; ×, ÷, ^,
+     * √ and ! still round to DECIMAL128, so the calculator is not exact or symbolic arithmetic.
      */
     private fun checkedExactAdd(a: BigDecimal, b: BigDecimal): BigDecimal {
         // A zero operand needs no alignment; skip it so a zero with an extreme scale is harmless.
@@ -768,7 +771,8 @@ class CalculatorViewModel(
             a.precision() + (targetScale - a.scale()),
             b.precision() + (targetScale - b.scale())
         )
-        if (alignedDigits > MAX_EXACT_DIGITS) throw ArithmeticException(EXACT_LIMIT_MESSAGE)
+        // Too far apart to add exactly (1 + 10^-5000): the rounded sum is the displayed answer anyway.
+        if (alignedDigits > MAX_EXACT_DIGITS) return a.add(b, MC)
         return a.add(b)
     }
 
