@@ -55,7 +55,14 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
+            // Sign only when keystore.properties exists (local release builds, and the release
+            // workflow, which writes it from secrets). Without it — e.g. F-Droid's reproducible
+            // build from source — Gradle produces an unsigned app-release-unsigned.apk instead of
+            // failing in packageRelease. The release workflow separately refuses to publish an
+            // APK that isn't signed with the release certificate, so this can't ship unsigned.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
