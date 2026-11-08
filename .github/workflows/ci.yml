@@ -53,6 +53,8 @@ jobs:
       # of failing the whole job. Once a develop run has cached it, setup-gradle restores it.
       - name: Download Gradle (with retries)
         run: |
+          # The wrapper's 10 s network timeout trips on slow GitHub release downloads; CI-only.
+          sed -i 's/^networkTimeout=.*/networkTimeout=60000/' gradle/wrapper/gradle-wrapper.properties
           for attempt in 1 2 3 4 5; do
             ./gradlew --version && exit 0
             pause=$((attempt * 30))
@@ -113,6 +115,8 @@ jobs:
       # of failing the whole job. Once a develop run has cached it, setup-gradle restores it.
       - name: Download Gradle (with retries)
         run: |
+          # The wrapper's 10 s network timeout trips on slow GitHub release downloads; CI-only.
+          sed -i 's/^networkTimeout=.*/networkTimeout=60000/' gradle/wrapper/gradle-wrapper.properties
           for attempt in 1 2 3 4 5; do
             ./gradlew --version && exit 0
             pause=$((attempt * 30))
@@ -133,17 +137,22 @@ jobs:
         run: ./gradlew assembleDebug assembleDebugAndroidTest
 
       # API 34: CalculatorUiTest notes an AndroidX Test incompatibility on API 35.
+      # The app ships only arm64-v8a (LiteRT-LM's native libraries), so the x86_64 emulator must
+      # be a Google APIs image: those include ARM binary translation and report arm64-v8a, where
+      # the plain "default" image makes Gradle answer "No compatible devices connected".
       # The emulator is throwaway, so connectedDebugAndroidTest's install/uninstall is harmless.
       - name: Run instrumented UI tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           arch: x86_64
-          target: default
+          target: google_apis
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          script: ./gradlew connectedDebugAndroidTest
+          script: |
+            echo "Emulator ABIs: $(adb shell getprop ro.product.cpu.abilist)"
+            ./gradlew connectedDebugAndroidTest
 
       - name: Upload UI test reports
         if: failure()
