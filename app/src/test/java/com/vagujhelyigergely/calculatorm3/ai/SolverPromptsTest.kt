@@ -123,6 +123,16 @@ class SolverPromptsTest {
     }
 
     @Test
+    fun `a comma after a lone zero is a decimal comma, not a thousands separator`() {
+        // 0,125 used to lose its comma and become 125: no thousands-separated number starts with 0.
+        assertEquals("0.125", SolverPrompts.extractAnswer("The answer is 0,125"))
+        assertEquals("0.125", SolverPrompts.extractAnswer("1 ÷ 8 = 0,125"))
+        assertEquals("-0.5", SolverPrompts.extractAnswer("x = −0,5"))
+        assertEquals("10500", SolverPrompts.extractAnswer("Total: 10,500"))
+        assertEquals("1000", SolverPrompts.extractAnswer("1,000"))
+    }
+
+    @Test
     fun `number right after equals on a messy last line`() {
         // Was '5' before (last number on the line); the result after '=' is the answer.
         assertEquals("17", SolverPrompts.extractAnswer("So x = 17 (that is 12 + 5)"))

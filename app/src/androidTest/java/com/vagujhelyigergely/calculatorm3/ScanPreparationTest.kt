@@ -131,6 +131,36 @@ class ScanPreparationTest {
     }
 
     @Test
+    fun choosingAnUnpreparedModelInThePickerPreparesItFirst() {
+        // Picking a downloaded model the current engine hasn't prepared used to go straight to
+        // the capture chooser, leaving the slow preparation to the first scan, unexplained.
+        val solver = FakeSolver()
+        val vm = newViewModel(solver)
+        instrumentation.runOnMainSync { vm.selectModel(model) }
+
+        waitFor(5_000, "the preparing message") { vm.uiState is ScanUiState.PreparingModel }
+        solver.loadGate.complete(Unit)
+        waitFor(5_000, "the capture chooser") { vm.uiState is ScanUiState.Capturing }
+        assertEquals(listOf("load", "release"), solver.events.toList())
+        assertFalse("prepared for this engine version", manager.needsPreparation(model))
+    }
+
+    @Test
+    fun aScanThatLoadsAnUnpreparedModelRecordsItAsPrepared() {
+        // Whatever path leads to a successful load, it did the preparation: Retry and the next
+        // open must not prepare the model again.
+        val solver = FakeSolver()
+        val vm = newViewModel(solver)
+        val photo = File(context.cacheDir, "prep_${System.nanoTime()}.jpg").apply { writeText("x") }
+        instrumentation.runOnMainSync { vm.onPhotoCaptured(photo.path) }
+        waitFor(5_000, "the model load") { "load" in solver.events }
+        assertTrue(manager.needsPreparation(model))
+
+        solver.loadGate.complete(Unit)
+        waitFor(5_000, "the preparation record") { !manager.needsPreparation(model) }
+    }
+
+    @Test
     fun reopeningTheWindowDuringPreparationDoesNotStartASecondOne() {
         val solver = FakeSolver()
         val vm = newViewModel(solver)

@@ -20,8 +20,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.math.BigDecimal
 
 class CalculatorViewModelTest {
 
@@ -244,6 +246,22 @@ class CalculatorViewModelTest {
     fun noDuplicateDecimal() {
         tap("1", ".", "2", ".")
         assertExpression("1.2")
+    }
+
+    @Test
+    fun noDecimalPointAfterAValueThatEndsANumber() {
+        // "2π." and "5%." used to be accepted and then fail with "Invalid operation".
+        tap("2", "π", ".")
+        assertExpression("2π")
+        tap("AC", "5", "%", ".")
+        assertExpression("5%")
+        tap("AC", "3", "!", ".")
+        assertExpression("3!")
+        tap("AC", "9", "√", ".")
+        assertExpression("√(9)")
+        // A point still starts a new operand after an operator: 2π+.5
+        tap("AC", "2", "π", "+", ".", "5")
+        assertExpression("2π+.5")
     }
 
     @Test
@@ -567,6 +585,24 @@ class CalculatorViewModelTest {
     // ── Sqrt edge cases ────────────────────────────────────────────────
 
     @Test
+    fun repeatedSqrtStopsAtTheNestingLimit() {
+        // Each √ wraps the expression in another √( ); past 20 levels it can't be evaluated,
+        // and it used to keep growing past the 200-character limit.
+        tap("9")
+        repeat(80) { tap("√") }
+        assertEquals(20, vm.expression.count { it == '(' })
+        tapEquals()
+        assertTrue(!vm.result.startsWith("Error"))
+    }
+
+    @Test
+    fun sqrtRespectsTheLengthLimit() {
+        repeat(199) { tap("1") }
+        tap("√")
+        assertEquals(199, vm.expression.length)
+    }
+
+    @Test
     fun sqrtOfZero() {
         tap("0", "√")
         tapEquals()
@@ -689,6 +725,40 @@ class CalculatorViewModelTest {
     fun powerIgnoredAfterOperator() {
         tap("5", "+", "^")
         assertExpression("5+")
+    }
+
+    @Test
+    fun fractionalPowerOfAHugeBaseIsComputed() {
+        // 10^400 doesn't fit in a Double; this used to report "Result out of range".
+        tap("1", "0", "^", "4", "0", "0")
+        tapEquals()
+        tap("^", "0", ".", "5")
+        tapEquals()
+        assertEquals(0, BigDecimal("1E+200").compareTo(BigDecimal(vm.historyList.first().result)))
+    }
+
+    @Test
+    fun fractionalPowerOutsideDoubleRange() {
+        assertEquals(0, BigDecimal("1E+200").compareTo(BigDecimal(evalScan("1E+400^0.5"))))
+        assertEquals(0, BigDecimal("1E-200").compareTo(BigDecimal(evalScan("1E-400^0.5"))))
+        // 2^5000.5 = 2^5000 × √2 ≈ 1.997 × 10^1505, to the 12 significant digits it keeps.
+        val big = BigDecimal(evalScan("2^5000.5"))
+        val expected = BigDecimal(2).pow(5000).multiply(BigDecimal("1.41421356237309504880"))
+        assertTrue(big.subtract(expected).abs() < expected.movePointLeft(11))
+    }
+
+    @Test
+    fun fractionalPowerOfANegativeNumberIsInvalidNotOverflow() {
+        assertEquals("Error: invalidOperation", evalScan("(-8)^0.5"))
+        // Integer exponents of negative bases still work, inside and outside Double's range.
+        assertEquals("-8", evalScan("(-2)^3"))
+        assertEquals("Error: overflow", evalScan("(-2)^100001"))
+    }
+
+    @Test
+    fun fractionalPowerOfZero() {
+        assertEquals("0", evalScan("0^0.5"))
+        assertEquals("Error: divisionByZero", evalScan("0^-0.5"))
     }
 
     // ── Percentage edge cases ──────────────────────────────────────────
@@ -1859,12 +1929,9 @@ class CalculatorViewModelTest {
 
     @Test
     fun deeplyNestedSqrtErrors() {
-        // Build √(√(√(...√(4)...))) with 21 levels — exceeds MAX_PAREN_DEPTH of 20
-        tap("4")
-        repeat(21) { tap("√") }
-        tapEquals()
-        assertResult("Error: invalidOperation")
-        assertExpression("")
+        // √(√(√(...√(4)...))) with 21 levels exceeds MAX_PAREN_DEPTH of 20. The √ key stops at 20
+        // (see repeatedSqrtStopsAtTheNestingLimit), so this comes in through scan input.
+        assertEquals("Error: invalidOperation", evalScan("√(".repeat(21) + "4" + ")".repeat(21)))
     }
 
     @Test
@@ -2425,10 +2492,17 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun underflowingFractionalPowerReportsRangeError() {
-        vm.setExpressionFromScan("10^-1000.5")
-        tapEquals()
-        assertResult("Error: overflow")
+    fun fractionalPowerBelowDoubleRangeIsComputed() {
+        // Below Double's range (~1E-308) but well within the calculator's, like 10^-1000 = 1E-1000.
+        val r = BigDecimal(evalScan("10^-1000.5"))
+        val expected = BigDecimal("3.16227766016838E-1001")
+        assertTrue(r.subtract(expected).abs() < expected.movePointLeft(11))
+    }
+
+    @Test
+    fun fractionalPowerBeyondTheResultLimitReportsRangeError() {
+        assertEquals("Error: overflow", evalScan("10^-5000.5"))
+        assertEquals("Error: overflow", evalScan("10^5000.5"))
     }
 
     @Test

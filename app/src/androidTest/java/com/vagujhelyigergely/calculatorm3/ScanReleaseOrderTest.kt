@@ -11,6 +11,12 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -55,6 +61,45 @@ class ScanReleaseOrderTest {
         }
     }
 
+    /**
+     * Like the real LiteRTSolver: load, release and solve share one lock, and a load can't be
+     * interrupted (the native call runs to the end; the caller's cancellation only shows once it
+     * returns, with the engine loaded). The first load is held open until [loadGate].
+     */
+    private class LockedSolver : MathSolver {
+        val events: MutableList<String> = Collections.synchronizedList(mutableListOf())
+        val loadGate = CompletableDeferred<Unit>()
+        private val mutex = Mutex()
+        @Volatile var loaded = false
+        @Volatile var loadedWhenSolving: Boolean? = null
+        private var loads = 0
+
+        override val isModelLoaded get() = loaded
+        override val activeBackend = "fake"
+        override suspend fun loadModel(modelPath: String) = mutex.withLock {
+            val first = synchronized(this) { loads++ == 0 }
+            withContext(NonCancellable) {
+                events += "load-start"
+                if (first) loadGate.await()
+                loaded = true
+                events += "load-end"
+            }
+            currentCoroutineContext().ensureActive()
+        }
+        override suspend fun solveFromImageStreaming(
+            imagePath: String, onToken: suspend (partialRaw: String) -> Unit
+        ): Result<RecognitionResult> = mutex.withLock {
+            loadedWhenSolving = loaded
+            events += "solve"
+            if (loaded) Result.success(RecognitionResult(raw = "42", answer = "42"))
+            else Result.failure(IllegalStateException("Model not loaded"))
+        }
+        override suspend fun release() = mutex.withLock {
+            loaded = false
+            events += "release"
+        }
+    }
+
     private fun photo(): String {
         val file = File(context.cacheDir, "release_order_${System.nanoTime()}.jpg")
         val bmp = Bitmap.createBitmap(64, 32, Bitmap.Config.ARGB_8888).apply { eraseColor(Color.WHITE) }
@@ -74,6 +119,45 @@ class ScanReleaseOrderTest {
     @After
     fun tearDown() {
         created.forEach { it.delete() }
+        // A successful (fake) load records the model as prepared; don't leave that for other tests.
+        context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE).edit()
+            .remove("prepared_engine_version_${AiModel.GEMMA4_E2B.id}").commit()
+    }
+
+    @Test
+    fun aScanStoppedDuringItsLoadDoesNotCloseTheNextScansEngine() {
+        assumeTrue("Writes app data; run with allowDataWrites=true",
+            InstrumentationRegistry.getArguments().getString("allowDataWrites") == "true")
+        val solver = LockedSolver()
+        installPlaceholderModel()
+        val vm = ScanViewModel(solver, ModelManager(context), HuggingFaceAuthManager(context), context)
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+
+        // Scan A starts loading the model (slow, can't be interrupted) and the user stops it.
+        instrumentation.runOnMainSync { vm.onPhotoCaptured(photo()) }
+        assertTrue(waitFor(5_000) { "load-start" in solver.events })
+        instrumentation.runOnMainSync { vm.stopInference() }
+        // Right away the user picks another photo: scan B.
+        instrumentation.runOnMainSync { vm.onPhotoCaptured(photo()) }
+        Thread.sleep(500)
+        // A's load finishes now. A's cleanup then releases the engine; that release must not
+        // land between B's load and B's solve.
+        solver.loadGate.complete(Unit)
+
+        assertTrue("scan B never solved: ${solver.events}", waitFor(10_000) { "solve" in solver.events })
+        assertEquals("the engine was closed under scan B: ${solver.events}", true, solver.loadedWhenSolving)
+    }
+
+    private fun installPlaceholderModel() {
+        // Placeholder files so the selected model counts as downloaded (the fake solver never
+        // reads them); only files created here are deleted afterwards.
+        val manager = ModelManager(context)
+        val model = AiModel.GEMMA4_E2B
+        manager.selectedModel = model
+        for (f in model.files) {
+            val file = File(File(context.getExternalFilesDir(null), "models/${model.id}"), f.filename)
+            if (!file.exists()) { file.parentFile!!.mkdirs(); file.writeText("placeholder"); created += file }
+        }
     }
 
     @Test
