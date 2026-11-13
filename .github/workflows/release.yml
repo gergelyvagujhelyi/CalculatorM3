@@ -57,7 +57,18 @@ jobs:
           if [ -n "$TAG_COMMIT" ] && [ "$TAG_COMMIT" != "$GITHUB_SHA" ]; then
             echo "::error::Tag '$TAG' already exists at $TAG_COMMIT, but this run built $GITHUB_SHA"; exit 1
           fi
+          # The release notes' "What's new" comes from the F-Droid changelog for this versionCode,
+          # so a release without one fails here, before anything is built or published.
+          VERSION_CODE=$(sed -n 's/^[[:space:]]*versionCode[[:space:]]*=[[:space:]]*\([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
+          CHANGELOG="metadata/en-US/changelogs/$VERSION_CODE.txt"
+          if [ -z "$VERSION_CODE" ]; then
+            echo "::error::Could not read versionCode from app/build.gradle.kts"; exit 1
+          fi
+          if [ ! -s "$CHANGELOG" ]; then
+            echo "::error::$CHANGELOG is missing or empty; write this version's changelog before releasing"; exit 1
+          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "changelog=$CHANGELOG" >> "$GITHUB_OUTPUT"
 
       # UI tests run only after merging (ci.yml, develop/main pushes), so a UI regression can sit
       # on develop. Never release such a commit: require a passing CI run (push or manual,
@@ -165,6 +176,36 @@ jobs:
           echo "sha1=$(sha1sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
           echo "sha256=$(sha256sum "$APK" | awk '{print $1}')" >> $GITHUB_OUTPUT
 
+      # What's new (the F-Droid changelog), then install links and checksums; GitHub appends
+      # its generated list of merged PRs below.
+      - name: Write release notes
+        env:
+          CHANGELOG: ${{ steps.version.outputs.changelog }}
+          MD5: ${{ steps.checksums.outputs.md5 }}
+          SHA1: ${{ steps.checksums.outputs.sha1 }}
+          SHA256: ${{ steps.checksums.outputs.sha256 }}
+        run: |
+          {
+            echo "## ✨ What's new"
+            echo
+            cat "$CHANGELOG"
+            echo
+            echo
+            echo "## 📦 Install"
+            echo
+            echo "- **F-Droid:** https://f-droid.org/packages/com.vagujhelyigergely.calculatorm3/ (F-Droid builds each version itself, so it can appear there later than here)"
+            echo "- **APK:** \`app-release.apk\` below"
+            echo
+            echo "## 🔑 Checksums"
+            echo
+            echo "| Algorithm  | Value |"
+            echo "|------------|-------|"
+            echo "| **MD5**    | \`$MD5\` |"
+            echo "| **SHA1**   | \`$SHA1\` |"
+            echo "| **SHA-256**| \`$SHA256\` |"
+          } > release-notes.md
+          cat release-notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -174,20 +215,7 @@ jobs:
           name: Calculator M3 ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           append_body: true
-          body: |
-
-            ## 📦 Install
-
-            - **F-Droid:** https://f-droid.org/packages/com.vagujhelyigergely.calculatorm3/ (F-Droid builds each version itself, so it can appear there later than here)
-            - **APK:** `app-release.apk` below
-
-            ## 🔑 Checksums
-
-            | Algorithm  | Value |
-            |------------|-------|
-            | **MD5**    | `${{ steps.checksums.outputs.md5 }}` |
-            | **SHA1**   | `${{ steps.checksums.outputs.sha1 }}` |
-            | **SHA-256**| `${{ steps.checksums.outputs.sha256 }}` |
+          body_path: release-notes.md
           files: |
             app/build/outputs/apk/release/app-release.apk
             app/build/outputs/bundle/release/*.aab
