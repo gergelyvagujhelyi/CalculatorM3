@@ -24,6 +24,11 @@ interface MathSolver {
     val activeBackend: String
 
     suspend fun loadModel(modelPath: String)
+
+    /**
+     * Solve the photo at [imagePath], calling [onToken] with the full output so far as it
+     * streams. An empty string means the output restarts from scratch (e.g. a GPU→CPU retry).
+     */
     suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit

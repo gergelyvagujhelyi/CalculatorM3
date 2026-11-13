@@ -274,6 +274,7 @@ fun CameraScanScreen(
                                 onScanQualityChange = { viewModel.updateScanQuality(it) },
                                 onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
                                 onCaptureError = { msg -> viewModel.onCaptureError(msg) },
+                                onPickedImageUnreadable = { viewModel.onPickedImageUnreadable() },
                                 onSwitchModel = { viewModel.showModelSelection() },
                                 onDismiss = onDismiss
                             )
@@ -602,6 +603,7 @@ private fun CameraContent(
     onScanQualityChange: (ScanQuality) -> Unit,
     onPhotoCaptured: (String) -> Unit,
     onCaptureError: (String) -> Unit,
+    onPickedImageUnreadable: () -> Unit,
     onSwitchModel: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -632,7 +634,7 @@ private fun CameraContent(
             scope.launch {
                 val path = copyUriToCache(context, uri)
                 if (path != null) onPhotoCaptured(path)
-                else onCaptureError("Could not open the selected image")
+                else onPickedImageUnreadable()
             }
         }
     }
@@ -760,7 +762,12 @@ private suspend fun copyUriToCache(context: android.content.Context, uri: Uri): 
                 null
             } else {
                 val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-                input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
+                try {
+                    input.use { source -> file.outputStream().use { output -> source.copyTo(output) } }
+                } catch (e: Exception) {
+                    file.delete() // don't leave a partial copy in the cache
+                    throw e
+                }
                 file.absolutePath
             }
         } catch (e: Exception) {

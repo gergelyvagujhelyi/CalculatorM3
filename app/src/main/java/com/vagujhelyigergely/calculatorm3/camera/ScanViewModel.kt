@@ -40,6 +40,7 @@ sealed interface ScanUiState {
     data object Capturing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
+        /** Start of the current inference attempt (a GPU→CPU retry starts a new one). */
         val startTimeMs: Long = System.currentTimeMillis(),
         val tokenCount: Int = 0,
         val backend: String = "",
@@ -473,17 +474,23 @@ class ScanViewModel(
                 var lastTokenMs = 0L
                 var lastUiUpdateMs = 0L
                 var lastRawLen = 0
+                // When the attempt that produced the answer started: TTFT is measured from here.
+                var attemptStartMs = startTime
                 val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
                     // Time decode at the source (inference dispatcher), independent of the UI:
                     // the first token marks end-of-prefill (TTFT); the rest is the decode window.
                     val now = System.currentTimeMillis()
                     // The solver can silently reload GPU→CPU and replay inference with this same
-                    // callback, restarting the streamed text from empty. Detect that reset (the
-                    // cumulative output shrank) and restart our counters so the stats reflect the
-                    // attempt that actually produced the answer.
-                    if (partialRaw.length < lastRawLen) {
+                    // callback. It signals that with an empty string; restart the counters and the
+                    // TTFT reference so the stats describe the attempt that produced the answer
+                    // ("Solved in" still counts the whole wait). A shrinking output is treated
+                    // the same, for solvers that don't send the signal.
+                    if (partialRaw.isEmpty() || partialRaw.length < lastRawLen) {
                         tokenCount = 0
                         firstTokenMs = 0L
+                        attemptStartMs = now
+                        lastRawLen = 0
+                        if (partialRaw.isEmpty()) return@solveFromImageStreaming
                     }
                     lastRawLen = partialRaw.length
                     if (tokenCount == 0) firstTokenMs = now
@@ -496,10 +503,12 @@ class ScanViewModel(
                         // Main thread; snapshot the mutable counters first to avoid a race.
                         val uiTokenCount = tokenCount
                         val uiFirstTokenMs = firstTokenMs.takeIf { it > 0L }
+                        val uiAttemptStartMs = attemptStartMs
                         inferenceScope.launch {
                             uiState = ScanUiState.Processing(
                                 partialRaw = partialRaw,
-                                startTimeMs = startTime,
+                                // The live prefill/TTFT readout times the current attempt.
+                                startTimeMs = uiAttemptStartMs,
                                 tokenCount = uiTokenCount,
                                 backend = solver.activeBackend,
                                 firstTokenMs = uiFirstTokenMs
@@ -508,7 +517,7 @@ class ScanViewModel(
                     }
                 }
                 val elapsed = System.currentTimeMillis() - startTime
-                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - startTime else elapsed
+                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - attemptStartMs else elapsed
                 val decodeMs = (lastTokenMs - firstTokenMs).coerceAtLeast(0L)
                 val decodeTps = if (tokenCount > 1 && decodeMs > 0L)
                     (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
@@ -581,7 +590,8 @@ class ScanViewModel(
         val sampleSize = if (maxOf(w, h) > maxEdge) Integer.highestOneBit(maxOf(w, h) / maxEdge) else 1
         val decodeOpts = BitmapFactory.Options().apply { inSampleSize = maxOf(1, sampleSize) }
         var bmp = BitmapFactory.decodeFile(imagePath, decodeOpts) ?: return null
-        return try {
+        var outFile: java.io.File? = null
+        val result = try {
             bmp = applyExifOrientation(imagePath, bmp)
             // Scale down further if still larger than maxEdge after sampling.
             val longest = maxOf(bmp.width, bmp.height)
@@ -591,14 +601,19 @@ class ScanViewModel(
                 if (scaled !== bmp) bmp.recycle()
                 bmp = scaled
             }
-            val outFile = java.io.File(java.io.File(imagePath).parent, "scan_prepared_${System.nanoTime()}.jpg")
-            outFile.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
-            outFile.absolutePath
+            outFile = java.io.File(java.io.File(imagePath).parent, "scan_prepared_${System.nanoTime()}.jpg")
+            val written = outFile.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            // compress() returns false instead of throwing when it can't encode: don't hand the
+            // model an empty or truncated file.
+            if (written) outFile.absolutePath else null
         } catch (e: Exception) {
             null
         } finally {
             bmp.recycle()
         }
+        // The caller only deletes a file whose path it got back: remove a failed one here.
+        if (result == null) outFile?.delete()
+        return result
     }
 
     /** Rotate/flip [bitmap] to upright per the source file's EXIF orientation tag. */
@@ -629,6 +644,11 @@ class ScanViewModel(
         } catch (e: Exception) {
             bitmap
         }
+    }
+
+    /** A photo picked from the gallery couldn't be read. */
+    fun onPickedImageUnreadable() {
+        uiState = ScanUiState.Error(appContext.getString(R.string.error_image_process))
     }
 
     fun onCaptureError(message: String) {
