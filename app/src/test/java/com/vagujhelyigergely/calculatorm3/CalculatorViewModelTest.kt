@@ -405,6 +405,30 @@ class CalculatorViewModelTest {
     }
 
     @Test
+    fun aFailingHistoryStoreNeverCrashesTheCalculator() {
+        // Only IOException used to be caught: anything else DataStore or the SharedPreferences
+        // migration throws went uncaught in viewModelScope / MainScope and crashed the app.
+        val uncaught = mutableListOf<Throwable>()
+        val thread = Thread.currentThread()
+        val previousHandler = thread.uncaughtExceptionHandler
+        thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e -> uncaught += e }
+        try {
+            val broken = object : DataStore<Preferences> {
+                override val data = flow<Preferences> { throw IllegalStateException("migration failed") }
+                override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
+                    throw SecurityException("no access")
+            }
+            val viewModel = CalculatorViewModel(dataStore = broken)
+            listOf("2", "+", "3", "=").forEach(viewModel::onButtonPress)
+            assertEquals(listOf("2+3"), viewModel.historyList.map { it.expression })
+            viewModel.clearHistory()
+            assertEquals(emptyList<Throwable>(), uncaught)
+        } finally {
+            thread.uncaughtExceptionHandler = previousHandler
+        }
+    }
+
+    @Test
     fun historyWritesDoNotDependOnTheViewModelScope() {
         // Clearing a ViewModel cancels viewModelScope; a pending history write must still land.
         val store = FakeHistoryStore()

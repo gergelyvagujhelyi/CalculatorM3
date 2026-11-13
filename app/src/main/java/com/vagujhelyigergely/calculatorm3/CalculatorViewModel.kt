@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 import android.os.Build
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
@@ -102,8 +102,12 @@ class CalculatorViewModel(
     private suspend fun restoreHistoryFromDisk(store: DataStore<Preferences>) {
         val saved = try {
             parseHistory(store.data.first()[HISTORY_JSON_KEY])
-        } catch (_: IOException) {
-            emptyList() // unreadable store: start empty (cancellation is not caught and stops the load)
+        } catch (e: Exception) {
+            // Cancellation must still stop the load (clearHistory cancels it).
+            if (e is CancellationException) throw e
+            // Any other failure (unreadable file, a failed SharedPreferences migration, …) means
+            // an empty history, not a crash: before DataStore, a failed load did the same.
+            emptyList()
         }
         val merged = mergeHistory(_historyList.toList(), saved)
         _historyList.clear()
@@ -174,8 +178,9 @@ class CalculatorViewModel(
                         else mergeHistory(current, parseHistory(prefs[HISTORY_JSON_KEY]))
                     prefs[HISTORY_JSON_KEY] = historyToJson(entries)
                 }
-            } catch (_: IOException) {
-                // Best-effort persist
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // Best-effort persist: an uncaught failure here would crash the app from MainScope.
             }
         }
     }

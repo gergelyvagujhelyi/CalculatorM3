@@ -146,7 +146,9 @@ class LiteRTSolver : MathSolver {
                     rawBuilder.append(text)
                     lastActivityMs.set(SystemClock.elapsedRealtime())
                     firstTokenSeen.set(true)
-                    onToken(rawBuilder.toString())
+                    // An empty partial output means "restarting" to the caller (see the GPU→CPU
+                    // retry), so a message without text before any output isn't passed on.
+                    if (rawBuilder.isNotEmpty()) onToken(rawBuilder.toString())
                     // Hard output cap (length): a runaway that never emits a stop would stream
                     // forever. Interrupt native generation and throw to unwind the collect now.
                     if (++tokenCount >= MAX_OUTPUT_TOKENS) {
@@ -251,6 +253,9 @@ class LiteRTSolver : MathSolver {
                         closeEngine()
                         engine = buildEngine(path, Backend.CPU(), Backend.CPU())
                         backendLabel = "CPU"
+                        // The retry streams its output from the start: say so, so the caller
+                        // restarts its counters instead of mixing both attempts.
+                        onToken("")
                         return@withContext runInference(imagePath, onToken)
                     } catch (retry: Throwable) {
                         if (retry is kotlinx.coroutines.CancellationException) throw retry
@@ -267,9 +272,11 @@ class LiteRTSolver : MathSolver {
         // Signal native generation to stop. Deliberately does NOT take [mutex]: the lock is held
         // by the in-flight solveFromImageStreaming, and cancelProcess() is a thread-safe signal to
         // the native side (not a state mutation), so read the @Volatile conversation directly.
+        // catch Throwable, not Exception, as at the other cancelProcess() calls: it's a native JNI
+        // call, and a Stop that lands as the scan finishes can reach a conversation being closed.
         try {
             conversation?.cancelProcess()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.w(TAG, "cancelProcess() failed", e)
         }
     }
