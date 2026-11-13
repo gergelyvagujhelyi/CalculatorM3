@@ -5,6 +5,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.SharedPreferencesMigration
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -16,10 +20,17 @@ import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 
+private val Context.historyDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = "calculator_history",
+    produceMigrations = { context ->
+        listOf(SharedPreferencesMigration(context, "calculator_history"))
+    }
+)
+
 class MainActivity : ComponentActivity() {
 
     private val viewModel: CalculatorViewModel by lazy {
-        val factory = CalculatorViewModelFactory(this, this)
+        val factory = CalculatorViewModelFactory(applicationContext, this)
         ViewModelProvider(this, factory)[CalculatorViewModel::class.java]
     }
 
@@ -50,9 +61,8 @@ class CalculatorViewModelFactory(
     owner: SavedStateRegistryOwner
 ) : AbstractSavedStateViewModelFactory(owner, null) {
     override fun <T : ViewModel> create(key: String, modelClass: Class<T>, handle: SavedStateHandle): T {
-        val prefs = context.getSharedPreferences("calculator_history", Context.MODE_PRIVATE)
         @Suppress("UNCHECKED_CAST")
-        return CalculatorViewModel(prefs, handle) as T
+        return CalculatorViewModel(context.historyDataStore, handle) as T
     }
 }
 

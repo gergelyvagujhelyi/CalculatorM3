@@ -1,17 +1,41 @@
 package com.vagujhelyigergely.calculatorm3
 
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.SavedStateHandle
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import org.json.JSONArray
+import org.json.JSONObject
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 class CalculatorViewModelTest {
 
+    private val testDispatcher = UnconfinedTestDispatcher()
     private lateinit var vm: CalculatorViewModel
 
     @Before
     fun setup() {
+        Dispatchers.setMain(testDispatcher)
         vm = CalculatorViewModel()
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     private fun tap(vararg labels: String) {
@@ -299,6 +323,66 @@ class CalculatorViewModelTest {
         assertEquals(2, vm.historyList.size)
         vm.clearHistory()
         assertEquals(0, vm.historyList.size)
+    }
+
+    @Test
+    fun historyPersistsToAndRestoresFromDataStore() {
+        runBlocking {
+            val tempFile = File.createTempFile("datastore_test", ".preferences_pb")
+            tempFile.deleteOnExit()
+            val dataStore = PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+                produceFile = { tempFile }
+            )
+
+            dataStore.edit { prefs ->
+                val arr = JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("expr", "1+2")
+                        put("result", "3")
+                        put("ts", 1000L)
+                    })
+                }
+                prefs[stringPreferencesKey("history_json")] = arr.toString()
+            }
+
+            val viewModel = CalculatorViewModel(dataStore = dataStore)
+            delay(200.milliseconds)
+
+            assertEquals(1, viewModel.historyList.size)
+            assertEquals("1+2", viewModel.historyList[0].expression)
+            assertEquals("3", viewModel.historyList[0].result)
+
+            tempFile.delete()
+        }
+    }
+
+    @Test
+    fun historySavesToDataStoreOnEvaluation() {
+        runBlocking {
+            val tempFile = File.createTempFile("datastore_test", ".preferences_pb")
+            tempFile.deleteOnExit()
+            val dataStore = PreferenceDataStoreFactory.create(
+                scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+                produceFile = { tempFile }
+            )
+
+            val viewModel = CalculatorViewModel(dataStore = dataStore)
+            viewModel.onButtonPress("2")
+            viewModel.onButtonPress("+")
+            viewModel.onButtonPress("3")
+            viewModel.onButtonPress("=")
+
+            delay(200.milliseconds)
+
+            val storedJson = dataStore.data.first()[stringPreferencesKey("history_json")]
+            val arr = JSONArray(storedJson)
+            assertEquals(1, arr.length())
+            assertEquals("2+3", arr.getJSONObject(0).getString("expr"))
+            assertEquals("5", arr.getJSONObject(0).getString("result"))
+
+            tempFile.delete()
+        }
     }
 
     // ── Cursor ──────────────────────────────────────────────────────

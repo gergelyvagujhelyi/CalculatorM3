@@ -1,13 +1,19 @@
 package com.vagujhelyigergely.calculatorm3
 
-import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import android.os.Build
 import org.json.JSONArray
 import org.json.JSONObject
@@ -22,7 +28,7 @@ data class HistoryEntry(
 )
 
 class CalculatorViewModel(
-    private val prefs: SharedPreferences? = null,
+    private val dataStore: DataStore<Preferences>? = null,
     private val savedState: SavedStateHandle = SavedStateHandle()
 ) : ViewModel() {
 
@@ -56,7 +62,12 @@ class CalculatorViewModel(
 
     init {
         // Restore history list: prefer saved state (process death), fall back to disk
-        val restored = restoreHistoryFromSavedState() || restoreHistoryFromDisk()
+        val restored = restoreHistoryFromSavedState()
+        if (!restored && dataStore != null) {
+            viewModelScope.launch {
+                restoreHistoryFromDisk()
+            }
+        }
     }
 
     private fun restoreHistoryFromSavedState(): Boolean {
@@ -69,9 +80,17 @@ class CalculatorViewModel(
         return expressions.isNotEmpty()
     }
 
-    private fun restoreHistoryFromDisk(): Boolean {
-        val json = prefs?.getString("history_json", null) ?: return false
-        return try {
+    private suspend fun restoreHistoryFromDisk() {
+        val store = dataStore ?: return
+        val json = try {
+            store.data.firstOrNull()?.get(HISTORY_JSON_KEY)
+        } catch (_: Exception) {
+            null
+        } ?: return
+
+        if (_historyList.isNotEmpty()) return
+
+        try {
             val arr = JSONArray(json)
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
@@ -81,9 +100,8 @@ class CalculatorViewModel(
                     timestamp = obj.getLong("ts")
                 ))
             }
-            arr.length() > 0
         } catch (_: Exception) {
-            false
+            // Ignore corrupted JSON
         }
     }
 
@@ -100,7 +118,7 @@ class CalculatorViewModel(
     }
 
     private fun saveHistoryToDisk() {
-        prefs ?: return
+        val store = dataStore ?: return
         val arr = JSONArray()
         _historyList.forEach { entry ->
             arr.put(JSONObject().apply {
@@ -109,10 +127,20 @@ class CalculatorViewModel(
                 put("ts", entry.timestamp)
             })
         }
-        prefs.edit().putString("history_json", arr.toString()).apply()
+        val jsonString = arr.toString()
+        viewModelScope.launch {
+            try {
+                store.edit { prefs ->
+                    prefs[HISTORY_JSON_KEY] = jsonString
+                }
+            } catch (_: Exception) {
+                // Best-effort persist
+            }
+        }
     }
 
     companion object {
+        private val HISTORY_JSON_KEY = stringPreferencesKey("history_json")
         private const val MAX_HISTORY_SIZE = 100
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
