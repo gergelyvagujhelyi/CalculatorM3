@@ -226,6 +226,9 @@ class ScanViewModel(
             solver.loadModel(modelManager.modelPath(model))
             loadedModelId = model.id
             loadedBudget = budget
+            // A successful load is the one-time preparation, whichever path got here; record it
+            // so Retry and the next open don't prepare the model again.
+            if (modelManager.needsPreparation(model)) modelManager.markPrepared(model)
             true
         } catch (e: Exception) {
             // A stop during the load cancels this coroutine; let it propagate (the caller's
@@ -262,8 +265,14 @@ class ScanViewModel(
     fun selectModel(model: AiModel) {
         modelManager.selectedModel = model
         if (modelManager.areModelsAvailable(model)) {
-            // Loaded lazily on first photo, not here.
-            uiState = ScanUiState.Capturing
+            if (modelManager.needsPreparation(model)) {
+                // Same as initialize(): do the slow one-time preparation now, with its message,
+                // instead of silently during the first scan.
+                prepareModel(model, isUpdate = true)
+            } else {
+                // Loaded lazily on first photo, not here.
+                uiState = ScanUiState.Capturing
+            }
         } else {
             startDownload(model)
         }
@@ -423,7 +432,8 @@ class ScanViewModel(
         // Cancel any still-running inference before starting a new one, so an overlapping call
         // can't orphan the previous job (the ViewModel is Activity-scoped, so an un-cancelled job
         // keeps generating in the background). Keep the new Job so stopInference() can cancel it.
-        inferenceJob?.cancel()
+        val previousScan = inferenceJob
+        previousScan?.cancel()
         inferenceJob = viewModelScope.launch {
             // Streaming UI updates launch from this scope (not viewModelScope) so cancelling the
             // inference also drops any in-flight token update, instead of it racing to overwrite
@@ -431,6 +441,16 @@ class ScanViewModel(
             val inferenceScope = this
             var processPath: String? = null
             try {
+                // A stopped scan can still be inside its model load, which can't be interrupted.
+                // When that load returns, the stopped scan's finally releases the engine. Wait
+                // for that first: otherwise the release lands after this scan's load and closes
+                // the engine this scan is about to use ("Model not loaded").
+                // (isCompleted, not isActive: a cancelled Job is no longer "active" while it is
+                // still finishing.)
+                if (previousScan != null && !previousScan.isCompleted) {
+                    uiState = ScanUiState.ModelLoading()
+                    previousScan.join()
+                }
                 // Load the model now that a photo exists (it wasn't resident while the camera app
                 // was open). Shows "Loading AI model…" then proceeds. Kept inside the try so the
                 // finally releases the engine even if a stop cancels during the (uninterruptible)
@@ -535,8 +555,9 @@ class ScanViewModel(
         // Order matters: interrupt native generation first (it ignores coroutine cancellation),
         // then cancel the coroutine so it unwinds cleanly via its CancellationException guards.
         solver.cancel()
+        // Keep the cancelled Job: it may still be finishing an uninterruptible model load, and
+        // the next onPhotoCaptured waits for it before loading again.
         inferenceJob?.cancel()
-        inferenceJob = null
         // Only snap back to capture if we were actually mid-scan; calling this from a dialog
         // dismiss in another state (Success, Downloading, …) must not disturb that state.
         if (uiState is ScanUiState.Processing || uiState is ScanUiState.ModelLoading) {

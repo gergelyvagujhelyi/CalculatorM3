@@ -67,6 +67,10 @@ object SolverPrompts {
     // English thousands separators ("1,234" -> "1234"): a comma between a digit and exactly
     // three digits that aren't themselves followed by another digit.
     private val thousandsSeparator = Regex("(?<=\\d),(?=\\d{3}(?:\\D|\$))")
+    // A comma right after a lone 0 ("0,125", "-0,5") can only be a decimal comma: no number
+    // written with thousands separators starts with a 0 group. Read it as a decimal point
+    // before thousands separators are stripped, which would otherwise turn 0,125 into 125.
+    private val decimalCommaAfterZero = Regex("(?<![\\d.,])0,(?=\\d)")
 
     // Characters that are always a minus sign: U+2212 minus, hyphens, small/fullwidth hyphen-minus.
     private val minusVariants = Regex("[−‐‑﹣－]")
@@ -92,7 +96,7 @@ object SolverPrompts {
      * safer than a wrong "Use answer".
      *
      * Supported: plain and E-notation numbers, Unicode minus signs, `a × 10^b`, English thousands
-     * separators, markdown/LaTeX wrappers, a trailing sentence period, a `= 42` tail and asides
+     * separators, a decimal comma after a lone 0 (`0,125`), markdown/LaTeX wrappers, a trailing sentence period, a `= 42` tail and asides
      * like `17 (that is 12 + 5)`.
      *
      * The answer must also agree with the result the model already wrote in its working (see
@@ -106,6 +110,7 @@ object SolverPrompts {
             .replace(boxed, "$1")
             .replace(latexDelimiters, "")
             .replace(timesTenPower, "$1E$2")
+            .replace(decimalCommaAfterZero, "0.")
             .replace(thousandsSeparator, "")
 
         // The answer line is the last line with a digit, so a trailing sign-off ("Hope this

@@ -61,6 +61,11 @@ class ScanModelUnusableTest {
             file.parentFile!!.mkdirs(); file.writeText("placeholder"); created += file
         }
         manager.selectedModel = model
+        // These tests rely on the model needing preparation. A record left by another test
+        // would match these placeholders when they're written in the same second (the stamp
+        // uses the file's mtime, which has 1 s resolution here), so start without one.
+        context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE).edit()
+            .remove("prepared_engine_version_${model.id}").commit()
     }
 
     @After

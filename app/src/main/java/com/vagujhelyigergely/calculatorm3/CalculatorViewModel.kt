@@ -185,6 +185,8 @@ class CalculatorViewModel(
         private const val MAX_HISTORY_SIZE = 100
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
+        /** Characters that end a number: a decimal point can't follow them. */
+        private val NUMBER_ENDING_CHARS = setOf('π', '%', '!', ')')
         private const val KEY_JUST_EVALUATED = "justEvaluated"
         private const val KEY_ANSWER_ALLOWANCE = "answerAllowance"
 
@@ -230,8 +232,20 @@ class CalculatorViewModel(
         saveState()
     }
 
+    /** True if an expression of [newLength] characters stays within the typing budget. */
+    private fun fitsLengthLimit(newLength: Int) = newLength <= MAX_EXPRESSION_LENGTH + answerAllowance
+
+    private fun maxParenDepth(expr: String): Int {
+        var depth = 0
+        var max = 0
+        for (c in expr) {
+            if (c == '(') max = maxOf(max, ++depth) else if (c == ')') depth--
+        }
+        return max
+    }
+
     private fun insertAtCursor(text: String) {
-        if (expression.length + text.length > MAX_EXPRESSION_LENGTH + answerAllowance) return
+        if (!fitsLengthLimit(expression.length + text.length)) return
         expression = expression.substring(0, cursorPosition) + text + expression.substring(cursorPosition)
         cursorPosition += text.length
     }
@@ -381,7 +395,7 @@ class CalculatorViewModel(
                     // Remove existing negative sign
                     expression = expression.removeRange(effectiveStart, effectiveStart + 1)
                     cursorPosition = (cursorPosition - 1).coerceAtLeast(effectiveStart)
-                } else {
+                } else if (fitsLengthLimit(expression.length + 1)) {
                     // Insert negative sign at start of operand
                     expression = expression.substring(0, effectiveStart) + "-" + expression.substring(effectiveStart)
                     cursorPosition++
@@ -394,7 +408,12 @@ class CalculatorViewModel(
                 }
             }
             "√" -> {
-                if (expression.isNotEmpty()) {
+                // Wrapping adds "√(" and ")": respect the same length budget as typing, and stop
+                // at the nesting depth evaluation accepts instead of building an unusable expression.
+                if (expression.isNotEmpty() &&
+                    fitsLengthLimit(expression.length + 3) &&
+                    maxParenDepth(expression) < MAX_PAREN_DEPTH
+                ) {
                     expression = "√($expression)"
                     cursorPosition = expression.length
                 }
@@ -437,7 +456,10 @@ class CalculatorViewModel(
                 val start = (cursorPosition - 1 downTo 0).firstOrNull { expression[it] in operatorChars }?.plus(1) ?: 0
                 val end = (cursorPosition until expression.length).firstOrNull { expression[it] in operatorChars } ?: expression.length
                 val operand = expression.substring(start, end)
-                if (!operand.contains(".")) {
+                // π, a percent, a factorial or a closing bracket ends a number, so a point right
+                // after one ("2π.", "5%.") can only produce an invalid expression.
+                val charBefore = expression.getOrNull(cursorPosition - 1)
+                if (!operand.contains(".") && charBefore !in NUMBER_ENDING_CHARS) {
                     insertAtCursor(label)
                 }
             }
@@ -779,11 +801,7 @@ class CalculatorViewModel(
                                     throw ArithmeticException(RANGE_LIMIT_MESSAGE)
                                 }
                             } else {
-                                val dResult = Math.pow(a.v.toDouble(), b.v.toDouble())
-                                if (!dResult.isFinite()) throw ArithmeticException("Non-finite result")
-                                // Zero from a non-zero base is a Double underflow, not the answer.
-                                if (dResult == 0.0 && a.v.signum() != 0) throw ArithmeticException(RANGE_LIMIT_MESSAGE)
-                                BigDecimal.valueOf(dResult)
+                                nonExactPow(a.v, b.v)
                             }
                         }
                         else -> throw ArithmeticException("Unknown operator")
@@ -889,6 +907,45 @@ class CalculatorViewModel(
             x = a.divide(x, MC).add(x, MC).divide(two, MC)
         }
         return x
+    }
+
+    /**
+     * [base]^[exponent] for an exponent that isn't a small integer (0.5, 1.5, 100001). Computed in
+     * Double when base and result fit; otherwise through logarithms, so (10^400)^0.5 = 1E+200
+     * instead of overflowing on base.toDouble() = Infinity, and 2^5000.5 gets an answer.
+     */
+    private fun nonExactPow(base: BigDecimal, exponent: BigDecimal): BigDecimal {
+        val integerExponent = exponent.signum() == 0 || exponent.stripTrailingZeros().scale() <= 0
+        // A negative number has no real root: (−8)^0.5 is invalid, not out of range.
+        if (base.signum() < 0 && !integerExponent) throw ArithmeticException("Negative base with fractional exponent")
+        if (base.signum() == 0) {
+            if (exponent.signum() < 0) throw ArithmeticException("Division by zero")
+            return BigDecimal.ZERO
+        }
+        val dBase = base.toDouble()
+        val dExponent = exponent.toDouble()
+        val dResult = Math.pow(dBase, dExponent)
+        if (dBase.isFinite() && dBase != 0.0 && dResult.isFinite() && dResult != 0.0) {
+            return BigDecimal.valueOf(dResult)
+        }
+        // Outside Double's range: |base|^exponent = 10^(exponent × log10|base|), with log10 taken
+        // from the decimal magnitude (|base| = m × 10^e, 1 ≤ m < 10) so it never overflows.
+        val magnitude = base.abs()
+        val e = magnitude.precision() - magnitude.scale() - 1
+        val log10Base = e + Math.log10(magnitude.scaleByPowerOfTen(-e).toDouble())
+        val log10Result = dExponent * log10Base
+        if (!log10Result.isFinite() || Math.abs(log10Result) > MAX_RESULT_PLAIN_LENGTH) {
+            throw ArithmeticException(RANGE_LIMIT_MESSAGE)
+        }
+        val wholePart = Math.floor(log10Result)
+        // The logarithm's rounding error grows with its size: at |log10Result| up to the result
+        // limit (4200) about 12 significant digits are right, so don't claim more.
+        val result = BigDecimal.valueOf(Math.pow(10.0, log10Result - wholePart))
+            .round(MathContext(12, RoundingMode.HALF_UP))
+            .scaleByPowerOfTen(wholePart.toInt())
+        // Only an integer exponent reaches here with a negative base; an odd one keeps the sign.
+        val oddExponent = integerExponent && exponent.toBigInteger().testBit(0)
+        return if (base.signum() < 0 && oddExponent) result.negate() else result
     }
 
     private fun factorial(n: Long): BigDecimal {
