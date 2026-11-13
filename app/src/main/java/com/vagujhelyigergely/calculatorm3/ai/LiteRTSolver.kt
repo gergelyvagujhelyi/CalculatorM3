@@ -146,7 +146,9 @@ class LiteRTSolver : MathSolver {
                     rawBuilder.append(text)
                     lastActivityMs.set(SystemClock.elapsedRealtime())
                     firstTokenSeen.set(true)
-                    onToken(rawBuilder.toString())
+                    // An empty partial output means "restarting" to the caller (see the GPU→CPU
+                    // retry), so a message without text before any output isn't passed on.
+                    if (rawBuilder.isNotEmpty()) onToken(rawBuilder.toString())
                     // Hard output cap (length): a runaway that never emits a stop would stream
                     // forever. Interrupt native generation and throw to unwind the collect now.
                     if (++tokenCount >= MAX_OUTPUT_TOKENS) {
