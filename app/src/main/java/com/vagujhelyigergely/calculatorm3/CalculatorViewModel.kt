@@ -12,11 +12,15 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import android.os.Build
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.IOException
 import java.math.BigDecimal
 import java.math.MathContext
 import java.math.RoundingMode
@@ -29,7 +33,13 @@ data class HistoryEntry(
 
 class CalculatorViewModel(
     private val dataStore: DataStore<Preferences>? = null,
-    private val savedState: SavedStateHandle = SavedStateHandle()
+    private val savedState: SavedStateHandle = SavedStateHandle(),
+    /**
+     * Scope for history writes. It must outlive this ViewModel: a write launched in
+     * viewModelScope is dropped if the user leaves right after "=", because clearing the
+     * ViewModel cancels it before DataStore runs it.
+     */
+    private val persistScope: CoroutineScope = MainScope()
 ) : ViewModel() {
 
     var expression by mutableStateOf(savedState.get<String>("expression") ?: "")
@@ -60,13 +70,22 @@ class CalculatorViewModel(
     private val _historyList = mutableStateListOf<HistoryEntry>()
     val historyList: List<HistoryEntry> get() = _historyList
 
+    /**
+     * False until the saved history has been read from disk (or [clearHistory] made it moot).
+     * The load is asynchronous, so until then the list may lack the saved entries, and every
+     * write merges with what is on disk instead of overwriting it.
+     */
+    @Volatile private var historyLoaded = false
+
+    /** The disk load started in init; cancelled by [clearHistory] so it can't bring entries back. */
+    private var restoreJob: Job? = null
+
     init {
         // Restore history list: prefer saved state (process death), fall back to disk
-        val restored = restoreHistoryFromSavedState()
-        if (!restored && dataStore != null) {
-            viewModelScope.launch {
-                restoreHistoryFromDisk()
-            }
+        if (restoreHistoryFromSavedState() || dataStore == null) {
+            historyLoaded = true
+        } else {
+            restoreJob = viewModelScope.launch { restoreHistoryFromDisk(dataStore) }
         }
     }
 
@@ -80,29 +99,55 @@ class CalculatorViewModel(
         return expressions.isNotEmpty()
     }
 
-    private suspend fun restoreHistoryFromDisk() {
-        val store = dataStore ?: return
-        val json = try {
-            store.data.firstOrNull()?.get(HISTORY_JSON_KEY)
-        } catch (_: Exception) {
-            null
-        } ?: return
+    private suspend fun restoreHistoryFromDisk(store: DataStore<Preferences>) {
+        val saved = try {
+            parseHistory(store.data.first()[HISTORY_JSON_KEY])
+        } catch (_: IOException) {
+            emptyList() // unreadable store: start empty (cancellation is not caught and stops the load)
+        }
+        val merged = mergeHistory(_historyList.toList(), saved)
+        _historyList.clear()
+        _historyList.addAll(merged)
+        historyLoaded = true
+        saveState()
+    }
 
-        if (_historyList.isNotEmpty()) return
+    /**
+     * Entries evaluated during the load are newer than the saved ones, so they go on top. The
+     * saved list may already contain them (a write can land before the read), hence the filter.
+     */
+    private fun mergeHistory(newer: List<HistoryEntry>, saved: List<HistoryEntry>): List<HistoryEntry> =
+        (newer + saved.filterNot { it in newer }).take(MAX_HISTORY_SIZE)
 
+    private fun parseHistory(json: String?): List<HistoryEntry> {
+        json ?: return emptyList()
+        val entries = mutableListOf<HistoryEntry>()
         try {
             val arr = JSONArray(json)
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
-                _historyList.add(HistoryEntry(
+                entries.add(HistoryEntry(
                     expression = obj.getString("expr"),
                     result = obj.getString("result"),
                     timestamp = obj.getLong("ts")
                 ))
             }
         } catch (_: Exception) {
-            // Ignore corrupted JSON
+            // Corrupted JSON: keep the entries read before the bad one
         }
+        return entries
+    }
+
+    private fun historyToJson(entries: List<HistoryEntry>): String {
+        val arr = JSONArray()
+        entries.forEach { entry ->
+            arr.put(JSONObject().apply {
+                put("expr", entry.expression)
+                put("result", entry.result)
+                put("ts", entry.timestamp)
+            })
+        }
+        return arr.toString()
     }
 
     private fun saveState() {
@@ -119,21 +164,17 @@ class CalculatorViewModel(
 
     private fun saveHistoryToDisk() {
         val store = dataStore ?: return
-        val arr = JSONArray()
-        _historyList.forEach { entry ->
-            arr.put(JSONObject().apply {
-                put("expr", entry.expression)
-                put("result", entry.result)
-                put("ts", entry.timestamp)
-            })
-        }
-        val jsonString = arr.toString()
-        viewModelScope.launch {
+        persistScope.launch {
             try {
+                // Serialise the list as it is when the write runs, not when it was queued, so
+                // whichever write lands last always holds the latest history.
                 store.edit { prefs ->
-                    prefs[HISTORY_JSON_KEY] = jsonString
+                    val current = _historyList.toList()
+                    val entries = if (historyLoaded) current
+                        else mergeHistory(current, parseHistory(prefs[HISTORY_JSON_KEY]))
+                    prefs[HISTORY_JSON_KEY] = historyToJson(entries)
                 }
-            } catch (_: Exception) {
+            } catch (_: IOException) {
                 // Best-effort persist
             }
         }
@@ -234,6 +275,8 @@ class CalculatorViewModel(
     }
 
     fun clearHistory() {
+        restoreJob?.cancel()
+        historyLoaded = true // the saved entries are being cleared too, so don't merge them back
         _historyList.clear()
         saveState()
         saveHistoryToDisk()

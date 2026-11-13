@@ -19,6 +19,7 @@ import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
+import kotlinx.coroutines.MainScope
 
 private val Context.historyDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "calculator_history",
@@ -26,6 +27,9 @@ private val Context.historyDataStore: DataStore<Preferences> by preferencesDataS
         listOf(SharedPreferencesMigration(context, "calculator_history"))
     }
 )
+
+/** App-wide scope for history writes, so they finish even after the ViewModel is cleared. */
+private val historyWriteScope = MainScope()
 
 class MainActivity : ComponentActivity() {
 
@@ -62,7 +66,7 @@ class CalculatorViewModelFactory(
 ) : AbstractSavedStateViewModelFactory(owner, null) {
     override fun <T : ViewModel> create(key: String, modelClass: Class<T>, handle: SavedStateHandle): T {
         @Suppress("UNCHECKED_CAST")
-        return CalculatorViewModel(context.historyDataStore, handle) as T
+        return CalculatorViewModel(context.historyDataStore, handle, historyWriteScope) as T
     }
 }
 

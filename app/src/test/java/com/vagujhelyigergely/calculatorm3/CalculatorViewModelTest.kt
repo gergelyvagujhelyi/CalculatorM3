@@ -1,15 +1,18 @@
 package com.vagujhelyigergely.calculatorm3
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.edit
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.preferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.SavedStateHandle
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -19,8 +22,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import java.io.File
-import kotlin.time.Duration.Companion.milliseconds
 
 class CalculatorViewModelTest {
 
@@ -325,64 +326,112 @@ class CalculatorViewModelTest {
         assertEquals(0, vm.historyList.size)
     }
 
+    // ── History persistence (DataStore) ─────────────────────────────
+
     @Test
-    fun historyPersistsToAndRestoresFromDataStore() {
-        runBlocking {
-            val tempFile = File.createTempFile("datastore_test", ".preferences_pb")
-            tempFile.deleteOnExit()
-            val dataStore = PreferenceDataStoreFactory.create(
-                scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-                produceFile = { tempFile }
-            )
-
-            dataStore.edit { prefs ->
-                val arr = JSONArray().apply {
-                    put(JSONObject().apply {
-                        put("expr", "1+2")
-                        put("result", "3")
-                        put("ts", 1000L)
-                    })
-                }
-                prefs[stringPreferencesKey("history_json")] = arr.toString()
-            }
-
-            val viewModel = CalculatorViewModel(dataStore = dataStore)
-            delay(200.milliseconds)
-
-            assertEquals(1, viewModel.historyList.size)
-            assertEquals("1+2", viewModel.historyList[0].expression)
-            assertEquals("3", viewModel.historyList[0].result)
-
-            tempFile.delete()
-        }
+    fun historyRestoresFromDataStore() {
+        val store = FakeHistoryStore(storedHistory(1))
+        val viewModel = CalculatorViewModel(dataStore = store)
+        assertEquals(listOf("1+1"), viewModel.historyList.map { it.expression })
     }
 
     @Test
     fun historySavesToDataStoreOnEvaluation() {
-        runBlocking {
-            val tempFile = File.createTempFile("datastore_test", ".preferences_pb")
-            tempFile.deleteOnExit()
-            val dataStore = PreferenceDataStoreFactory.create(
-                scope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-                produceFile = { tempFile }
-            )
+        val store = FakeHistoryStore()
+        val viewModel = CalculatorViewModel(dataStore = store)
+        listOf("2", "+", "3", "=").forEach(viewModel::onButtonPress)
+        val arr = JSONArray(store.storedJson())
+        assertEquals(1, arr.length())
+        assertEquals("2+3", arr.getJSONObject(0).getString("expr"))
+        assertEquals("5", arr.getJSONObject(0).getString("result"))
+    }
 
-            val viewModel = CalculatorViewModel(dataStore = dataStore)
-            viewModel.onButtonPress("2")
-            viewModel.onButtonPress("+")
-            viewModel.onButtonPress("3")
-            viewModel.onButtonPress("=")
+    @Test
+    fun evaluatingWhileHistoryLoadsKeepsTheSavedHistory() {
+        for (readBeforeWrites in listOf(true, false)) {
+            val store = FakeHistoryStore(storedHistory(5), loadImmediately = false, readBeforeWrites)
+            val viewModel = CalculatorViewModel(dataStore = store)
+            listOf("7", "+", "1", "=").forEach(viewModel::onButtonPress)
+            store.finishLoad()
 
-            delay(200.milliseconds)
-
-            val storedJson = dataStore.data.first()[stringPreferencesKey("history_json")]
-            val arr = JSONArray(storedJson)
-            assertEquals(1, arr.length())
-            assertEquals("2+3", arr.getJSONObject(0).getString("expr"))
-            assertEquals("5", arr.getJSONObject(0).getString("result"))
-
-            tempFile.delete()
+            val expected = listOf("7+1", "1+1", "2+2", "3+3", "4+4", "5+5")
+            assertEquals("readBeforeWrites=$readBeforeWrites", expected, viewModel.historyList.map { it.expression })
+            assertEquals("readBeforeWrites=$readBeforeWrites", expected, store.storedExpressions())
         }
+    }
+
+    @Test
+    fun mergingWithALoadedFullHistoryKeepsTheLimit() {
+        val store = FakeHistoryStore(storedHistory(100), loadImmediately = false)
+        val viewModel = CalculatorViewModel(dataStore = store)
+        listOf("7", "+", "1", "=").forEach(viewModel::onButtonPress)
+        store.finishLoad()
+
+        assertEquals(100, viewModel.historyList.size)
+        assertEquals("7+1", viewModel.historyList.first().expression)
+        assertEquals("99+99", viewModel.historyList.last().expression)
+        assertEquals(100, store.storedExpressions().size)
+    }
+
+    @Test
+    fun clearingWhileHistoryLoadsStaysCleared() {
+        for (readBeforeWrites in listOf(true, false)) {
+            val store = FakeHistoryStore(storedHistory(5), loadImmediately = false, readBeforeWrites)
+            val viewModel = CalculatorViewModel(dataStore = store)
+            viewModel.clearHistory()
+            store.finishLoad()
+
+            assertEquals("readBeforeWrites=$readBeforeWrites", 0, viewModel.historyList.size)
+            assertEquals("readBeforeWrites=$readBeforeWrites", emptyList<String>(), store.storedExpressions())
+        }
+    }
+
+    @Test
+    fun historyWritesDoNotDependOnTheViewModelScope() {
+        // Clearing a ViewModel cancels viewModelScope; a pending history write must still land.
+        val store = FakeHistoryStore()
+        val viewModel = CalculatorViewModel(dataStore = store)
+        viewModel.viewModelScope.cancel()
+        listOf("2", "+", "3", "=").forEach(viewModel::onButtonPress)
+        assertEquals(listOf("2+3"), store.storedExpressions())
+    }
+
+    /** Stored history of [count] entries "1+1", "2+2", …, newest first. */
+    private fun storedHistory(count: Int): String = JSONArray().apply {
+        for (i in 1..count) put(JSONObject().put("expr", "$i+$i").put("result", "${2 * i}").put("ts", i.toLong()))
+    }.toString()
+
+    /**
+     * In-memory DataStore. With loadImmediately = false the first read waits for [finishLoad],
+     * which stands in for a slow cold-start read (plus the SharedPreferences migration).
+     * readBeforeWrites picks which side of that race wins: whether the first read returns the
+     * file as it was when collection started, or already sees writes made while it waited.
+     */
+    private class FakeHistoryStore(
+        json: String? = null,
+        loadImmediately: Boolean = true,
+        private val readBeforeWrites: Boolean = false
+    ) : DataStore<Preferences> {
+        private val gate = CompletableDeferred<Unit>().apply { if (loadImmediately) complete(Unit) }
+        private val state = MutableStateFlow(json?.let { preferencesOf(KEY to it) } ?: emptyPreferences())
+
+        override val data = flow {
+            val atStart = state.value
+            gate.await()
+            if (readBeforeWrites) emit(atStart)
+            emitAll(state)
+        }
+        override suspend fun updateData(transform: suspend (Preferences) -> Preferences): Preferences =
+            transform(state.value).also { state.value = it }
+
+        fun finishLoad() { gate.complete(Unit) }
+        fun storedJson(): String? = state.value[KEY]
+        fun storedExpressions(): List<String> {
+            val arr = JSONArray(storedJson() ?: return emptyList())
+            return (0 until arr.length()).map { arr.getJSONObject(it).getString("expr") }
+        }
+
+        companion object { val KEY = stringPreferencesKey("history_json") }
     }
 
     // ── Cursor ──────────────────────────────────────────────────────
