@@ -9,6 +9,7 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryOutcome
+import com.vagujhelyigergely.calculatorm3.camera.MAX_FOLLOW_UPS
 import com.vagujhelyigergely.calculatorm3.camera.InkPoint
 import com.vagujhelyigergely.calculatorm3.camera.InkStroke
 import com.vagujhelyigergely.calculatorm3.camera.ScanUiState
@@ -48,9 +49,21 @@ class AiEntryRoutingTest {
         /** The drawings sent to the model: (path, whether that file existed at the time). */
         val solvedImages = mutableListOf<Pair<String, Boolean>>()
         @Volatile private var loaded = false
+        @Volatile var loads = 0
+        /** Follow-up messages sent; a reply waits for [followUpGate] if set (so Stop can land). */
+        val followUpMessages = java.util.Collections.synchronizedList(mutableListOf<String>())
+        @Volatile var followUpGate: CompletableDeferred<Unit>? = null
         override val isModelLoaded get() = loaded
         override val activeBackend = "fake"
-        override suspend fun loadModel(modelPath: String) { loadGate.await(); loaded = true }
+        override suspend fun loadModel(modelPath: String) { loadGate.await(); loads++; loaded = true }
+        override suspend fun followUpStreaming(
+            message: String, onToken: suspend (partialRaw: String) -> Unit
+        ): Result<RecognitionResult> {
+            followUpMessages += message
+            onToken("Because")
+            followUpGate?.await()
+            return Result.success(RecognitionResult("Because 6 × 7 = 42. (reply ${followUpMessages.size})", ""))
+        }
         override suspend fun solveFromImageStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> {
@@ -479,5 +492,110 @@ class AiEntryRoutingTest {
         waitFor("the second solve saved") { vm.aiHistory.size == 2 }
         assertEquals(listOf("6 × 7", "6 × 7"), solver.solvedTexts)
         assertTrue(vm.uiState is ScanUiState.Success)
+    }
+
+    // ── Follow-up questions ─────────────────────────────────────────────────
+
+    /** A typed problem answered, with the solver ready; returns the view model on the answer. */
+    private fun answered(solver: FakeSolver): ScanViewModel {
+        solver.loadGate.complete(Unit)
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the answer saved") { vm.uiState is ScanUiState.Success && vm.currentAnswer?.id?.isNotEmpty() == true }
+        return vm
+    }
+
+    private fun ScanViewModel.ask(question: String) = instrumentation.runOnMainSync { askFollowUp(question) }
+
+    @Test
+    fun anAnswerKeepsTheModelLoadedAndAQuestionIsAnsweredAndSaved() {
+        val solver = FakeSolver()
+        val vm = answered(solver)
+        Thread.sleep(200)
+        assertTrue("kept loaded for questions", solver.isModelLoaded)
+        assertEquals(MAX_FOLLOW_UPS, vm.followUpsLeft)
+        vm.ask("Why 42?")
+        waitFor("the reply") { vm.currentAnswer?.followUps?.size == 1 }
+        assertEquals(1, solver.loads)
+        assertEquals("Why 42?", vm.currentAnswer!!.followUps.single().question)
+        assertEquals(MAX_FOLLOW_UPS - 1, vm.followUpsLeft)
+        // The message carries the answer as saved text, then the question.
+        val message = solver.followUpMessages.single()
+        assertTrue(message, message.startsWith("Problem: 6 × 7\nAnswer: 42\nWorking:\n1. 6 × 7 = 42"))
+        assertTrue(message, message.endsWith("Question: Why 42?"))
+        waitFor("saved in AI history") { vm.aiHistory.firstOrNull()?.followUps?.size == 1 }
+    }
+
+    @Test
+    fun onlyTwoQuestionsAreAllowedAndTheModelIsFreedAfterTheSecond() {
+        val solver = FakeSolver()
+        val vm = answered(solver)
+        vm.ask("Why?")
+        waitFor("first reply") { vm.currentAnswer?.followUps?.size == 1 }
+        vm.ask("Another way?")
+        waitFor("second reply") { vm.currentAnswer?.followUps?.size == 2 }
+        // The second question carried the first one and its reply.
+        assertTrue(solver.followUpMessages[1].contains("Earlier question: Why?"))
+        assertEquals(0, vm.followUpsLeft)
+        waitFor("the engine freed") { !solver.isModelLoaded }
+        vm.ask("A third?")
+        Thread.sleep(300)
+        assertEquals("no third question", 2, solver.followUpMessages.size)
+    }
+
+    @Test
+    fun aQuestionAfterTheModelWasFreedReloadsItFirst() {
+        val solver = FakeSolver()
+        val vm = answered(solver)
+        // The app went to the background (or the window closed): the engine is freed.
+        instrumentation.runOnMainSync { vm.stopInference() }
+        waitFor("the engine freed") { !solver.isModelLoaded }
+        assertTrue("still on the answer", vm.uiState is ScanUiState.Success)
+        vm.ask("Why?")
+        waitFor("the reply") { vm.currentAnswer?.followUps?.size == 1 }
+        assertEquals("loaded again for the question", 2, solver.loads)
+    }
+
+    @Test
+    fun aStoppedQuestionDoesNotCount() {
+        val solver = FakeSolver().apply { followUpGate = CompletableDeferred() }
+        val vm = answered(solver)
+        vm.ask("Why?")
+        waitFor("answering") { vm.followUp is ScanViewModel.FollowUpUi.Answering }
+        instrumentation.runOnMainSync { vm.stopFollowUp() }
+        solver.followUpGate!!.complete(Unit)
+        Thread.sleep(300)
+        assertEquals(ScanViewModel.FollowUpUi.Idle, vm.followUp)
+        assertEquals(MAX_FOLLOW_UPS, vm.followUpsLeft)
+    }
+
+    @Test
+    fun leavingTheAnswerFreesTheModel() {
+        val solver = FakeSolver()
+        val vm = answered(solver)
+        Thread.sleep(200)
+        assertTrue(solver.isModelLoaded)
+        instrumentation.runOnMainSync { vm.editTypedProblem() }
+        waitFor("the engine freed") { !solver.isModelLoaded }
+        assertEquals(null, vm.currentAnswer)
+    }
+
+    @Test
+    fun aSavedAnswerOpensFromHistoryWithItsQuestionsLeft() {
+        val solver = FakeSolver()
+        val vm = answered(solver)
+        vm.ask("Why?")
+        waitFor("first reply saved") { vm.aiHistory.firstOrNull()?.followUps?.size == 1 }
+        val id = vm.aiHistory.first().id
+        instrumentation.runOnMainSync { vm.stopInference() }
+        // Ask about this, from AI history: the answer as it was, one question left.
+        instrumentation.runOnMainSync { vm.initialize(AiEntry.TYPE, answerId = id) }
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals("42", state.steps?.usableAnswer)
+        assertEquals(1, vm.followUpsLeft)
+        vm.ask("Another way?")
+        waitFor("second reply") { vm.currentAnswer?.followUps?.size == 2 }
+        waitFor("saved") { vm.aiHistory.first().followUps.size == 2 }
     }
 }

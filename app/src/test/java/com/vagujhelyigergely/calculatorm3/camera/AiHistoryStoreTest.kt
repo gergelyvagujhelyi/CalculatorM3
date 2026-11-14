@@ -91,4 +91,29 @@ class AiHistoryStoreTest {
         assertEquals(saved, store.find(saved.id))
         assertNull(store.find("missing"))
     }
+
+    @Test
+    fun `follow-ups are saved with their entry and an update keeps the picture`() {
+        val source = File(dir.parentFile, "src_${System.nanoTime()}.jpg").apply { writeText("jpeg") }
+        try {
+            val saved = store.add(typed(9).copy(mode = AiEntry.CAMERA, typedText = null), image = source)
+            val asked = saved.copy(followUps = listOf(FollowUp("Why 42?", "Because 6 × 7 = 42.")))
+            store.update(asked)
+            val loaded = store.find(saved.id)!!
+            assertEquals(asked.followUps, loaded.followUps)
+            assertEquals(saved.imageFile, loaded.imageFile)
+            assertNotNull(store.imageOf(loaded))
+            assertEquals(1, store.load().size)
+        } finally {
+            source.delete()
+        }
+    }
+
+    @Test
+    fun `updating an entry that was deleted doesn't bring it back`() {
+        val saved = store.add(typed(10))
+        store.delete(saved.id)
+        store.update(saved.copy(followUps = listOf(FollowUp("q", "a"))))
+        assertTrue(store.load().isEmpty())
+    }
 }

@@ -181,6 +181,8 @@ internal fun StepsSuccessContent(
     onDismiss: () -> Unit,
     drawn: Boolean = false,
     onFixAsText: () -> Unit = {},
+    /** Shown under the answer: questions about it ([FollowUpSection]). */
+    extra: @Composable () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     AiStateScaffold(onDismiss = onDismiss) {
@@ -259,6 +261,7 @@ internal fun StepsSuccessContent(
                     }
                 }
             }
+            extra()
         }
     }
 }

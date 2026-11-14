@@ -22,6 +22,18 @@
     <string name="ai_history_photo">Photo</string>
     <string name="ai_history_drawing">Drawing</string>
     <string name="ai_history_back">Back</string>
+    <string name="follow_up_title">Ask about this answer</string>
+    <string name="follow_up_hint">Ask a question…</string>
+    <string name="follow_up_left">Possible follow-up questions left: %1$d</string>
+    <string name="follow_up_none">No follow-up questions left for this answer.</string>
+    <string name="follow_up_send">Send</string>
+    <string name="follow_up_chip_simpler">Explain it more simply</string>
+    <string name="follow_up_chip_another">Is there another way?</string>
+    <string name="follow_up_chip_why">Why this method?</string>
+    <string name="follow_up_thinking">Thinking…</string>
+    <string name="follow_up_failed">The model couldn\'t answer that. Please try again.</string>
+    <string name="ai_history_ask">Ask about this</string>
+    <string name="ai_history_questions">Follow-up questions</string>
     <string name="no_history_yet">No history yet</string>
 
     <!-- Button accessibility -->

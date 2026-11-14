@@ -22,6 +22,18 @@
     <string name="ai_history_photo">Foto</string>
     <string name="ai_history_drawing">Gambar</string>
     <string name="ai_history_back">Kembali</string>
+    <string name="follow_up_title">Tanya tentang jawaban ini</string>
+    <string name="follow_up_hint">Ajukan pertanyaan…</string>
+    <string name="follow_up_left">Sisa pertanyaan lanjutan yang bisa diajukan: %1$d</string>
+    <string name="follow_up_none">Tidak ada sisa pertanyaan lanjutan untuk jawaban ini.</string>
+    <string name="follow_up_send">Kirim</string>
+    <string name="follow_up_chip_simpler">Jelaskan lebih sederhana</string>
+    <string name="follow_up_chip_another">Ada cara lain?</string>
+    <string name="follow_up_chip_why">Mengapa metode ini?</string>
+    <string name="follow_up_thinking">Berpikir…</string>
+    <string name="follow_up_failed">Model tidak bisa menjawabnya. Silakan coba lagi.</string>
+    <string name="ai_history_ask">Tanya tentang ini</string>
+    <string name="ai_history_questions">Pertanyaan lanjutan</string>
     <string name="no_history_yet">Belum ada riwayat</string>
 
     <!-- Aksesibilitas tombol -->

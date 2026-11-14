@@ -22,6 +22,18 @@
     <string name="ai_history_photo">사진</string>
     <string name="ai_history_drawing">그림</string>
     <string name="ai_history_back">뒤로</string>
+    <string name="follow_up_title">이 답에 대해 질문하기</string>
+    <string name="follow_up_hint">질문을 입력하세요…</string>
+    <string name="follow_up_left">남은 추가 질문: %1$d</string>
+    <string name="follow_up_none">이 답에 대해 남은 추가 질문이 없습니다.</string>
+    <string name="follow_up_send">보내기</string>
+    <string name="follow_up_chip_simpler">더 쉽게 설명해 줘</string>
+    <string name="follow_up_chip_another">다른 방법이 있어?</string>
+    <string name="follow_up_chip_why">왜 이 방법이야?</string>
+    <string name="follow_up_thinking">생각 중…</string>
+    <string name="follow_up_failed">모델이 답하지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="ai_history_ask">이것에 대해 질문</string>
+    <string name="ai_history_questions">추가 질문</string>
     <string name="no_history_yet">아직 기록이 없습니다</string>
 
     <!-- 버튼 접근성 -->

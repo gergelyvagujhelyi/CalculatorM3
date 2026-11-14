@@ -137,6 +137,8 @@ fun CalculatorScreen(
     var aiEntry by rememberSaveable { mutableStateOf<AiEntry?>(null) }
     // An AI history entry to solve again when the AI window opens (Solve again), by id.
     var aiRerunId by rememberSaveable { mutableStateOf<String?>(null) }
+    // A saved AI answer to open in the AI window, to ask about it (Ask about this), by id.
+    var aiAnswerId by rememberSaveable { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
@@ -243,7 +245,7 @@ fun CalculatorScreen(
 
     pendingAiEntry?.let { pending ->
         AlertDialog(
-            onDismissRequest = { pendingAiEntry = null; aiRerunId = null },
+            onDismissRequest = { pendingAiEntry = null; aiRerunId = null; aiAnswerId = null },
             icon = { Icon(imageVector = Icons.Default.Psychology, contentDescription = null) },
             title = { Text(text = stringResource(R.string.experimental_feature_title)) },
             text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
@@ -268,7 +270,7 @@ fun CalculatorScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingAiEntry = null; aiRerunId = null }) {
+                TextButton(onClick = { pendingAiEntry = null; aiRerunId = null; aiAnswerId = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -298,7 +300,12 @@ fun CalculatorScreen(
                 handleShowAi(entry.mode)
             },
             onDeleteAiEntry = { scanViewModel?.deleteHistoryEntry(it.id) },
-            onClearAiHistory = { scanViewModel?.clearAiHistory() }
+            onClearAiHistory = { scanViewModel?.clearAiHistory() },
+            onAskAboutAi = { entry ->
+                showHistory = false
+                aiAnswerId = entry.id
+                handleShowAi(entry.mode)
+            }
         )
     }
 
@@ -308,6 +315,7 @@ fun CalculatorScreen(
             viewModel = scanViewModel,
             entry = openAiEntry,
             rerunId = aiRerunId,
+            answerId = aiAnswerId,
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
@@ -322,6 +330,7 @@ fun CalculatorScreen(
                 scanViewModel.stopInference()
                 aiEntry = null
                 aiRerunId = null
+                aiAnswerId = null
             }
         )
     }
@@ -1037,6 +1046,7 @@ fun HistorySheet(
     onSolveAgain: (AiHistoryEntry) -> Unit = {},
     onDeleteAiEntry: (AiHistoryEntry) -> Unit = {},
     onClearAiHistory: () -> Unit = {},
+    onAskAboutAi: (AiHistoryEntry) -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
     // 0 = calculations, 1 = AI history. Saveable, like the open entry, so rotation keeps both.
@@ -1130,7 +1140,8 @@ fun HistorySheet(
                         onDelete = {
                             openAiId = null
                             onDeleteAiEntry(openAi)
-                        }
+                        },
+                        onAskAbout = { onAskAboutAi(openAi) }
                     )
                 } else {
                     AiHistoryList(

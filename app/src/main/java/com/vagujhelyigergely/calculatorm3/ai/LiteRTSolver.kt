@@ -260,6 +260,16 @@ class LiteRTSolver : MathSolver {
         )
     }
 
+    override suspend fun followUpStreaming(
+        message: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = solveStreaming(onToken) {
+        runInference(
+            Contents.of(Content.Text(message)),
+            SolverPrompts.FOLLOW_UP_SYSTEM_PROMPT, requireNumber = false, onToken = onToken
+        )
+    }
+
     /**
      * Run [attempt] under the solver lock; if it fails on the GPU, reload on CPU and run it once
      * more (some devices initialize the GPU backend fine but fault during inference).

@@ -55,6 +55,16 @@ interface MathSolver {
     ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No image steps"))
 
     /**
+     * Answer a question about an earlier answer. [message] carries everything the model needs
+     * ([SolverPrompts.followUpMessage]): each follow-up is a fresh conversation built from saved
+     * text, so it works the same whether or not the engine still holds the earlier one.
+     */
+    suspend fun followUpStreaming(
+        message: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No follow-ups"))
+
+    /**
      * Interrupt an in-flight [solveFromImageStreaming] so native generation stops promptly.
      * Must be safe to call WITHOUT holding the backend's internal lock — the running inference
      * already holds it, and this is only a signal to the native side, not a state change.
@@ -105,6 +115,37 @@ object SolverPrompts {
         "2. <next step>\n" +
         "(at most 4 steps, one short line each)\n" +
         "Answer: <only the final answer, e.g. 42 or x = 5; a number without units where possible>"
+
+    /** For a question about an answer the user already has ([followUpMessage]). */
+    const val FOLLOW_UP_SYSTEM_PROMPT =
+        "You are a math tutor. The user has a math problem, its answer and the working, and asks " +
+        "a question about it. Answer only that question, briefly and clearly, in the language " +
+        "of the question: a few short sentences or steps."
+
+    /**
+     * The single message for a follow-up: the problem as read, the answer, the working (steps,
+     * or a photo scan's whole output), up to [MAX_EARLIER] earlier questions with their replies,
+     * then the new [question]. Built fresh each time from saved text.
+     */
+    fun followUpMessage(
+        problem: String,
+        answer: String,
+        working: String,
+        earlier: List<Pair<String, String>>,
+        question: String,
+    ): String = buildString {
+        if (problem.isNotBlank()) append("Problem: ").append(problem.trim()).append("\n")
+        if (answer.isNotBlank()) append("Answer: ").append(answer.trim()).append("\n")
+        if (working.isNotBlank()) append("Working:\n").append(working.trim()).append("\n")
+        earlier.takeLast(MAX_EARLIER).forEach { (q, a) ->
+            append("\nEarlier question: ").append(q.trim()).append("\n")
+            append("Your reply: ").append(a.trim()).append("\n")
+        }
+        append("\nQuestion: ").append(question.trim())
+    }
+
+    /** Earlier exchanges a follow-up may carry (2 questions per answer → at most 1 earlier). */
+    private const val MAX_EARLIER = 1
 
     /** The user turn that goes with a handwritten picture under [STEPS_SYSTEM_PROMPT]. */
     const val STEPS_IMAGE_USER_PROMPT = "Solve the handwritten math problem in this image."

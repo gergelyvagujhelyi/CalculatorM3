@@ -13,6 +13,9 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuContent
+import com.vagujhelyigergely.calculatorm3.camera.FollowUp
+import com.vagujhelyigergely.calculatorm3.camera.FollowUpSection
+import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel.FollowUpUi
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryDetail
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryList
@@ -616,5 +619,64 @@ class AiScreensUiTest {
         composeTestRule.onNodeWithText("What is 15% of 80?").assertIsDisplayed()
         composeTestRule.onNodeWithText("What is 15% of 80?").performClick()
         composeTestRule.onNodeWithText(str(R.string.ai_history_full_output)).assertIsDisplayed()
+    }
+
+    // ── Follow-up questions ─────────────────────────────────────────────────
+
+    @Test
+    fun theFirstQuestionOffersSuggestionsAndShowsTheCounter() {
+        val asked = mutableListOf<String>()
+        show {
+            FollowUpSection(thread = emptyList(), state = FollowUpUi.Idle, left = 2,
+                onAsk = { asked += it }, onStop = {}, onSolveAgain = {})
+        }
+        composeTestRule.onNodeWithText(str(R.string.follow_up_left, 2)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.follow_up_chip_why)).performClick()
+        composeTestRule.onNode(hasSetTextAction()).performTextInput("Why 0.15?")
+        composeTestRule.onNodeWithContentDescription(str(R.string.follow_up_send)).performClick()
+        assertEquals(listOf(str(R.string.follow_up_chip_why), "Why 0.15?"), asked)
+    }
+
+    @Test
+    fun aQuestionBeingAnsweredStreamsWithStopAndHidesTheField() {
+        var stops = 0
+        show {
+            FollowUpSection(thread = emptyList(), state = FollowUpUi.Answering("Why?", "Because 15%"), left = 2,
+                onAsk = {}, onStop = { stops++ }, onSolveAgain = {})
+        }
+        composeTestRule.onNodeWithText("Why?").assertIsDisplayed()
+        composeTestRule.onNode(hasSetTextAction()).assertDoesNotExist()
+        button(str(R.string.stop)).performClick()
+        assertEquals(1, stops)
+    }
+
+    @Test
+    fun withNoQuestionsLeftItOffersToSolveAgain() {
+        var again = 0
+        show {
+            FollowUpSection(
+                thread = listOf(FollowUp("Why?", "Because."), FollowUp("Another way?", "Yes.")),
+                state = FollowUpUi.Idle, left = 0, onAsk = {}, onStop = {}, onSolveAgain = { again++ }
+            )
+        }
+        composeTestRule.onNodeWithText("Another way?").assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.follow_up_none)).assertIsDisplayed()
+        composeTestRule.onNode(hasSetTextAction()).assertDoesNotExist()
+        button(str(R.string.ai_history_solve_again)).performClick()
+        assertEquals(1, again)
+    }
+
+    @Test
+    fun aSavedAnswerShowsItsQuestionsAndHowManyAreLeft() {
+        var asks = 0
+        val entry = typedEntry.copy(followUps = listOf(FollowUp("Why 0.15?", "15% is 15 per 100.")))
+        show {
+            AiHistoryDetail(entry, image = null, onBack = {}, onUse = {}, onSolveAgain = {}, onDelete = {},
+                onAskAbout = { asks++ })
+        }
+        composeTestRule.onNodeWithText("Why 0.15?").assertExists()
+        composeTestRule.onNodeWithText(str(R.string.follow_up_left, 1)).assertExists()
+        button(str(R.string.ai_history_ask)).performScrollTo().performClick()
+        assertEquals(1, asks)
     }
 }
