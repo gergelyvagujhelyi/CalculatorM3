@@ -227,6 +227,9 @@ class CalculatorViewModel(
         const val ERROR_DIVISION_BY_ZERO = "Error: divisionByZero"
         const val ERROR_INVALID_OPERATION = "Error: invalidOperation"
         const val ERROR_OVERFLOW = "Error: overflow"
+
+        /** Operators and functions that make typed text a calculation ([evaluateStandalone]). */
+        private const val INSTANT_OPERATORS = "+-*/×÷−^√!%"
     }
 
     fun moveCursorTo(position: Int) {
@@ -516,6 +519,31 @@ class CalculatorViewModel(
         val preview = evaluate(evaluable)
         result = if (!preview.startsWith("Error")) formatForDisplay(preview) else ""
     }
+
+    /**
+     * The calculator's own answer for a typed problem (the AI Type screen), or null when it isn't
+     * plain arithmetic the calculator understands. Strict: [evaluate]'s tokenizer skips unknown
+     * characters, so anything beyond digits, operators, √ π ! % ^ and parentheses (letters, '=',
+     * a second '.') is left to the AI rather than misread ("solve 3x+5" must not become 3+5).
+     * Keyboard `*` `/` `-` are accepted; a trailing "=" is ignored. Doesn't touch the calculator.
+     */
+    fun evaluateStandalone(text: String): String? {
+        val trimmed = text.trim().removeSuffix("=").trim()
+        if (!instantAllowed.matches(trimmed)) return null
+        // The keypad always writes √ with brackets, "√(9)"; a bare √ would take everything after
+        // it ("√144+2^5" = √176). Typed, it means the number right after it: bracket that, and
+        // leave any other bare √ ("√-4", "√√16") to the AI.
+        val compact = trimmed.filterNot { it.isWhitespace() }.replace(bareSqrtOfNumber, "√($1)")
+        if (bareSqrt.containsMatchIn(compact)) return null
+        // A bare number isn't a calculation; it needs an operator or function.
+        if (compact.none { it in INSTANT_OPERATORS } || compact.none { it.isDigit() || it == 'π' }) return null
+        val value = evaluate(compact)
+        return value.takeUnless { it.startsWith("Error") }
+    }
+
+    private val instantAllowed = Regex("[0-9.\\s+\\-*/×÷−^√π!%()]+")
+    private val bareSqrtOfNumber = Regex("√(\\d+(?:\\.\\d+)?|π)")
+    private val bareSqrt = Regex("√(?!\\()")
 
     /** Drop operators that lack an operand at either end, exactly as "=" does before evaluating. */
     private fun stripDanglingOperators(expr: String): String =

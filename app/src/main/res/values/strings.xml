@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Solve with AI</string>
     <string name="ai_menu_camera">Camera</string>
     <string name="ai_menu_gallery">Gallery</string>
+    <string name="ai_menu_type">Type</string>
+    <string name="type_title">Type a math problem</string>
+    <string name="type_placeholder">e.g. 3x + 5 = 20, or a word problem</string>
+    <string name="type_instant_label">Calculator</string>
+    <string name="type_show_steps">Show steps with AI</string>
+    <string name="steps_problem">Problem</string>
+    <string name="steps_title">Steps</string>
+    <string name="steps_not_usable">This answer isn\'t a single number, so it can\'t go into the calculator.</string>
+    <string name="steps_edit">Edit</string>
     <string name="ai_settings">AI settings</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Speed</string>

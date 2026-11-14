@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Yapay zekayla çöz</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_menu_type">Yaz</string>
+    <string name="type_title">Bir matematik sorusu yazın</string>
+    <string name="type_placeholder">ör. 3x + 5 = 20 veya bir problem</string>
+    <string name="type_instant_label">Hesap makinesi</string>
+    <string name="type_show_steps">Adımları yapay zekayla göster</string>
+    <string name="steps_problem">Soru</string>
+    <string name="steps_title">Adımlar</string>
+    <string name="steps_not_usable">Bu cevap tek bir sayı değil, bu yüzden hesap makinesine aktarılamaz.</string>
+    <string name="steps_edit">Düzenle</string>
     <string name="ai_settings">Yapay zeka ayarları</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Hız</string>

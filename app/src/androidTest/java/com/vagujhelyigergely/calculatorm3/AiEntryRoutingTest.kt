@@ -32,9 +32,16 @@ class AiEntryRoutingTest {
     private lateinit var manager: ModelManager
     private val created = mutableListOf<File>()
 
-    /** Holds loadModel() open until [loadGate], so the preparation can be finished on cue. */
-    private class FakeSolver : MathSolver {
+    /**
+     * Holds loadModel() open until [loadGate], so the preparation can be finished on cue. A typed
+     * problem gets [textReply], after waiting for [textGate] if one is set (so Stop can land).
+     */
+    private class FakeSolver(
+        val textReply: String = "Problem: 6 × 7\n1. 6 × 7 = 42\nAnswer: 42",
+        val textGate: CompletableDeferred<Unit>? = null,
+    ) : MathSolver {
         val loadGate = CompletableDeferred<Unit>()
+        val solvedTexts = mutableListOf<String>()
         @Volatile private var loaded = false
         override val isModelLoaded get() = loaded
         override val activeBackend = "fake"
@@ -42,6 +49,14 @@ class AiEntryRoutingTest {
         override suspend fun solveFromImageStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException())
+        override suspend fun solveFromTextStreaming(
+            problem: String, onToken: suspend (partialRaw: String) -> Unit
+        ): Result<RecognitionResult> {
+            solvedTexts += problem
+            onToken("Problem:")
+            textGate?.await()
+            return Result.success(RecognitionResult(textReply, ""))
+        }
         override suspend fun release() { loaded = false }
     }
 
@@ -67,14 +82,17 @@ class AiEntryRoutingTest {
         }
     }
 
+    private var lastVm: ScanViewModel? = null
+
     private fun waitFor(what: String, condition: () -> Boolean) {
         val end = System.currentTimeMillis() + 5_000
         while (System.currentTimeMillis() < end) { if (condition()) return; Thread.sleep(25) }
-        throw AssertionError("timed out waiting for: $what")
+        throw AssertionError("timed out waiting for: $what (state: ${lastVm?.uiState})")
     }
 
     private fun open(entry: AiEntry, solver: FakeSolver = FakeSolver(), resumed: Boolean = false) =
         ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context).also { vm ->
+            lastVm = vm
             instrumentation.runOnMainSync { vm.initialize(entry, resumed) }
         }
 
@@ -139,5 +157,99 @@ class AiEntryRoutingTest {
         waitFor("the preparing message") { vm.uiState is ScanUiState.PreparingModel }
         solver.loadGate.complete(Unit)
         waitFor("the settings page") { vm.uiState is ScanUiState.ModelSelection }
+    }
+
+    // ── Type ────────────────────────────────────────────────────────────────
+
+    private fun solveTyped(vm: ScanViewModel, text: String) {
+        instrumentation.runOnMainSync {
+            vm.updateTypedProblem(text)
+            vm.onTextSubmitted(text)
+        }
+    }
+
+    @Test
+    fun typeOpensTheTypeScreen() {
+        val vm = open(AiEntry.TYPE)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+    }
+
+    @Test
+    fun aTypedProblemIsSolvedStepByStepAndItsNumberOffered() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "  6 × 7  ")
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals(listOf("6 × 7"), solver.solvedTexts)
+        assertEquals("42", state.answer)
+        assertEquals("42", state.steps?.usableAnswer)
+        assertEquals("1. 6 × 7 = 42", state.steps?.steps)
+    }
+
+    @Test
+    fun anEquationIsAnsweredButNotOfferedForUse() {
+        val solver = FakeSolver(textReply = "Problem: 3x + 5 = 20\n1. 3x = 15\nAnswer: x = 5")
+            .apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "3x + 5 = 20")
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals("x = 5", state.steps?.answer)
+        assertEquals("", state.answer)
+    }
+
+    @Test
+    fun aReplyWithoutAnAnswerLineIsShownToCheck() {
+        val solver = FakeSolver(textReply = "I think it is about forty.").apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the check-output error") { vm.uiState is ScanUiState.Error }
+        val state = vm.uiState as ScanUiState.Error
+        assertTrue(state.checkOutput)
+        assertEquals("I think it is about forty.", state.rawResponse)
+    }
+
+    @Test
+    fun editAndRetryGoBackToTheTypedProblem() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        instrumentation.runOnMainSync { vm.editTypedProblem() }
+        assertEquals(ScanUiState.Typing, vm.uiState)
+        assertEquals("6 × 7", vm.typedProblem)
+        instrumentation.runOnMainSync { vm.retry() }
+        assertEquals(ScanUiState.Typing, vm.uiState)
+        assertEquals("6 × 7", vm.typedProblem)
+    }
+
+    @Test
+    fun stoppingATypedSolveGoesBackToTheText() {
+        val gate = CompletableDeferred<Unit>()
+        val solver = FakeSolver(textGate = gate).apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the solve") { vm.uiState is ScanUiState.Processing }
+        instrumentation.runOnMainSync { vm.stopInference() }
+        assertEquals(ScanUiState.Typing, vm.uiState)
+        assertEquals("6 × 7", vm.typedProblem)
+        gate.complete(Unit)
+    }
+
+    @Test
+    fun blankTextIsNotSolved() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "   ")
+        Thread.sleep(200)
+        assertEquals(ScanUiState.Typing, vm.uiState)
+        assertTrue(solver.solvedTexts.isEmpty())
     }
 }

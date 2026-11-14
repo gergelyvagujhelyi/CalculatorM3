@@ -99,12 +99,12 @@ class LiteRTSolver : MathSolver {
         return eng
     }
 
-    private fun createConversation(): Conversation {
+    private fun createConversation(systemPrompt: String): Conversation {
         val eng = engine ?: throw IllegalStateException("Model not loaded")
         try { conversation?.close() } catch (_: Exception) {}
         return eng.createConversation(
             ConversationConfig(
-                systemInstruction = Contents.of(Content.Text(SolverPrompts.SYSTEM_PROMPT)),
+                systemInstruction = Contents.of(Content.Text(systemPrompt)),
                 samplerConfig = SamplerConfig(
                     topK = SolverPrompts.TOP_K,
                     topP = SolverPrompts.TOP_P.toDouble(),
@@ -114,11 +114,18 @@ class LiteRTSolver : MathSolver {
         ).also { conversation = it }
     }
 
+    /**
+     * One generation of [message] under [systemPrompt]. With [requireNumber] (photo scans) a
+     * response without a usable final number is a failure; typed problems are parsed by the
+     * caller ([SolverPrompts.parseSteps]) and return the raw text with an empty answer.
+     */
     private suspend fun runInference(
-        imagePath: String,
+        message: Contents,
+        systemPrompt: String,
+        requireNumber: Boolean,
         onToken: suspend (partialRaw: String) -> Unit
     ): Result<RecognitionResult> = coroutineScope {
-        val conv = createConversation()
+        val conv = createConversation(systemPrompt)
         val rawBuilder = StringBuilder()
         var tokenCount = 0
         var capReached = false
@@ -134,13 +141,8 @@ class LiteRTSolver : MathSolver {
         // "Processing"), so a stuck collect can only be unwound by cancelling its coroutine.
         val collectJob = launch {
             try {
-                conv.sendMessageAsync(
-                    Contents.of(
-                        Content.ImageFile(imagePath),
-                        Content.Text(SolverPrompts.USER_PROMPT)
-                    )
-                ).collect { message ->
-                    val text = message.contents.contents
+                conv.sendMessageAsync(message).collect { reply ->
+                    val text = reply.contents.contents
                         .filterIsInstance<Content.Text>()
                         .joinToString("") { it.text }
                     rawBuilder.append(text)
@@ -218,6 +220,7 @@ class LiteRTSolver : MathSolver {
             )
         }
         val raw = rawBuilder.toString()
+        if (!requireNumber) return@coroutineScope Result.success(RecognitionResult(raw = raw, answer = ""))
         val answer = SolverPrompts.extractAnswer(raw)
         if (answer.isBlank()) {
             Result.failure(RecognitionException(
@@ -230,10 +233,34 @@ class LiteRTSolver : MathSolver {
     override suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = solveStreaming(onToken) {
+        runInference(
+            Contents.of(Content.ImageFile(imagePath), Content.Text(SolverPrompts.USER_PROMPT)),
+            SolverPrompts.SYSTEM_PROMPT, requireNumber = true, onToken = onToken
+        )
+    }
+
+    override suspend fun solveFromTextStreaming(
+        problem: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = solveStreaming(onToken) {
+        runInference(
+            Contents.of(Content.Text(problem)),
+            SolverPrompts.STEPS_SYSTEM_PROMPT, requireNumber = false, onToken = onToken
+        )
+    }
+
+    /**
+     * Run [attempt] under the solver lock; if it fails on the GPU, reload on CPU and run it once
+     * more (some devices initialize the GPU backend fine but fault during inference).
+     */
+    private suspend fun solveStreaming(
+        onToken: suspend (partialRaw: String) -> Unit,
+        attempt: suspend () -> Result<RecognitionResult>
     ): Result<RecognitionResult> = mutex.withLock {
         withContext(Dispatchers.IO) {
             try {
-                runInference(imagePath, onToken)
+                attempt()
             } catch (e: Throwable) {
                 // Never swallow cancellation — let the coroutine actually cancel
                 // instead of treating it as a failure and reloading on CPU.
@@ -256,7 +283,7 @@ class LiteRTSolver : MathSolver {
                         // The retry streams its output from the start: say so, so the caller
                         // restarts its counters instead of mixing both attempts.
                         onToken("")
-                        return@withContext runInference(imagePath, onToken)
+                        return@withContext attempt()
                     } catch (retry: Throwable) {
                         if (retry is kotlinx.coroutines.CancellationException) throw retry
                         Log.e(TAG, "CPU retry also failed", retry)

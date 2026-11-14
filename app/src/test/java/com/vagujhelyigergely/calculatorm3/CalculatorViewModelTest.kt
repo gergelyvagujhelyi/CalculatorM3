@@ -2627,4 +2627,47 @@ class CalculatorViewModelTest {
         // Remaining 500 answer characters plus the normal 200-character typing budget.
         assertEquals(700, vm.expression.length)
     }
+
+    // ── Typed problems answered by the calculator itself (AI Type screen) ──
+
+    @Test
+    fun `typed arithmetic is answered with keyboard or calculator symbols`() {
+        assertEquals("17", vm.evaluateStandalone("12 + 5"))
+        assertEquals("42", vm.evaluateStandalone("6*7"))
+        assertEquals("42", vm.evaluateStandalone("6 × 7 ="))
+        assertEquals("0.25", vm.evaluateStandalone("1/4"))
+        assertEquals("-7", vm.evaluateStandalone("3 - 10"))
+        assertEquals("44", vm.evaluateStandalone("√144 + 2^5"))
+        assertEquals("120", vm.evaluateStandalone("5!"))
+    }
+
+    @Test
+    fun `a typed root takes the number right after it, as written`() {
+        // Not √(144 + 2^5): the keypad brackets every √, typed text doesn't.
+        assertEquals("44", vm.evaluateStandalone("√144 + 2^5"))
+        assertEquals("5", vm.evaluateStandalone("√(9+16)"))
+        assertEquals("1.5", vm.evaluateStandalone("√2.25"))
+    }
+
+    @Test
+    fun `anything beyond plain arithmetic is left to the AI`() {
+        // The tokenizer skips unknown characters; these must not be misread as arithmetic.
+        listOf("solve 3x+5", "3x + 5 = 20", "15% of 80", "sqrt(144)", "1,5 + 2", "x^2", "√-4", "√√16").forEach {
+            assertEquals(it, null, vm.evaluateStandalone(it))
+        }
+    }
+
+    @Test
+    fun `a bare number, an error or an unfinished expression gives no instant answer`() {
+        listOf("42", "", "  ", "1/0", "12 +", "1.2.3 + 1", "(").forEach {
+            assertEquals(it, null, vm.evaluateStandalone(it))
+        }
+    }
+
+    @Test
+    fun `answering typed text leaves the calculator untouched`() {
+        vm.onButtonPress("9")
+        vm.evaluateStandalone("12 + 5")
+        assertEquals("9", vm.expression)
+    }
 }

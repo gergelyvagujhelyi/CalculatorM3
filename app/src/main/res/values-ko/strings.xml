@@ -52,6 +52,15 @@
     <string name="ai_menu_title">AI로 풀기</string>
     <string name="ai_menu_camera">카메라</string>
     <string name="ai_menu_gallery">갤러리</string>
+    <string name="ai_menu_type">입력</string>
+    <string name="type_title">수학 문제 입력</string>
+    <string name="type_placeholder">예: 3x + 5 = 20 또는 문장제</string>
+    <string name="type_instant_label">계산기</string>
+    <string name="type_show_steps">AI로 풀이 보기</string>
+    <string name="steps_problem">문제</string>
+    <string name="steps_title">풀이</string>
+    <string name="steps_not_usable">이 답은 하나의 숫자가 아니어서 계산기에 넣을 수 없습니다.</string>
+    <string name="steps_edit">수정</string>
     <string name="ai_settings">AI 설정</string>
     <string name="ai_settings_model">모델</string>
     <string name="ai_settings_speed">속도</string>

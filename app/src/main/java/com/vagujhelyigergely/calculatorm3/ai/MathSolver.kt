@@ -35,6 +35,16 @@ interface MathSolver {
     ): Result<RecognitionResult>
 
     /**
+     * Solve a typed [problem] step by step ([SolverPrompts.STEPS_SYSTEM_PROMPT]). Succeeds with
+     * the raw response and an empty answer: the caller parses it ([SolverPrompts.parseSteps]),
+     * since an answer such as `x = 5` is a fine result here, not a failure.
+     */
+    suspend fun solveFromTextStreaming(
+        problem: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No text solving"))
+
+    /**
      * Interrupt an in-flight [solveFromImageStreaming] so native generation stops promptly.
      * Must be safe to call WITHOUT holding the backend's internal lock — the running inference
      * already holds it, and this is only a signal to the native side, not a state change.
@@ -51,6 +61,19 @@ interface MathSolver {
     suspend fun release()
 }
 
+/**
+ * A typed problem's parsed step-by-step answer ([SolverPrompts.parseSteps]).
+ * [problem]: how the model restated it. [steps]: the working, as Markdown. [answer]: the final
+ * answer as written (may be `x = 5` or a fraction). [usableAnswer]: the number for "Use", or ""
+ * when the answer isn't a single number that agrees with the working.
+ */
+data class SolvedSteps(
+    val problem: String,
+    val steps: String,
+    val answer: String,
+    val usableAnswer: String,
+)
+
 /** Shared prompts used by all backends. */
 object SolverPrompts {
     const val SYSTEM_PROMPT =
@@ -62,6 +85,56 @@ object SolverPrompts {
 
     const val USER_PROMPT =
         "Calculate the result of the mathematical expression in this image."
+
+    /** For typed problems: a fixed shape that [parseSteps] reads back. */
+    const val STEPS_SYSTEM_PROMPT =
+        "You are a math tutor. Solve the user's math problem step by step.\n" +
+        "Reply in exactly this format and nothing else:\n" +
+        "Problem: <the problem, restated in one line>\n" +
+        "1. <first step>\n" +
+        "2. <next step>\n" +
+        "(at most 4 steps, one short line each)\n" +
+        "Answer: <only the final answer, e.g. 42 or x = 5; a number without units where possible>"
+
+    // A label with optional Markdown emphasis or heading marks around it ("**Answer:**",
+    // "## Problem:"). Only the label's own decoration is removed: a '*' in the maths after it
+    // ("5*4+3") must stay.
+    private val problemLabel = Regex("^[#*_\\s]*problem[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
+    private val answerLabel = Regex("^[#*_\\s]*(final\\s+)?answer[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
+
+    /**
+     * Read a [STEPS_SYSTEM_PROMPT] response, or null if it has no `Answer:` line (the caller then
+     * shows the raw output to check). Labels may carry Markdown emphasis (`**Answer:**`). With
+     * no `Problem:` line the problem is [typed]. The answer is offered for "Use" only if it's a
+     * plain number (no variable, no '=') that [extractAnswer] accepts against the working.
+     */
+    fun parseSteps(raw: String, typed: String): SolvedSteps? {
+        val lines = raw.trim().lines()
+        val answerIndex = lines.indexOfLast { answerLabel.containsMatchIn(it) }
+        if (answerIndex < 0) return null
+        // A bold answer line ("**Answer: 42**") keeps no dangling closing marks.
+        val answer = lines[answerIndex].replace(answerLabel, "").trim().removeSuffix("**").trim()
+        if (answer.isEmpty()) return null
+        val problemIndex = lines.indexOfFirst { problemLabel.containsMatchIn(it) }
+            .takeIf { it in 0 until answerIndex }
+        val problem = problemIndex?.let { lines[it].replace(problemLabel, "").trim() }
+            ?.takeIf { it.isNotEmpty() } ?: typed.trim()
+        val stepLines = lines.subList((problemIndex ?: -1) + 1, answerIndex)
+        val steps = stepLines.joinToString("\n").trim()
+        return SolvedSteps(problem, steps, answer, usableAnswer(stepLines, answer))
+    }
+
+    private val answerWrappers = Regex("\\\\boxed\\{([^{}]*)\\}")
+    private val answerDelimiters = Regex("\\\\[()\\[\\]]|\\$")
+
+    private fun usableAnswer(working: List<String>, answer: String): String {
+        val bare = answer.replace(answerWrappers, "$1").replace(answerDelimiters, "").trim()
+        // "x = 5", "5/4", "60 km/h", "\frac{1}{2}": shown, but not a number to put in the calculator.
+        // (An 'e'/'E' is allowed only as exponent notation, which extractAnswer reads.)
+        val letters = bare.replace(Regex("(?<=\\d)[eE](?=[+-]?\\d)"), "")
+        if ('=' in bare || letters.any { it.isLetter() }) return ""
+        return extractAnswer((working + bare).joinToString("\n"))
+    }
 
     // Sampler params for the LiteRT-LM conversation (match AI Edge Gallery defaults).
     const val TOP_K = 64

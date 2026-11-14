@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Selesaikan dengan AI</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_menu_type">Ketik</string>
+    <string name="type_title">Ketik soal matematika</string>
+    <string name="type_placeholder">mis. 3x + 5 = 20, atau soal cerita</string>
+    <string name="type_instant_label">Kalkulator</string>
+    <string name="type_show_steps">Lihat langkah dengan AI</string>
+    <string name="steps_problem">Soal</string>
+    <string name="steps_title">Langkah</string>
+    <string name="steps_not_usable">Jawaban ini bukan satu angka, jadi tidak bisa dimasukkan ke kalkulator.</string>
+    <string name="steps_edit">Edit</string>
     <string name="ai_settings">Pengaturan AI</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Kecepatan</string>

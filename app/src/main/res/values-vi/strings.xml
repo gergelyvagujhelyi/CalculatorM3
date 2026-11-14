@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Giải bằng AI</string>
     <string name="ai_menu_camera">Máy ảnh</string>
     <string name="ai_menu_gallery">Thư viện</string>
+    <string name="ai_menu_type">Nhập</string>
+    <string name="type_title">Nhập một bài toán</string>
+    <string name="type_placeholder">vd. 3x + 5 = 20, hoặc một bài toán có lời văn</string>
+    <string name="type_instant_label">Máy tính</string>
+    <string name="type_show_steps">Xem các bước bằng AI</string>
+    <string name="steps_problem">Bài toán</string>
+    <string name="steps_title">Các bước</string>
+    <string name="steps_not_usable">Câu trả lời này không phải là một số duy nhất nên không thể đưa vào máy tính.</string>
+    <string name="steps_edit">Sửa</string>
     <string name="ai_settings">Cài đặt AI</string>
     <string name="ai_settings_model">Mô hình</string>
     <string name="ai_settings_speed">Tốc độ</string>
