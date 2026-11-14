@@ -81,6 +81,8 @@ Point your camera at a handwritten math expression, write it on screen with your
 
 **AI settings** (the ⚙ in the menu) holds the model choice and the **speed**: with the Gemma 4 models, **Fast / Balanced / Accurate** sets how much detail the model takes from the photo or drawing. Fast can answer in about half the time; Accurate (the default) reads the most detail. The choice is remembered and applies from the next scan.
 
+**Answer language:** when the app isn't in English, you choose once (on first use, or later in AI settings) between answers in **English**, where the model works best, and answers in **your language**. The model always solves in English; with your language chosen, the problem, the steps and follow-up replies are then translated **on the phone** by [Mozilla's Firefox Translations](https://github.com/mozilla/translations) models, run by the [slimt](https://github.com/DavidVentura/slimt) engine: a one-time 15–38 MB download per language, after which a translation takes well under a second. Only the words are translated: the maths stays exactly as the model wrote it, and a sentence whose numbers wouldn't survive translation stays in English. The answer and the number for **Use** always come from the English solve.
+
 **Good to know:**
 - The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. When the model writes the same value two ways (`1/4 or 0.25`), the plain number is offered. Otherwise (an equation's `x = 5`, a fraction like `5/4`) the answer and steps are shown with a note saying why it can't go into the calculator; a reply without a clear final answer says **"Check the model's answer below"** and opens the model's full working
 - After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
@@ -104,11 +106,12 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 **Requirements:**
 - Android device with 6+ GB RAM — the smallest model (Gemma 4 E2B) needs 6 GB and the larger E4B models need 8 GB; on devices with less, the AI button isn't shown
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
-- Internet for the one-time model download (Wi-Fi by default; the app asks before using mobile data)
+- Internet for the one-time model download (Wi-Fi by default; the app asks before using mobile data), and for the translation model if you want answers in your language
 - Gemma 3n models require a free [HuggingFace](https://huggingface.co) account — you sign in once, in-app, and accept the model license; Gemma 4 models need no account ([setup](docs/huggingface-oauth-setup.md))
 
 **Powered by:**
 - [Google LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) — on-device multimodal LLM inference, GPU-accelerated with automatic CPU fallback
+- [Mozilla Firefox Translations](https://github.com/mozilla/translations) models (MPL-2.0), run by [slimt](https://github.com/DavidVentura/slimt) (GPL-2.0-or-later, with SentencePiece and ruy) — on-device translation of answers
 
 ---
 
@@ -124,7 +127,7 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - No data harvesting
 - AI models run entirely on-device — no cloud processing
 - AI history stays on your device, in the app's private storage, and you can delete it any time
-- Internet is only used to download AI models (optional, one-time)
+- Internet is only used to download AI models and, for answers in your language, its translation model (optional, one-time)
 
 ---
 
@@ -135,8 +138,19 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - **BigDecimal** high-precision arithmetic
 - **System camera + photo picker** for image capture (no in-app camera permission)
 - **LiteRT-LM** for on-device multimodal model inference (GPU-accelerated, CPU fallback)
+- **slimt** (C++, built with the NDK) for on-device translation with Mozilla's models
 - **WorkManager** foreground service for resumable background model downloads
 - **Markwon + jlatexmath** for rendering the answer's math and markdown
+
+---
+
+## Building from source
+
+The answer translator's engine (slimt) is a git submodule, so clone with submodules:
+
+    git clone --recursive https://github.com/gergelyvagujhelyi/CalculatorM3.git
+
+(or `git submodule update --init --recursive` in an existing clone). The build uses NDK 28.0.13004108 and CMake 3.22.1, which Gradle downloads on the first build if they're missing.
 
 ---
 

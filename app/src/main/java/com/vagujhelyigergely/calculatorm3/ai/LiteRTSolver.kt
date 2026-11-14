@@ -245,7 +245,7 @@ class LiteRTSolver : MathSolver {
         onToken: suspend (partialRaw: String) -> Unit
     ): Result<RecognitionResult> = solveStreaming(onToken) {
         runInference(
-            Contents.of(Content.Text(problem)),
+            Contents.of(Content.Text(SolverPrompts.stepsMessage(problem))),
             SolverPrompts.STEPS_SYSTEM_PROMPT, requireNumber = false, onToken = onToken
         )
     }

@@ -10,8 +10,12 @@ import kotlin.random.Random
 /** Follow-up questions allowed per answer: keeps each follow-up's context small and fixed. */
 const val MAX_FOLLOW_UPS = 2
 
-/** A question asked about an answer, and the model's reply. */
-data class FollowUp(val question: String, val reply: String)
+/**
+ * A question asked about an answer, and the model's reply as shown. [englishReply] is the
+ * model's own English reply when [reply] is its translation (answers in the app's language):
+ * the model is given that as context for a later question, not the translation.
+ */
+data class FollowUp(val question: String, val reply: String, val englishReply: String? = null)
 
 /** How a saved AI solve ended. */
 enum class AiHistoryOutcome {
@@ -147,7 +151,11 @@ class AiHistoryStore(private val dir: File, private val maxEntries: Int = MAX_EN
             put("elapsedMs", e.elapsedMs)
             if (e.followUps.isNotEmpty()) {
                 put("followUps", JSONArray().apply {
-                    e.followUps.forEach { put(JSONObject().put("q", it.question).put("a", it.reply)) }
+                    e.followUps.forEach { f ->
+                        put(JSONObject().put("q", f.question).put("a", f.reply).apply {
+                            f.englishReply?.let { put("en", it) }
+                        })
+                    }
                 })
             }
         }
@@ -179,7 +187,9 @@ class AiHistoryStore(private val dir: File, private val maxEntries: Int = MAX_EN
             elapsedMs = o.getLong("elapsedMs"),
             followUps = o.optJSONArray("followUps")?.let { arr ->
                 (0 until arr.length()).map { i ->
-                    arr.getJSONObject(i).let { FollowUp(it.getString("q"), it.getString("a")) }
+                    arr.getJSONObject(i).let {
+                        FollowUp(it.getString("q"), it.getString("a"), it.optString("en").takeIf { _ -> it.has("en") })
+                    }
                 }
             } ?: emptyList(),
         )

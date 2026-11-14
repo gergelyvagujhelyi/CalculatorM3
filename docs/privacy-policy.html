@@ -13,7 +13,7 @@
 </head>
 <body>
     <h1>Privacy Policy</h1>
-    <p class="date">Last updated: June 26, 2026</p>
+    <p class="date">Last updated: November 14, 2026</p>
 
     <h2>Calculator M3</h2>
     <p>Calculator M3 is a free, open-source calculator app built by Gergely Vagujhelyi.</p>
@@ -27,15 +27,16 @@
 
     <h2>Internet Access</h2>
     <p>The calculator works entirely offline and makes no network connections. The only feature that uses the internet is the optional AI Math Solver: when you choose to download an AI model, the app downloads it from a public model host (such as Hugging Face). The model then runs entirely on your device. If you never download an AI model, the app uses no internet at all.</p>
+    <p>If you choose to have AI answers in your own language, the app also downloads that language's translation model once (15–38 MB), from Mozilla's public model storage (Firefox Translations). The translation then runs entirely on your device too: the answers themselves are never sent anywhere.</p>
     <p>Some models are "gated" and require a one-time sign-in to Hugging Face, which you start yourself. The sign-in happens directly with Hugging Face in a browser tab — your credentials are entered on Hugging Face's own page and are never seen by this app. The app stores only a short-lived access token on your device, used solely to authorize that download. The token is excluded from device backups and is not copied to a new phone when you transfer your data.</p>
 
     <h2>Third-Party Services</h2>
-    <p>This app contains no analytics, advertising, or tracking tools. AI models are downloaded from public hosts (such as Hugging Face) solely to run on your device; no usage data is shared with them. If you choose to download a gated model, you sign in to Hugging Face directly, and the app receives only a short-lived download token — never your credentials.</p>
+    <p>This app contains no analytics, advertising, or tracking tools. AI models are downloaded from public hosts (such as Hugging Face, and Mozilla's storage for translation models) solely to run on your device; no usage data is shared with them. If you choose to download a gated model, you sign in to Hugging Face directly, and the app receives only a short-lived download token — never your credentials.</p>
 
     <h2>Permissions</h2>
     <p>The calculator itself requests no special permissions. The optional AI Math Solver uses:</p>
     <ul>
-        <li><strong>Internet and network state</strong> — to download an AI model you choose (one-time).</li>
+        <li><strong>Internet and network state</strong> — to download an AI model you choose, and the translation model if you choose answers in your language (one-time).</li>
         <li><strong>Foreground service and notifications</strong> — to show download progress and keep a large model download running reliably.</li>
     </ul>
     <p>Photos are captured through your device's system camera app, so the app needs no camera permission of its own.</p>

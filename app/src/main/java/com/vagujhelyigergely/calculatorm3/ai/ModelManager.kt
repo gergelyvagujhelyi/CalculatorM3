@@ -239,6 +239,23 @@ class ModelManager(private val context: Context) {
     private val modelsDir: File = File(context.getExternalFilesDir(null), "models")
     private val prefs = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
 
+    /**
+     * Answers in the app's own language instead of English (AI settings, "Answer language").
+     * Off by default: the on-device model writes English best.
+     */
+    var answerInAppLanguage: Boolean
+        get() = prefs.getBoolean("answer_in_app_language", false)
+        set(value) {
+            prefs.edit { putBoolean("answer_in_app_language", value) }
+        }
+
+    /** The user has chosen the answer language (asked once, or changed in AI settings). */
+    var answerLanguageChosen: Boolean
+        get() = prefs.getBoolean("answer_language_chosen", false)
+        set(value) {
+            prefs.edit { putBoolean("answer_language_chosen", value) }
+        }
+
     /** The speed/quality switch; [ScanQuality.ACCURATE] (the engine default) until changed. */
     var scanQuality: ScanQuality
         get() = prefs.getString("scan_quality", null)

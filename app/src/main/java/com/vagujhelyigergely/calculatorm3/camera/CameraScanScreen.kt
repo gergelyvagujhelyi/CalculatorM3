@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
+import android.text.format.Formatter
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -41,6 +42,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -343,6 +346,7 @@ fun CameraScanScreen(
                                 // Typed and drawn problems: no photo, and the answer starts in seconds.
                                 fromText = viewModel.entry == AiEntry.TYPE || viewModel.entry == AiEntry.WRITE,
                                 partialRaw = state.partialRaw,
+                                translating = state.translating,
                                 onStop = { viewModel.stopInference() },
                                 onDismiss = onDismiss
                             )
@@ -448,7 +452,13 @@ fun CameraScanScreen(
                                 onDownloadModel = startDownloadWithNotifPrompt,
                                 onDismiss = onDismiss,
                                 showAiButton = showAiButton,
-                                onShowAiButtonChange = onShowAiButtonChange
+                                onShowAiButtonChange = onShowAiButtonChange,
+                                answerLanguageChoice = viewModel.answerLanguageChoice,
+                                answerInAppLanguage = viewModel.answerInAppLanguage,
+                                appLanguageName = viewModel.appLanguageNativeName,
+                                translationDownloadSize = viewModel.translationDownloadSize,
+                                translationStatus = viewModel.translationStatus,
+                                onAnswerInAppLanguageChange = { viewModel.updateAnswerInAppLanguage(it) }
                             )
                         }
                     }
@@ -573,11 +583,13 @@ private fun ProcessingContent(
     onStop: () -> Unit,
     onDismiss: () -> Unit,
     /** A typed problem: there's no photo to process, and the answer starts within seconds. */
-    fromText: Boolean = false
+    fromText: Boolean = false,
+    /** Solved; translating the steps into the app's language ([partialRaw] is the translation). */
+    translating: Boolean = false
 ) {
     val isGenerating = partialRaw.isNotEmpty()
     // The hero says "Solving…" once text streams, and from the start for a typed problem.
-    val solving = isGenerating || fromText
+    val solving = isGenerating || fromText || translating
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     // Landscape has a short viewport, and the streaming card grows as tokens arrive. Cap it to a
@@ -596,10 +608,11 @@ private fun ProcessingContent(
         ) {
             if (!isLandscape) {
                 AiHero(
-                    title = if (solving)
-                        stringResource(R.string.camera_generating)
-                    else
-                        stringResource(R.string.camera_processing_image),
+                    title = when {
+                        translating -> stringResource(R.string.ai_translating)
+                        solving -> stringResource(R.string.camera_generating)
+                        else -> stringResource(R.string.camera_processing_image)
+                    },
                     subtitle = if (solving) null else stringResource(R.string.processing_image_hint),
                     icon = Icons.Default.Psychology,
                     pulsing = true
@@ -1081,6 +1094,13 @@ private fun ModelSelectionContent(
     onDismiss: () -> Unit,
     showAiButton: Boolean = true,
     onShowAiButtonChange: (Boolean) -> Unit = {},
+    /** Offer "Answer language" (only when the app isn't in English). */
+    answerLanguageChoice: Boolean = false,
+    answerInAppLanguage: Boolean = false,
+    appLanguageName: String = "",
+    translationDownloadSize: Long? = null,
+    translationStatus: ScanViewModel.TranslationStatus? = null,
+    onAnswerInAppLanguageChange: (Boolean) -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
@@ -1169,6 +1189,20 @@ private fun ModelSelectionContent(
                     enabled = selectedModel.supportsScanQuality
                 )
             }
+            if (answerLanguageChoice) {
+                item {
+                    SettingsSectionHeader(
+                        stringResource(R.string.ai_settings_answer_language),
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
+                item {
+                    AnswerLanguageSetting(
+                        answerInAppLanguage, appLanguageName, onAnswerInAppLanguageChange,
+                        downloadSize = translationDownloadSize, status = translationStatus
+                    )
+                }
+            }
             item {
                 SettingsSectionHeader(
                     stringResource(R.string.ai_settings_button),
@@ -1176,6 +1210,89 @@ private fun ModelSelectionContent(
                 )
             }
             item { AiButtonSetting(showAiButton, onShowAiButtonChange) }
+        }
+    }
+}
+
+/**
+ * "Answer language": English (the default, where the on-device model works best) or the app's
+ * own language ([appLanguageName], as its speakers write it), translated on the phone. Shows the
+ * translation's one-time [downloadSize] (null once it's on the phone) and its download [status].
+ * Applies from the next answer.
+ */
+@Composable
+internal fun AnswerLanguageSetting(
+    inAppLanguage: Boolean,
+    appLanguageName: String,
+    onChange: (Boolean) -> Unit,
+    downloadSize: Long? = null,
+    status: ScanViewModel.TranslationStatus? = null,
+) {
+    val context = LocalContext.current
+    Column(Modifier.selectableGroup()) {
+        AnswerLanguageOption(
+            selected = !inAppLanguage,
+            title = stringResource(R.string.ai_answer_english),
+            hint = stringResource(R.string.ai_answer_english_hint),
+            onClick = { onChange(false) }
+        )
+        AnswerLanguageOption(
+            selected = inAppLanguage,
+            title = appLanguageName,
+            hint = stringResource(R.string.ai_answer_app_hint),
+            onClick = { onChange(true) }
+        ) {
+            when {
+                status is ScanViewModel.TranslationStatus.Downloading -> {
+                    val fraction = if (status.total > 0) status.downloaded.toFloat() / status.total else 0f
+                    LinearProgressIndicator(
+                        progress = { fraction },
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
+                    )
+                    Text(
+                        stringResource(R.string.ai_translation_downloading, (fraction * 100).toInt()),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                status == ScanViewModel.TranslationStatus.Failed -> Text(
+                    stringResource(R.string.ai_translation_failed),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+                downloadSize != null -> Text(
+                    stringResource(R.string.ai_translation_size, Formatter.formatShortFileSize(context, downloadSize)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnswerLanguageOption(
+    selected: Boolean,
+    title: String,
+    hint: String,
+    onClick: () -> Unit,
+    extra: @Composable ColumnScope.() -> Unit = {},
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            extra()
         }
     }
 }

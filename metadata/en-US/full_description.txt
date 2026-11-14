@@ -48,6 +48,7 @@ Photograph handwritten math, write it on screen, or type a problem — word prob
 - AI history keeps every answer on your device; delete it any time
 - A number goes into the calculator only if it agrees with the model's working
 - Fast, Balanced or Accurate speed settings
+- Answers in English, or translated into your language on the phone (Mozilla's open translation models, a one-time 15–38 MB download)
 - Open models (Gemma 4, Gemma 3n), fully on-device, GPU-accelerated
 - Internet only once, to download the model — Wi-Fi by default
 - Don't want it? Turn off "Show AI button" in AI settings

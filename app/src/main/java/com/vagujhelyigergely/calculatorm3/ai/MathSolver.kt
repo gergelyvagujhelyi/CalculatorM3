@@ -111,9 +111,15 @@ object SolverPrompts {
     const val USER_PROMPT =
         "Calculate the result of the mathematical expression in this image."
 
-    /** For typed problems: a fixed shape that [parseSteps] reads back. */
+    /**
+     * For typed problems: a fixed shape that [parseSteps] reads back. Always in English, where the
+     * model writes best: without saying so, a problem typed in another language got its working
+     * in that language (often broken), and answers in the app's language are translated from
+     * English afterwards.
+     */
     const val STEPS_SYSTEM_PROMPT =
         "You are a math tutor. Solve the user's math problem step by step.\n" +
+        "Write the problem and the steps in English, even if the problem is in another language.\n" +
         "Reply in exactly this format and nothing else:\n" +
         "Problem: <the problem, restated in one line>\n" +
         "1. <first step>\n" +
@@ -121,11 +127,15 @@ object SolverPrompts {
         "(at most 4 steps, one short line each)\n" +
         "Answer: <only the final answer, e.g. 42 or x = 5; a number without units where possible>"
 
-    /** For a question about an answer the user already has ([followUpMessage]). */
+    /**
+     * For a question about an answer the user already has ([followUpMessage]). Replies are in
+     * English, where the model writes best; with answers in the app's language, the app
+     * translates them (AnswerTranslator).
+     */
     const val FOLLOW_UP_SYSTEM_PROMPT =
         "You are a math tutor. The user has a math problem, its answer and the working, and asks " +
-        "a question about it. Answer only that question, briefly and clearly, in the language " +
-        "of the question: a few short sentences or steps."
+        "a question about it. Answer only that question, briefly and clearly, in English: a " +
+        "few short sentences or steps."
 
     /**
      * The single message for a follow-up: the problem as read, the answer, the working (steps,
@@ -155,6 +165,16 @@ object SolverPrompts {
     /** The user turn that goes with a handwritten picture under [STEPS_SYSTEM_PROMPT]. */
     const val STEPS_IMAGE_USER_PROMPT = "Solve the handwritten math problem in this image."
 
+    /**
+     * Said again with the problem itself: in the system prompt alone, a problem typed in another
+     * language still got its working in that language (measured on a Note 9: mostly so for
+     * Hungarian and Turkish).
+     */
+    const val IN_ENGLISH = "(Write the problem and the steps in English.)"
+
+    /** The user turn for a typed [problem] under [STEPS_SYSTEM_PROMPT]. */
+    fun stepsMessage(problem: String): String = "${problem.trim()}\n\n$IN_ENGLISH"
+
     // A label with optional Markdown emphasis or heading marks around it ("**Answer:**",
     // "## Problem:"). Only the label's own decoration is removed: a '*' in the maths after it
     // ("5*4+3") must stay.
@@ -180,7 +200,9 @@ object SolverPrompts {
         if (answer.isEmpty()) return null
         val problemIndex = lines.indexOfFirst { problemLabel.containsMatchIn(it) }
             .takeIf { it in 0 until answerIndex }
-        val problem = problemIndex?.let { lines[it].replace(problemLabel, "").replace(promptEcho, "").trim() }
+        val problem = problemIndex?.let {
+            lines[it].replace(problemLabel, "").replace(promptEcho, "").replace(IN_ENGLISH, "").trim()
+        }
             ?.takeIf { it.isNotEmpty() } ?: typed.trim()
         val stepLines = lines.subList((problemIndex ?: -1) + 1, answerIndex)
         val steps = stepLines.joinToString("\n").trim()
