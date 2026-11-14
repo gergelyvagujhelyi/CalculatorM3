@@ -96,8 +96,9 @@ class RealModelExtractionTest {
             for (case in cases) {
                 val path = image(case.shown)
                 val start = System.currentTimeMillis()
-                // steps=true: the step-by-step prompt (as typed and drawn problems use), to compare.
-                val steps = args.getString("steps") == "true"
+                // The step-by-step prompt, as the app solves photos; steps=false for the original
+                // single-number prompt, to compare.
+                val steps = args.getString("steps") != "false"
                 val result = if (steps) solver.solveFromImageStepsStreaming(path) { }
                     else solver.solveFromImageStreaming(path) { }
                 val ms = System.currentTimeMillis() - start

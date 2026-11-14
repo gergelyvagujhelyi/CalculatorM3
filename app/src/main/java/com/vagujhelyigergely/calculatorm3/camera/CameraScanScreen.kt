@@ -353,12 +353,16 @@ fun CameraScanScreen(
                                     onExpressionRecognized(state.steps.usableAnswer)
                                     onDismiss()
                                 },
+                                // Edit (typed), Draw again (drawn) or Retry (another photo).
                                 onEdit = {
-                                    if (viewModel.entry == AiEntry.WRITE) viewModel.drawAgain()
-                                    else viewModel.editTypedProblem()
+                                    when (viewModel.entry) {
+                                        AiEntry.WRITE -> viewModel.drawAgain()
+                                        AiEntry.TYPE -> viewModel.editTypedProblem()
+                                        else -> viewModel.retry()
+                                    }
                                 },
                                 onDismiss = onDismiss,
-                                drawn = viewModel.entry == AiEntry.WRITE,
+                                source = viewModel.entry,
                                 onFixAsText = { viewModel.fixAsText(state.steps.problem) },
                                 extra = questions
                             ) else SuccessContent(

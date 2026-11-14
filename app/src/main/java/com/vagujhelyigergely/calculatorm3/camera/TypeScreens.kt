@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
@@ -179,12 +180,14 @@ internal fun StepsSuccessContent(
     onUse: () -> Unit,
     onEdit: () -> Unit,
     onDismiss: () -> Unit,
-    drawn: Boolean = false,
+    /** Where the problem came from: a picture (photo, drawing) shows "Read as" with Fix as text. */
+    source: AiEntry = AiEntry.TYPE,
     onFixAsText: () -> Unit = {},
     /** Shown under the answer: questions about it ([FollowUpSection]). */
     extra: @Composable () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
+    val fromPicture = source != AiEntry.TYPE
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
@@ -194,10 +197,10 @@ internal fun StepsSuccessContent(
                 .padding(top = 72.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SectionLabel(stringResource(if (drawn) R.string.steps_read_as else R.string.steps_problem))
+            SectionLabel(stringResource(if (fromPicture) R.string.steps_read_as else R.string.steps_problem))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MarkdownLatexText(text = steps.problem, color = onSurface, modifier = Modifier.weight(1f))
-                if (drawn) {
+                if (fromPicture) {
                     IconButton(onClick = onFixAsText) {
                         Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.steps_fix_as_text))
                     }
@@ -248,12 +251,20 @@ internal fun StepsSuccessContent(
             ) {
                 OutlinedButton(onClick = onEdit) {
                     Icon(
-                        if (drawn) Icons.Filled.Draw else Icons.Filled.Edit,
+                        when (source) {
+                            AiEntry.WRITE -> Icons.Filled.Draw
+                            AiEntry.CAMERA, AiEntry.GALLERY -> Icons.Filled.Refresh
+                            else -> Icons.Filled.Edit
+                        },
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(if (drawn) R.string.write_again else R.string.steps_edit))
+                    Text(stringResource(when (source) {
+                        AiEntry.WRITE -> R.string.write_again
+                        AiEntry.CAMERA, AiEntry.GALLERY -> R.string.retry
+                        else -> R.string.steps_edit
+                    }))
                 }
                 if (steps.usableAnswer.isNotBlank()) {
                     Button(onClick = onUse) {

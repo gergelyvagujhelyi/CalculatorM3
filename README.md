@@ -1,10 +1,10 @@
 <div align="center">
 
-  <img src="metadata/en-US/images/icon.png" width="120" alt="CalculatorM3 icon">
+  <img src="metadata/en-US/images/icon.png" width="120" alt="Calculator M3 icon">
   <br><br>
-  <h1>CalculatorM3</h1>
+  <h1>Calculator M3</h1>
 
-  <p>A clean, private calculator that never collects your data.</p>
+  <p>A clean, private calculator with an optional on-device AI math solver — no tracking, no ads.</p>
 
   <a href="https://f-droid.org/packages/com.vagujhelyigergely.calculatorm3/">
     <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">
@@ -73,6 +73,8 @@ Point your camera at a handwritten math expression, write it on screen with your
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
 5. Tap "Use" to insert the answer into the calculator, or **Retry** to take or pick another photo
 
+**Photographed problems** are answered step by step too: what the model **read** from the photo, with ✎ to correct a misread as text (which then solves quickly, with no photo to process), the answer and the numbered steps, and **Retry** to take or pick another photo.
+
 **Written problems** go on a pad with undo, redo, an eraser and clear. Once you use a stylus, only the stylus draws, so a resting palm leaves no marks. The answer shows what the model **read**, with ✎ to correct a misread as text, the answer and the steps, and **Draw again** returns to your drawing. Only the ink is sent to the model, black on white and cropped, and the speed setting applies: in testing, Fast read clean ink as well as Accurate and answered in about two thirds of the time.
 
 **Typed problems** are answered step by step: the problem as the model read it, the answer, and numbered steps, with **Edit** to change the problem and solve again. Plain arithmetic such as `12+5*3` is answered by the calculator itself as you type, with **Use**; **Show steps with AI** still asks the model for the working. A typed problem starts answering within a couple of seconds, since there's no photo to process.
@@ -80,7 +82,7 @@ Point your camera at a handwritten math expression, write it on screen with your
 **AI settings** (the ⚙ in the menu) holds the model choice and the **speed**: with the Gemma 4 models, **Fast / Balanced / Accurate** sets how much detail the model takes from the photo or drawing. Fast can answer in about half the time; Accurate (the default) reads the most detail. The choice is remembered and applies from the next scan.
 
 **Good to know:**
-- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. Otherwise (for example when the result is a fraction like 5/4) a photo scan says **"Check the model's answer below"** and opens the model's full working, scrolled to its result; a typed problem shows its answer (such as `x = 5`) and steps, and says why it can't go into the calculator
+- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. When the model writes the same value two ways (`1/4 or 0.25`), the plain number is offered. Otherwise (an equation's `x = 5`, a fraction like `5/4`) the answer and steps are shown with a note saying why it can't go into the calculator; a reply without a clear final answer says **"Check the model's answer below"** and opens the model's full working
 - After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
 - If the model is deleted outside the app or can't be loaded, the app says so and offers **Download again**
 

@@ -45,12 +45,12 @@ class ScanReleaseOrderTest {
         override val isModelLoaded get() = loaded
         override val activeBackend = "fake"
         override suspend fun loadModel(modelPath: String) { events += "load"; loaded = true }
-        override suspend fun solveFromImageStreaming(
+        override suspend fun solveFromImageStepsStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> {
             loadedWhenSolving = loaded
             events += "solve"
-            return Result.success(RecognitionResult(raw = "42", answer = "42"))
+            return Result.success(RecognitionResult(raw = "Problem: 6 × 7\nAnswer: 42", answer = ""))
         }
         override suspend fun release() {
             val first = synchronized(this) { releases++ == 0 }
@@ -86,12 +86,12 @@ class ScanReleaseOrderTest {
             }
             currentCoroutineContext().ensureActive()
         }
-        override suspend fun solveFromImageStreaming(
+        override suspend fun solveFromImageStepsStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> = mutex.withLock {
             loadedWhenSolving = loaded
             events += "solve"
-            if (loaded) Result.success(RecognitionResult(raw = "42", answer = "42"))
+            if (loaded) Result.success(RecognitionResult(raw = "Problem: 6 × 7\nAnswer: 42", answer = ""))
             else Result.failure(IllegalStateException("Model not loaded"))
         }
         override suspend fun release() = mutex.withLock {
