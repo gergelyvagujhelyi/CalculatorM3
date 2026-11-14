@@ -1,0 +1,6 @@
+- AI Math Solver is no longer experimental: Camera, Gallery, Write (by hand) or Type (word problems too)
+- Step-by-step answers, up to two follow-up questions, and an AI history
+- Answers in your language, translated on the phone by Mozilla's open models
+- New keys: brackets, e, ln, log, sin, cos and tan (degrees or radians), and x! of fractions
+- √ after + − × ÷ starts a new root: 9 + √4 = 11
+- Fixes for scans, history, calculator input and light mode

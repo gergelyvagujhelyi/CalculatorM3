@@ -47,8 +47,8 @@ android {
         applicationId = "com.vagujhelyigergely.calculatorm3"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.8.0"
+        versionCode = 19
+        versionName = "1.8.1"
         buildConfigField("String", "LITERT_LM_VERSION", "\"$litertLmVersion\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
