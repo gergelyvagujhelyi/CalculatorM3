@@ -693,6 +693,98 @@ class CalculatorViewModelTest {
         assertExpression("3")
     }
 
+    // ── The ( ) key ───────────────────────────────────────────────────
+
+    @Test
+    fun bracketKeyOpensThenCloses() {
+        // (2 + 3) × 4 = 20
+        tap("( )", "2", "+", "3", "( )", "×", "4")
+        assertExpression("(2+3)×4")
+        tapEquals()
+        assertExpression("20")
+    }
+
+    @Test
+    fun bracketAfterANumberMultiplies() {
+        // 2(3 + 4) = 14
+        tap("2", "( )", "3", "+", "4", "( )")
+        assertExpression("2(3+4)")
+        tapEquals()
+        assertExpression("14")
+    }
+
+    @Test
+    fun bracketsAfterABracketMultiply() {
+        // (1 + 2)(3 + 4) = 21
+        tap("( )", "1", "+", "2", "( )", "( )", "3", "+", "4", "( )")
+        assertExpression("(1+2)(3+4)")
+        tapEquals()
+        assertExpression("21")
+    }
+
+    @Test
+    fun bracketsNest() {
+        // ((1 + 2) × 3) ^ 2 = 81
+        tap("( )", "( )", "1", "+", "2", "( )", "×", "3", "( )", "^", "2")
+        assertExpression("((1+2)×3)^2")
+        tapEquals()
+        assertExpression("81")
+    }
+
+    @Test
+    fun openBracketsAreClosedForThePreviewAndOnEquals() {
+        tap("2", "×", "( )", "3", "+", "4")
+        assertExpression("2×(3+4")
+        assertResult("14")
+        tapEquals()
+        assertExpression("14")
+        assertEquals("2×(3+4) =", vm.history)
+    }
+
+    @Test
+    fun aBracketOpenedButEmptyIsDroppedOnEquals() {
+        tap("9", "+", "( )")
+        assertResult("9")
+        tapEquals()
+        assertExpression("9")
+    }
+
+    @Test
+    fun bracketAfterAnOperatorAlwaysOpens() {
+        // Even with an open bracket before it, right after an operator there's nothing to close.
+        tap("( )", "2", "+", "( )")
+        assertExpression("(2+(")
+    }
+
+    @Test
+    fun bracketCanCloseARootStartedWithSqrt() {
+        // 9 + √(4) then ( ) steps over the root's own ")", it doesn't add another.
+        tap("9", "+", "√", "4", "( )", "×", "2")
+        assertExpression("9+√(4)×2")
+        tapEquals()
+        assertExpression("13")
+    }
+
+    @Test
+    fun bracketKeyRespectsTheNestingLimit() {
+        repeat(30) { tap("( )") }
+        assertEquals(20, vm.expression.count { it == '(' })
+    }
+
+    @Test
+    fun noBracketRightAfterADecimalPoint() {
+        tap("2", ".", "( )")
+        assertExpression("2.")
+    }
+
+    @Test
+    fun bracketKeyStartsANewEntryAfterEquals() {
+        tap("2", "+", "3")
+        tapEquals()
+        tap("( )")
+        assertExpression("(")
+    }
+
     // ── √ in writing order: after an operator it starts a root ─────────
 
     @Test

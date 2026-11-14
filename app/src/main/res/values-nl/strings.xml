@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Macht</string>
     <string name="btn_factorial">Faculteit</string>
+    <string name="btn_parentheses">Haakjes</string>
 
     <!-- Camera / AI-scan -->
     <string name="scan_hint">Maak of kies een foto van een handgeschreven wiskundige uitdrukking</string>

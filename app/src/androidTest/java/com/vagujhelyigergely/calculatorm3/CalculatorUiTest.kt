@@ -137,6 +137,22 @@ class CalculatorUiTest {
     }
 
     @Test
+    fun bracketKey() {
+        launch()
+        // (2 + 3) × 4
+        tap("( )", "2", "+", "3", "( )", "×", "4", "=")
+        displayShows("20")
+    }
+
+    @Test
+    fun sqrtAfterAnOperator() {
+        launch()
+        // 9 + √4 + 1, typed in writing order
+        tap("9", "+", "√", "4", "+", "1", "=")
+        displayShows("12")
+    }
+
+    @Test
     fun toggleSign() {
         launch()
         tap("5")

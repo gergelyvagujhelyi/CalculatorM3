@@ -51,6 +51,7 @@
     <string name="btn_pi">Пі</string>
     <string name="btn_power">Степінь</string>
     <string name="btn_factorial">Факторіал</string>
+    <string name="btn_parentheses">Дужки</string>
 
     <!-- Камера / ШІ-сканування -->
     <string name="scan_hint">Зробіть або виберіть фото рукописного математичного виразу</string>

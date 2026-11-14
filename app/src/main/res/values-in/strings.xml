@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Pangkat</string>
     <string name="btn_factorial">Faktorial</string>
+    <string name="btn_parentheses">Tanda kurung</string>
 
     <!-- Kamera / Pemindaian AI -->
     <string name="scan_hint">Ambil atau pilih foto ekspresi matematika tulisan tangan</string>
