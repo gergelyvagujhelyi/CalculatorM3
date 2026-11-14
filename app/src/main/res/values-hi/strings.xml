@@ -28,7 +28,6 @@
     <string name="btn_factorial">क्रमगुणन</string>
 
     <!-- कैमरा / AI स्कैन -->
-    <string name="scan_expression">व्यंजक स्कैन करें</string>
     <string name="scan_hint">हाथ से लिखे गणितीय व्यंजक की फ़ोटो लें या चुनें</string>
     <string name="take_photo">फ़ोटो लें</string>
     <string name="choose_from_gallery">गैलरी से चुनें</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">संतुलित</string>
     <string name="scan_quality_accurate">सटीक</string>
     <string name="scan_quality_hint">तेज़ सेटिंग्स फ़ोटो को कम बारीकी से देखती हैं।</string>
+    <string name="ai_menu_title">AI से हल करें</string>
+    <string name="ai_menu_camera">कैमरा</string>
+    <string name="ai_menu_gallery">गैलरी</string>
+    <string name="ai_settings">AI सेटिंग्स</string>
+    <string name="ai_settings_model">मॉडल</string>
+    <string name="ai_settings_speed">गति</string>
+    <string name="scan_quality_unavailable">Gemma 4 मॉडल के साथ उपलब्ध।</string>
     <string name="answer_found">उत्तर</string>
     <string name="recognized_in">%1$s में हल किया गया</string>
     <string name="use_expression">उपयोग करें</string>
@@ -58,9 +64,16 @@
     <string name="stop">रोकें</string>
     <string name="close">बंद करें</string>
     <string name="recognition_error">पहचान विफल रही</string>
-    <string name="choose_model">AI मॉडल चुनें</string>
     <string name="choose_model_description">आपके डिवाइस में %1$d GB RAM है। बड़े मॉडल अधिक सटीक होते हैं लेकिन धीमे होते हैं। सभी मॉडल पूरी तरह आपके डिवाइस पर चलते हैं।</string>
     <string name="model_too_large">%1$d GB RAM चाहिए — आपके डिवाइस में %2$d GB है</string>
+    <string name="model_recommended">सुझाया गया</string>
+    <string name="model_desc_gemma4_e2b">तेज़ और सटीक</string>
+    <string name="model_desc_gemma4_e4b">सबसे सटीक, लेकिन धीमा</string>
+    <string name="model_desc_gemma3n_e2b">पिछली पीढ़ी</string>
+    <string name="model_desc_gemma3n_e4b">पिछली पीढ़ी, अधिक सटीक लेकिन धीमा</string>
+    <string name="model_size_download_ram">%1$s डाउनलोड · %2$d GB RAM चाहिए</string>
+    <string name="model_size_download">%1$s डाउनलोड</string>
+    <string name="model_size_downloaded">डाउनलोड हो गया · %1$s</string>
     <string name="download_model">डाउनलोड करें</string>
     <string name="downloaded">डाउनलोड हो गया</string>
     <string name="downloading_model">AI मॉडल डाउनलोड हो रहा है</string>

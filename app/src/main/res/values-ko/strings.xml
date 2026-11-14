@@ -28,7 +28,6 @@
     <string name="btn_factorial">계승</string>
 
     <!-- 카메라 / AI 스캔 -->
-    <string name="scan_expression">수식 스캔</string>
     <string name="scan_hint">손으로 쓴 수식의 사진을 찍거나 선택하세요</string>
     <string name="take_photo">사진 촬영</string>
     <string name="choose_from_gallery">갤러리에서 선택</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">균형</string>
     <string name="scan_quality_accurate">정확하게</string>
     <string name="scan_quality_hint">빠른 설정일수록 사진을 덜 자세히 봅니다.</string>
+    <string name="ai_menu_title">AI로 풀기</string>
+    <string name="ai_menu_camera">카메라</string>
+    <string name="ai_menu_gallery">갤러리</string>
+    <string name="ai_settings">AI 설정</string>
+    <string name="ai_settings_model">모델</string>
+    <string name="ai_settings_speed">속도</string>
+    <string name="scan_quality_unavailable">Gemma 4 모델에서 사용할 수 있습니다.</string>
     <string name="answer_found">답</string>
     <string name="recognized_in">%1$s 만에 풀이함</string>
     <string name="use_expression">사용</string>
@@ -58,9 +64,16 @@
     <string name="stop">중지</string>
     <string name="close">닫기</string>
     <string name="recognition_error">인식 실패</string>
-    <string name="choose_model">AI 모델 선택</string>
     <string name="choose_model_description">기기의 RAM은 %1$d GB입니다. 더 큰 모델은 더 정확하지만 느립니다. 모든 모델은 전적으로 기기에서 실행됩니다.</string>
     <string name="model_too_large">%1$d GB RAM이 필요합니다 — 기기에는 %2$d GB가 있습니다</string>
+    <string name="model_recommended">추천</string>
+    <string name="model_desc_gemma4_e2b">빠르고 정확함</string>
+    <string name="model_desc_gemma4_e4b">가장 정확하지만 느림</string>
+    <string name="model_desc_gemma3n_e2b">이전 세대</string>
+    <string name="model_desc_gemma3n_e4b">이전 세대, 더 정확하지만 느림</string>
+    <string name="model_size_download_ram">%1$s 다운로드 · %2$d GB RAM 필요</string>
+    <string name="model_size_download">%1$s 다운로드</string>
+    <string name="model_size_downloaded">다운로드됨 · %1$s</string>
     <string name="download_model">다운로드</string>
     <string name="downloaded">다운로드됨</string>
     <string name="downloading_model">AI 모델 다운로드 중</string>

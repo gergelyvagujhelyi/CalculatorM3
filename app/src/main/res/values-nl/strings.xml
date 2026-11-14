@@ -28,7 +28,6 @@
     <string name="btn_factorial">Faculteit</string>
 
     <!-- Camera / AI-scan -->
-    <string name="scan_expression">Uitdrukking scannen</string>
     <string name="scan_hint">Maak of kies een foto van een handgeschreven wiskundige uitdrukking</string>
     <string name="take_photo">Foto maken</string>
     <string name="choose_from_gallery">Kies uit galerij</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Gebalanceerd</string>
     <string name="scan_quality_accurate">Nauwkeurig</string>
     <string name="scan_quality_hint">Snellere instellingen bekijken de foto met minder detail.</string>
+    <string name="ai_menu_title">Oplossen met AI</string>
+    <string name="ai_menu_camera">Camera</string>
+    <string name="ai_menu_gallery">Galerij</string>
+    <string name="ai_settings">AI-instellingen</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_speed">Snelheid</string>
+    <string name="scan_quality_unavailable">Beschikbaar met de Gemma 4-modellen.</string>
     <string name="answer_found">Antwoord</string>
     <string name="recognized_in">Opgelost in %1$s</string>
     <string name="use_expression">Gebruiken</string>
@@ -58,9 +64,16 @@
     <string name="stop">Stoppen</string>
     <string name="close">Sluiten</string>
     <string name="recognition_error">Herkenning mislukt</string>
-    <string name="choose_model">AI-model kiezen</string>
     <string name="choose_model_description">Je apparaat heeft %1$d GB RAM. Grotere modellen zijn nauwkeuriger maar trager. Alle modellen draaien volledig op je apparaat.</string>
     <string name="model_too_large">Vereist %1$d GB RAM — je apparaat heeft %2$d GB</string>
+    <string name="model_recommended">Aanbevolen</string>
+    <string name="model_desc_gemma4_e2b">Snel en nauwkeurig</string>
+    <string name="model_desc_gemma4_e4b">Meest nauwkeurig, maar trager</string>
+    <string name="model_desc_gemma3n_e2b">Vorige generatie</string>
+    <string name="model_desc_gemma3n_e4b">Vorige generatie, nauwkeuriger maar trager</string>
+    <string name="model_size_download_ram">Download van %1$s · vereist %2$d GB RAM</string>
+    <string name="model_size_download">Download van %1$s</string>
+    <string name="model_size_downloaded">Gedownload · %1$s</string>
     <string name="download_model">Downloaden</string>
     <string name="downloaded">Gedownload</string>
     <string name="downloading_model">AI-model downloaden</string>

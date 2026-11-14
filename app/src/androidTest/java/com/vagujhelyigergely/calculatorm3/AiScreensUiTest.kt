@@ -9,6 +9,8 @@ import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
+import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiMenuContent
 import com.vagujhelyigergely.calculatorm3.camera.DownloadingContent
 import com.vagujhelyigergely.calculatorm3.camera.ErrorContent
 import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
@@ -83,7 +85,8 @@ class AiScreensUiTest {
         tooLarge: Boolean,
         deviceRamGb: Int,
         onSelect: (AiModel) -> Unit = {},
-        onDownload: (AiModel) -> Unit = {}
+        onDownload: (AiModel) -> Unit = {},
+        isRecommended: Boolean = false
     ) = show {
         ModelCard(
             model = model,
@@ -92,8 +95,22 @@ class AiScreensUiTest {
             tooLarge = tooLarge,
             deviceRamGb = deviceRamGb,
             onSelectModel = onSelect,
-            onDownloadModel = onDownload
+            onDownloadModel = onDownload,
+            isRecommended = isRecommended
         )
+    }
+
+    @Test
+    fun onlyTheRecommendedModelIsLabelledSo() {
+        showCard(AiModel.GEMMA4_E4B, isDownloaded = false, tooLarge = false, deviceRamGb = 8,
+            isRecommended = true)
+        composeTestRule.onNodeWithText(str(R.string.model_recommended)).assertIsDisplayed()
+    }
+
+    @Test
+    fun otherModelsHaveNoRecommendedLabel() {
+        showCard(AiModel.GEMMA4_E2B, isDownloaded = false, tooLarge = false, deviceRamGb = 8)
+        composeTestRule.onNodeWithText(str(R.string.model_recommended)).assertDoesNotExist()
     }
 
     @Test
@@ -105,6 +122,9 @@ class AiScreensUiTest {
 
         composeTestRule.onNodeWithText(str(R.string.model_too_large, model.minRamGb, model.minRamGb - 2))
             .assertIsDisplayed()
+        // The size line doesn't repeat the RAM figure the red line already gives.
+        composeTestRule.onNodeWithText(str(R.string.model_size_download, model.totalSizeDisplay))
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText(model.displayName).performClick()
         assertEquals(emptyList<String>(), calls)
     }
@@ -115,7 +135,10 @@ class AiScreensUiTest {
         var downloaded: AiModel? = null
         showCard(model, isDownloaded = false, tooLarge = false, deviceRamGb = 12,
             onDownload = { downloaded = it })
-        composeTestRule.onNodeWithText("${model.totalSizeDisplay} · ${model.minRamGb} GB+ RAM").assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.model_desc_gemma4_e2b)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(
+            str(R.string.model_size_download_ram, model.totalSizeDisplay, model.minRamGb)
+        ).assertIsDisplayed()
         composeTestRule.onNodeWithText(model.displayName).performClick()
         assertEquals(model, downloaded)
     }
@@ -127,6 +150,8 @@ class AiScreensUiTest {
         showCard(model, isDownloaded = true, tooLarge = false, deviceRamGb = 12,
             onSelect = { selected = it })
         composeTestRule.onNodeWithContentDescription(str(R.string.downloaded)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.model_size_downloaded, model.totalSizeDisplay))
+            .assertIsDisplayed()
         composeTestRule.onNodeWithText(model.displayName).performClick()
         assertEquals(model, selected)
     }
@@ -240,6 +265,27 @@ class AiScreensUiTest {
         assertEquals(listOf(ScanQuality.FAST, ScanQuality.BALANCED), chosen)
     }
 
+    @Test
+    fun scanQualitySwitchIsDisabledWithANoteForModelsWithoutIt() {
+        show { ScanQualitySwitch(ScanQuality.ACCURATE, onChange = {}, enabled = false) }
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_fast)).assertIsNotEnabled()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_unavailable)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.scan_quality_hint)).assertDoesNotExist()
+    }
+
+    // ── AI menu ─────────────────────────────────────────────────────────────
+
+    @Test
+    fun aiMenuOffersCameraGalleryAndSettings() {
+        val picked = mutableListOf<AiEntry>()
+        show { AiMenuContent(onSelect = { picked += it }) }
+        composeTestRule.onNodeWithText(str(R.string.ai_menu_title)).assertIsDisplayed()
+        button(str(R.string.ai_menu_camera)).performClick()
+        button(str(R.string.ai_menu_gallery)).performClick()
+        composeTestRule.onNodeWithContentDescription(str(R.string.ai_settings)).performClick()
+        assertEquals(listOf(AiEntry.CAMERA, AiEntry.GALLERY, AiEntry.SETTINGS), picked)
+    }
+
     // ── Model missing or unloadable ─────────────────────────────────────────
 
     @Test
@@ -309,12 +355,12 @@ class AiScreensUiTest {
     }
 
     @Test
-    fun sevenRapidAllClearTapsRevealTheCameraButton() {
+    fun sevenRapidAllClearTapsRevealTheAiButton() {
         assumeTrue("Writes the app's real AI-unlock setting; runs only with allowDataWrites=true (CI emulator)",
             allowDataWrites())
         val scanViewModel = ScanViewModel(FakeSolver(), ModelManager(context), HuggingFaceAuthManager(context), context)
         show { CalculatorScreen(viewModel = CalculatorViewModel(), scanViewModel = scanViewModel) }
-        val camera = hasContentDescription(str(R.string.scan_expression))
+        val camera = hasContentDescription(str(R.string.ai_menu_title))
         assumeTrue("AI features already unlocked on this device",
             composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isEmpty())
 

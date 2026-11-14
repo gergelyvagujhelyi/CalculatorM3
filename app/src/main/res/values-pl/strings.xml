@@ -28,7 +28,6 @@
     <string name="btn_factorial">Silnia</string>
 
     <!-- Aparat / Skanowanie AI -->
-    <string name="scan_expression">Skanuj wyrażenie</string>
     <string name="scan_hint">Zrób lub wybierz zdjęcie odręcznego wyrażenia matematycznego</string>
     <string name="take_photo">Zrób zdjęcie</string>
     <string name="choose_from_gallery">Wybierz z galerii</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Zrównoważony</string>
     <string name="scan_quality_accurate">Dokładnie</string>
     <string name="scan_quality_hint">Szybsze ustawienia analizują zdjęcie mniej szczegółowo.</string>
+    <string name="ai_menu_title">Rozwiąż z AI</string>
+    <string name="ai_menu_camera">Aparat</string>
+    <string name="ai_menu_gallery">Galeria</string>
+    <string name="ai_settings">Ustawienia AI</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_speed">Szybkość</string>
+    <string name="scan_quality_unavailable">Dostępne z modelami Gemma 4.</string>
     <string name="answer_found">Odpowiedź</string>
     <string name="recognized_in">Rozwiązano w %1$s</string>
     <string name="use_expression">Użyj</string>
@@ -58,9 +64,16 @@
     <string name="stop">Zatrzymaj</string>
     <string name="close">Zamknij</string>
     <string name="recognition_error">Rozpoznawanie nie powiodło się</string>
-    <string name="choose_model">Wybierz model AI</string>
     <string name="choose_model_description">Twoje urządzenie ma %1$d GB RAM. Większe modele są dokładniejsze, ale wolniejsze. Wszystkie modele działają w całości na Twoim urządzeniu.</string>
     <string name="model_too_large">Wymaga %1$d GB RAM — Twoje urządzenie ma %2$d GB</string>
+    <string name="model_recommended">Zalecany</string>
+    <string name="model_desc_gemma4_e2b">Szybki i dokładny</string>
+    <string name="model_desc_gemma4_e4b">Najdokładniejszy, ale wolniejszy</string>
+    <string name="model_desc_gemma3n_e2b">Poprzednia generacja</string>
+    <string name="model_desc_gemma3n_e4b">Poprzednia generacja, dokładniejszy, ale wolniejszy</string>
+    <string name="model_size_download_ram">Pobieranie %1$s · wymaga %2$d GB RAM</string>
+    <string name="model_size_download">Pobieranie %1$s</string>
+    <string name="model_size_downloaded">Pobrano · %1$s</string>
     <string name="download_model">Pobierz</string>
     <string name="downloaded">Pobrano</string>
     <string name="downloading_model">Pobieranie modelu AI</string>

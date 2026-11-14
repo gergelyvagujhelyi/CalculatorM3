@@ -28,7 +28,6 @@
     <string name="btn_factorial">阶乘</string>
 
     <!-- 相机 / AI 扫描 -->
-    <string name="scan_expression">扫描算式</string>
     <string name="scan_hint">拍摄或选择一张手写数学算式的照片</string>
     <string name="take_photo">拍照</string>
     <string name="choose_from_gallery">从相册选择</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">均衡</string>
     <string name="scan_quality_accurate">精确</string>
     <string name="scan_quality_hint">速度越快，读取照片的细节越少。</string>
+    <string name="ai_menu_title">用 AI 求解</string>
+    <string name="ai_menu_camera">相机</string>
+    <string name="ai_menu_gallery">相册</string>
+    <string name="ai_settings">AI 设置</string>
+    <string name="ai_settings_model">模型</string>
+    <string name="ai_settings_speed">速度</string>
+    <string name="scan_quality_unavailable">仅适用于 Gemma 4 模型。</string>
     <string name="answer_found">答案</string>
     <string name="recognized_in">用时 %1$s 求解</string>
     <string name="use_expression">使用</string>
@@ -58,9 +64,16 @@
     <string name="stop">停止</string>
     <string name="close">关闭</string>
     <string name="recognition_error">识别失败</string>
-    <string name="choose_model">选择 AI 模型</string>
     <string name="choose_model_description">你的设备有 %1$d GB 内存。更大的模型更准确但更慢。所有模型都完全在你的设备上运行。</string>
     <string name="model_too_large">需要 %1$d GB 内存 — 你的设备有 %2$d GB</string>
+    <string name="model_recommended">推荐</string>
+    <string name="model_desc_gemma4_e2b">快速且准确</string>
+    <string name="model_desc_gemma4_e4b">最准确，但较慢</string>
+    <string name="model_desc_gemma3n_e2b">上一代</string>
+    <string name="model_desc_gemma3n_e4b">上一代，更准确但较慢</string>
+    <string name="model_size_download_ram">下载 %1$s · 需要 %2$d GB 内存</string>
+    <string name="model_size_download">下载 %1$s</string>
+    <string name="model_size_downloaded">已下载 · %1$s</string>
     <string name="download_model">下载</string>
     <string name="downloaded">已下载</string>
     <string name="downloading_model">正在下载 AI 模型</string>

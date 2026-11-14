@@ -18,7 +18,8 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Assistant
+import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiMenuButton
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.*
@@ -126,10 +127,11 @@ fun CalculatorScreen(
     // Saveable so an open history sheet stays open when the screen rotates (the Activity is
     // recreated); plain remember reset it and closed the sheet.
     var showHistory by rememberSaveable { mutableStateOf(false) }
-    // Saveable so the scan dialog survives the activity being recreated while the
+    // The open AI window and what it was opened for from the AI menu (null = closed).
+    // Saveable so the window survives the activity being recreated while the
     // system camera is foreground (memory pressure) — otherwise it would close and
     // drop the user back on the calculator mid-scan.
-    var showCamera by rememberSaveable { mutableStateOf(false) }
+    var aiEntry by rememberSaveable { mutableStateOf<AiEntry?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
@@ -137,7 +139,8 @@ fun CalculatorScreen(
     // language switch is picked up; the Toasts below still need the Context itself.
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
-    var showAiWarningDialog by remember { mutableStateOf(false) }
+    // The menu choice waiting behind the one-time "experimental feature" dialog (null = no dialog).
+    var pendingAiEntry by remember { mutableStateOf<AiEntry?>(null) }
 
     // AI features stay hidden until the user reveals them with the rapid-equals
     // easter egg below. The unlock is persisted, so it survives restarts.
@@ -198,8 +201,8 @@ fun CalculatorScreen(
         }
     }
 
-    val handleShowCamera: () -> Unit = remember(scanViewModel, context, resources, scope) {
-        {
+    val handleShowAi: (AiEntry) -> Unit = remember(scanViewModel, context, resources, scope) {
+        { entry ->
             when {
                 // The button isn't shown when scanViewModel is null, but guard anyway.
                 scanViewModel == null -> Unit
@@ -223,9 +226,9 @@ fun CalculatorScreen(
                             false
                         }
                         if (hasSeenWarning) {
-                            showCamera = true
+                            aiEntry = entry
                         } else {
-                            showAiWarningDialog = true
+                            pendingAiEntry = entry
                         }
                     }
                 }
@@ -233,9 +236,9 @@ fun CalculatorScreen(
         }
     }
 
-    if (showAiWarningDialog) {
+    pendingAiEntry?.let { pending ->
         AlertDialog(
-            onDismissRequest = { showAiWarningDialog = false },
+            onDismissRequest = { pendingAiEntry = null },
             icon = { Icon(imageVector = Icons.Default.Psychology, contentDescription = null) },
             title = { Text(text = stringResource(R.string.experimental_feature_title)) },
             text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
@@ -252,15 +255,15 @@ fun CalculatorScreen(
                             } catch (e: java.io.IOException) {
                             }
                         }
-                        showAiWarningDialog = false
-                        showCamera = true
+                        pendingAiEntry = null
+                        aiEntry = pending
                     }
                 ) {
                     Text(stringResource(R.string.accept))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showAiWarningDialog = false }) {
+                TextButton(onClick = { pendingAiEntry = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -281,9 +284,11 @@ fun CalculatorScreen(
         )
     }
 
-    if (showCamera && scanViewModel != null) {
+    val openAiEntry = aiEntry
+    if (openAiEntry != null && scanViewModel != null) {
         com.vagujhelyigergely.calculatorm3.camera.CameraScanScreen(
             viewModel = scanViewModel,
+            entry = openAiEntry,
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
@@ -291,7 +296,7 @@ fun CalculatorScreen(
             // without this the scan coroutine would keep generating in the background after dismiss.
             onDismiss = {
                 scanViewModel.stopInference()
-                showCamera = false
+                aiEntry = null
             }
         )
     }
@@ -305,7 +310,7 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null && aiUnlocked) handleShowCamera else null,
+                onAiSelect = if (scanViewModel != null && aiUnlocked) handleShowAi else null,
                 onAllClearPressed = onAllClearPressed
             )
         } else {
@@ -313,7 +318,7 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onShowCamera = if (scanViewModel != null && aiUnlocked) handleShowCamera else null,
+                onAiSelect = if (scanViewModel != null && aiUnlocked) handleShowAi else null,
                 onAllClearPressed = onAllClearPressed
             )
         }
@@ -325,7 +330,7 @@ private fun PortraitLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
-    onShowCamera: (() -> Unit)? = null,
+    onAiSelect: ((AiEntry) -> Unit)? = null,
     onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -335,21 +340,15 @@ private fun PortraitLayout(
             .fillMaxSize()
             .safeDrawingPadding()
     ) {
-        // Top bar with camera (left) and history (right) buttons
+        // Top bar with the AI menu (left) and history (right) buttons
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
-            horizontalArrangement = if (onShowCamera != null) Arrangement.SpaceBetween else Arrangement.End
+            horizontalArrangement = if (onAiSelect != null) Arrangement.SpaceBetween else Arrangement.End
         ) {
-            if (onShowCamera != null) {
-                IconButton(onClick = onShowCamera) {
-                    Icon(
-                        imageVector = Icons.Filled.Assistant,
-                        contentDescription = stringResource(R.string.scan_expression),
-                        tint = colorScheme.onSurfaceVariant
-                    )
-                }
+            if (onAiSelect != null) {
+                AiMenuButton(onSelect = onAiSelect)
             }
             IconButton(onClick = onShowHistory) {
                 Icon(
@@ -410,7 +409,7 @@ private fun LandscapeLayout(
     viewModel: CalculatorViewModel,
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
-    onShowCamera: (() -> Unit)? = null,
+    onAiSelect: ((AiEntry) -> Unit)? = null,
     onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -429,16 +428,10 @@ private fun LandscapeLayout(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = if (onShowCamera != null) Arrangement.SpaceBetween else Arrangement.End
+                horizontalArrangement = if (onAiSelect != null) Arrangement.SpaceBetween else Arrangement.End
             ) {
-                if (onShowCamera != null) {
-                    IconButton(onClick = onShowCamera) {
-                        Icon(
-                            imageVector = Icons.Filled.Assistant,
-                            contentDescription = stringResource(R.string.scan_expression),
-                            tint = colorScheme.onSurfaceVariant
-                        )
-                    }
+                if (onAiSelect != null) {
+                    AiMenuButton(onSelect = onAiSelect)
                 }
                 IconButton(onClick = onShowHistory) {
                     Icon(

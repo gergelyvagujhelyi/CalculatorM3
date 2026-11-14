@@ -28,7 +28,6 @@
     <string name="btn_factorial">Факторіал</string>
 
     <!-- Камера / ШІ-сканування -->
-    <string name="scan_expression">Сканувати вираз</string>
     <string name="scan_hint">Зробіть або виберіть фото рукописного математичного виразу</string>
     <string name="take_photo">Зробити фото</string>
     <string name="choose_from_gallery">Вибрати з галереї</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Баланс</string>
     <string name="scan_quality_accurate">Точно</string>
     <string name="scan_quality_hint">Швидші налаштування розглядають фото менш детально.</string>
+    <string name="ai_menu_title">Розв’язати з ШІ</string>
+    <string name="ai_menu_camera">Камера</string>
+    <string name="ai_menu_gallery">Галерея</string>
+    <string name="ai_settings">Налаштування ШІ</string>
+    <string name="ai_settings_model">Модель</string>
+    <string name="ai_settings_speed">Швидкість</string>
+    <string name="scan_quality_unavailable">Доступно для моделей Gemma 4.</string>
     <string name="answer_found">Відповідь</string>
     <string name="recognized_in">Розв’язано за %1$s</string>
     <string name="use_expression">Використати</string>
@@ -58,9 +64,16 @@
     <string name="stop">Зупинити</string>
     <string name="close">Закрити</string>
     <string name="recognition_error">Не вдалося розпізнати</string>
-    <string name="choose_model">Вибрати модель ШІ</string>
     <string name="choose_model_description">На вашому пристрої %1$d ГБ ОЗП. Більші моделі точніші, але повільніші. Усі моделі працюють повністю на вашому пристрої.</string>
     <string name="model_too_large">Потрібно %1$d ГБ ОЗП — на вашому пристрої %2$d ГБ</string>
+    <string name="model_recommended">Рекомендовано</string>
+    <string name="model_desc_gemma4_e2b">Швидко й точно</string>
+    <string name="model_desc_gemma4_e4b">Найточніша, але повільніша</string>
+    <string name="model_desc_gemma3n_e2b">Попереднє покоління</string>
+    <string name="model_desc_gemma3n_e4b">Попереднє покоління, точніша, але повільніша</string>
+    <string name="model_size_download_ram">Завантаження %1$s · потрібно %2$d ГБ ОЗП</string>
+    <string name="model_size_download">Завантаження %1$s</string>
+    <string name="model_size_downloaded">Завантажено · %1$s</string>
     <string name="download_model">Завантажити</string>
     <string name="downloaded">Завантажено</string>
     <string name="downloading_model">Завантаження моделі ШІ</string>

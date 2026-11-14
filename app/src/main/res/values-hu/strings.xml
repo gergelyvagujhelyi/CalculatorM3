@@ -28,7 +28,6 @@
     <string name="btn_factorial">Faktoriális</string>
 
     <!-- Kamera / MI-beolvasás -->
-    <string name="scan_expression">Kifejezés beolvasása</string>
     <string name="scan_hint">Készíts vagy válassz fényképet egy kézzel írt matematikai kifejezésről</string>
     <string name="take_photo">Fénykép készítése</string>
     <string name="choose_from_gallery">Választás a galériából</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Közepes</string>
     <string name="scan_quality_accurate">Pontos</string>
     <string name="scan_quality_hint">A gyorsabb beállítások kevésbé részletesen nézik meg a fényképet.</string>
+    <string name="ai_menu_title">Megoldás MI-vel</string>
+    <string name="ai_menu_camera">Kamera</string>
+    <string name="ai_menu_gallery">Galéria</string>
+    <string name="ai_settings">MI-beállítások</string>
+    <string name="ai_settings_model">Modell</string>
+    <string name="ai_settings_speed">Sebesség</string>
+    <string name="scan_quality_unavailable">A Gemma 4 modellekkel érhető el.</string>
     <string name="answer_found">Válasz</string>
     <string name="recognized_in">Megoldva %1$s alatt</string>
     <string name="use_expression">Használat</string>
@@ -58,9 +64,16 @@
     <string name="stop">Leállítás</string>
     <string name="close">Bezárás</string>
     <string name="recognition_error">A felismerés sikertelen</string>
-    <string name="choose_model">Válassz MI-modellt</string>
     <string name="choose_model_description">Az eszközöd %1$d GB RAM-mal rendelkezik. A nagyobb modellek pontosabbak, de lassabbak. Minden modell teljes egészében az eszközödön fut.</string>
     <string name="model_too_large">%1$d GB RAM szükséges — az eszközöd %2$d GB-tal rendelkezik</string>
+    <string name="model_recommended">Ajánlott</string>
+    <string name="model_desc_gemma4_e2b">Gyors és pontos</string>
+    <string name="model_desc_gemma4_e4b">A legpontosabb, de lassabb</string>
+    <string name="model_desc_gemma3n_e2b">Előző generáció</string>
+    <string name="model_desc_gemma3n_e4b">Előző generáció, pontosabb, de lassabb</string>
+    <string name="model_size_download_ram">%1$s letöltés · %2$d GB RAM szükséges</string>
+    <string name="model_size_download">%1$s letöltés</string>
+    <string name="model_size_downloaded">Letöltve · %1$s</string>
     <string name="download_model">Letöltés</string>
     <string name="downloaded">Letöltve</string>
     <string name="downloading_model">MI-modell letöltése</string>

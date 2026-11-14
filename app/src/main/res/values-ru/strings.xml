@@ -28,7 +28,6 @@
     <string name="btn_factorial">Факториал</string>
 
     <!-- Камера / ИИ-сканирование -->
-    <string name="scan_expression">Сканировать выражение</string>
     <string name="scan_hint">Сделайте или выберите фото рукописного математического выражения</string>
     <string name="take_photo">Сделать фото</string>
     <string name="choose_from_gallery">Выбрать из галереи</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Баланс</string>
     <string name="scan_quality_accurate">Точно</string>
     <string name="scan_quality_hint">Более быстрые настройки рассматривают фото менее детально.</string>
+    <string name="ai_menu_title">Решить с ИИ</string>
+    <string name="ai_menu_camera">Камера</string>
+    <string name="ai_menu_gallery">Галерея</string>
+    <string name="ai_settings">Настройки ИИ</string>
+    <string name="ai_settings_model">Модель</string>
+    <string name="ai_settings_speed">Скорость</string>
+    <string name="scan_quality_unavailable">Доступно для моделей Gemma 4.</string>
     <string name="answer_found">Ответ</string>
     <string name="recognized_in">Решено за %1$s</string>
     <string name="use_expression">Использовать</string>
@@ -58,9 +64,16 @@
     <string name="stop">Остановить</string>
     <string name="close">Закрыть</string>
     <string name="recognition_error">Не удалось распознать</string>
-    <string name="choose_model">Выбрать модель ИИ</string>
     <string name="choose_model_description">На вашем устройстве %1$d ГБ ОЗУ. Более крупные модели точнее, но медленнее. Все модели работают полностью на вашем устройстве.</string>
     <string name="model_too_large">Требуется %1$d ГБ ОЗУ — на вашем устройстве %2$d ГБ</string>
+    <string name="model_recommended">Рекомендуется</string>
+    <string name="model_desc_gemma4_e2b">Быстро и точно</string>
+    <string name="model_desc_gemma4_e4b">Самая точная, но медленнее</string>
+    <string name="model_desc_gemma3n_e2b">Предыдущее поколение</string>
+    <string name="model_desc_gemma3n_e4b">Предыдущее поколение, точнее, но медленнее</string>
+    <string name="model_size_download_ram">Загрузка %1$s · требуется %2$d ГБ ОЗУ</string>
+    <string name="model_size_download">Загрузка %1$s</string>
+    <string name="model_size_downloaded">Скачано · %1$s</string>
     <string name="download_model">Скачать</string>
     <string name="downloaded">Скачано</string>
     <string name="downloading_model">Загрузка модели ИИ</string>

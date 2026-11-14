@@ -28,7 +28,6 @@
     <string name="btn_factorial">Faktorial</string>
 
     <!-- Kamera / Pemindaian AI -->
-    <string name="scan_expression">Pindai ekspresi</string>
     <string name="scan_hint">Ambil atau pilih foto ekspresi matematika tulisan tangan</string>
     <string name="take_photo">Ambil foto</string>
     <string name="choose_from_gallery">Pilih dari galeri</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Seimbang</string>
     <string name="scan_quality_accurate">Akurat</string>
     <string name="scan_quality_hint">Setelan yang lebih cepat melihat foto dengan detail lebih sedikit.</string>
+    <string name="ai_menu_title">Selesaikan dengan AI</string>
+    <string name="ai_menu_camera">Kamera</string>
+    <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_settings">Pengaturan AI</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_speed">Kecepatan</string>
+    <string name="scan_quality_unavailable">Tersedia dengan model Gemma 4.</string>
     <string name="answer_found">Jawaban</string>
     <string name="recognized_in">Diselesaikan dalam %1$s</string>
     <string name="use_expression">Gunakan</string>
@@ -58,9 +64,16 @@
     <string name="stop">Hentikan</string>
     <string name="close">Tutup</string>
     <string name="recognition_error">Pengenalan gagal</string>
-    <string name="choose_model">Pilih model AI</string>
     <string name="choose_model_description">Perangkat Anda memiliki RAM %1$d GB. Model yang lebih besar lebih akurat tetapi lebih lambat. Semua model berjalan sepenuhnya di perangkat Anda.</string>
     <string name="model_too_large">Memerlukan RAM %1$d GB — perangkat Anda memiliki %2$d GB</string>
+    <string name="model_recommended">Direkomendasikan</string>
+    <string name="model_desc_gemma4_e2b">Cepat dan akurat</string>
+    <string name="model_desc_gemma4_e4b">Paling akurat, tetapi lebih lambat</string>
+    <string name="model_desc_gemma3n_e2b">Generasi sebelumnya</string>
+    <string name="model_desc_gemma3n_e4b">Generasi sebelumnya, lebih akurat tetapi lebih lambat</string>
+    <string name="model_size_download_ram">Unduhan %1$s · memerlukan RAM %2$d GB</string>
+    <string name="model_size_download">Unduhan %1$s</string>
+    <string name="model_size_downloaded">Terunduh · %1$s</string>
     <string name="download_model">Unduh</string>
     <string name="downloaded">Terunduh</string>
     <string name="downloading_model">Mengunduh model AI</string>

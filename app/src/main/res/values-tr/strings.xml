@@ -28,7 +28,6 @@
     <string name="btn_factorial">Faktöriyel</string>
 
     <!-- Kamera / Yapay zeka taraması -->
-    <string name="scan_expression">İfadeyi tara</string>
     <string name="scan_hint">Elle yazılmış bir matematik ifadesinin fotoğrafını çekin veya seçin</string>
     <string name="take_photo">Fotoğraf çek</string>
     <string name="choose_from_gallery">Galeriden seç</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Dengeli</string>
     <string name="scan_quality_accurate">Hassas</string>
     <string name="scan_quality_hint">Daha hızlı ayarlar fotoğrafa daha az ayrıntıyla bakar.</string>
+    <string name="ai_menu_title">Yapay zekayla çöz</string>
+    <string name="ai_menu_camera">Kamera</string>
+    <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_settings">Yapay zeka ayarları</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_speed">Hız</string>
+    <string name="scan_quality_unavailable">Gemma 4 modelleriyle kullanılabilir.</string>
     <string name="answer_found">Yanıt</string>
     <string name="recognized_in">%1$s içinde çözüldü</string>
     <string name="use_expression">Kullan</string>
@@ -58,9 +64,16 @@
     <string name="stop">Durdur</string>
     <string name="close">Kapat</string>
     <string name="recognition_error">Tanıma başarısız oldu</string>
-    <string name="choose_model">Yapay zeka modelini seç</string>
     <string name="choose_model_description">Cihazınızda %1$d GB RAM var. Daha büyük modeller daha doğru ama daha yavaştır. Tüm modeller tamamen cihazınızda çalışır.</string>
     <string name="model_too_large">%1$d GB RAM gerekir — cihazınızda %2$d GB var</string>
+    <string name="model_recommended">Önerilen</string>
+    <string name="model_desc_gemma4_e2b">Hızlı ve doğru</string>
+    <string name="model_desc_gemma4_e4b">En doğru, ancak daha yavaş</string>
+    <string name="model_desc_gemma3n_e2b">Önceki nesil</string>
+    <string name="model_desc_gemma3n_e4b">Önceki nesil, daha doğru ama daha yavaş</string>
+    <string name="model_size_download_ram">%1$s indirme · %2$d GB RAM gerekir</string>
+    <string name="model_size_download">%1$s indirme</string>
+    <string name="model_size_downloaded">İndirildi · %1$s</string>
     <string name="download_model">İndir</string>
     <string name="downloaded">İndirildi</string>
     <string name="downloading_model">Yapay zeka modeli indiriliyor</string>
