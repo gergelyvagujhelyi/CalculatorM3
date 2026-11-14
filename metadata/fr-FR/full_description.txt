@@ -25,7 +25,9 @@ Saisissez des expressions mathématiques complètes avec la priorité des opéra
 - Racine carrée (√)
 - Constante Pi (π)
 - Puissance (^)
-- Factorielle (!) pour les valeurs de 0 à 99
+- Factorielle (!) de 0 à 99, et des fractions via la fonction gamma
+- e et logarithmes (ln, log)
+- sin, cos et tan, en degrés ou en radians
 - Pourcentage (%) à la manière des calculatrices grand public
 - Multiplication implicite (2π, 3√2, etc.)
 

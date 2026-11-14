@@ -51,6 +51,17 @@
     <string name="btn_pi">पाई</string>
     <string name="btn_power">घात</string>
     <string name="btn_factorial">क्रमगुणन</string>
+    <string name="btn_parentheses">कोष्ठक</string>
+    <string name="btn_e">ऑयलर संख्या e</string>
+    <string name="btn_ln">प्राकृतिक लघुगणक</string>
+    <string name="btn_log">आधार 10 का लघुगणक</string>
+    <string name="btn_more_functions">अधिक फ़ंक्शन</string>
+    <string name="btn_fewer_functions">कम फ़ंक्शन</string>
+    <string name="btn_sin">ज्या</string>
+    <string name="btn_cos">कोज्या</string>
+    <string name="btn_tan">स्पर्शज्या</string>
+    <string name="angle_degrees">कोण डिग्री में। रेडियन के लिए टैप करें।</string>
+    <string name="angle_radians">कोण रेडियन में। डिग्री के लिए टैप करें।</string>
 
     <!-- कैमरा / AI स्कैन -->
     <string name="scan_hint">हाथ से लिखे गणितीय व्यंजक की फ़ोटो लें या चुनें</string>

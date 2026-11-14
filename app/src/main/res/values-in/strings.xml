@@ -51,6 +51,17 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Pangkat</string>
     <string name="btn_factorial">Faktorial</string>
+    <string name="btn_parentheses">Tanda kurung</string>
+    <string name="btn_e">Bilangan Euler e</string>
+    <string name="btn_ln">Logaritma natural</string>
+    <string name="btn_log">Logaritma basis 10</string>
+    <string name="btn_more_functions">Fungsi lainnya</string>
+    <string name="btn_fewer_functions">Lebih sedikit fungsi</string>
+    <string name="btn_sin">Sinus</string>
+    <string name="btn_cos">Kosinus</string>
+    <string name="btn_tan">Tangen</string>
+    <string name="angle_degrees">Sudut dalam derajat. Ketuk untuk radian.</string>
+    <string name="angle_radians">Sudut dalam radian. Ketuk untuk derajat.</string>
 
     <!-- Kamera / Pemindaian AI -->
     <string name="scan_hint">Ambil atau pilih foto ekspresi matematika tulisan tangan</string>

@@ -693,6 +693,335 @@ class CalculatorViewModelTest {
         assertExpression("3")
     }
 
+    // ── The ( ) key ───────────────────────────────────────────────────
+
+    @Test
+    fun bracketKeyOpensThenCloses() {
+        // (2 + 3) × 4 = 20
+        tap("( )", "2", "+", "3", "( )", "×", "4")
+        assertExpression("(2+3)×4")
+        tapEquals()
+        assertExpression("20")
+    }
+
+    @Test
+    fun bracketAfterANumberMultiplies() {
+        // 2(3 + 4) = 14
+        tap("2", "( )", "3", "+", "4", "( )")
+        assertExpression("2(3+4)")
+        tapEquals()
+        assertExpression("14")
+    }
+
+    @Test
+    fun bracketsAfterABracketMultiply() {
+        // (1 + 2)(3 + 4) = 21
+        tap("( )", "1", "+", "2", "( )", "( )", "3", "+", "4", "( )")
+        assertExpression("(1+2)(3+4)")
+        tapEquals()
+        assertExpression("21")
+    }
+
+    @Test
+    fun bracketsNest() {
+        // ((1 + 2) × 3) ^ 2 = 81
+        tap("( )", "( )", "1", "+", "2", "( )", "×", "3", "( )", "^", "2")
+        assertExpression("((1+2)×3)^2")
+        tapEquals()
+        assertExpression("81")
+    }
+
+    @Test
+    fun openBracketsAreClosedForThePreviewAndOnEquals() {
+        tap("2", "×", "( )", "3", "+", "4")
+        assertExpression("2×(3+4")
+        assertResult("14")
+        tapEquals()
+        assertExpression("14")
+        assertEquals("2×(3+4) =", vm.history)
+    }
+
+    @Test
+    fun aBracketOpenedButEmptyIsDroppedOnEquals() {
+        tap("9", "+", "( )")
+        assertResult("9")
+        tapEquals()
+        assertExpression("9")
+    }
+
+    @Test
+    fun bracketAfterAnOperatorAlwaysOpens() {
+        // Even with an open bracket before it, right after an operator there's nothing to close.
+        tap("( )", "2", "+", "( )")
+        assertExpression("(2+(")
+    }
+
+    @Test
+    fun bracketCanCloseARootStartedWithSqrt() {
+        // 9 + √(4) then ( ) steps over the root's own ")", it doesn't add another.
+        tap("9", "+", "√", "4", "( )", "×", "2")
+        assertExpression("9+√(4)×2")
+        tapEquals()
+        assertExpression("13")
+    }
+
+    @Test
+    fun bracketKeyRespectsTheNestingLimit() {
+        repeat(30) { tap("( )") }
+        assertEquals(20, vm.expression.count { it == '(' })
+    }
+
+    @Test
+    fun noBracketRightAfterADecimalPoint() {
+        tap("2", ".", "( )")
+        assertExpression("2.")
+    }
+
+    @Test
+    fun bracketKeyStartsANewEntryAfterEquals() {
+        tap("2", "+", "3")
+        tapEquals()
+        tap("( )")
+        assertExpression("(")
+    }
+
+    // ── e, ln, log, x! of fractions (#74, phase 2) ────────────────────
+    // Expected values from Python's decimal module at 60 digits, rounded to the 30 shown.
+
+    @Test
+    fun eIsAConstant() {
+        tap("e")
+        tapEquals()
+        assertExpression("2.71828182845904523536028747135")
+    }
+
+    @Test
+    fun eMultipliesLikePi() {
+        tap("2", "e")
+        tapEquals()
+        assertExpression("5.43656365691809047072057494271")
+        tap("AC", "e", "^", "2")
+        tapEquals()
+        assertExpression("7.38905609893065022723042746058")
+    }
+
+    @Test
+    fun naturalLogarithm() {
+        tap("ln", "2")
+        assertExpression("ln(2)")
+        tapEquals()
+        assertExpression("0.693147180559945309417232121458")
+        tap("AC", "ln", "0", ".", "0", "0", "1")
+        tapEquals()
+        assertExpression("-6.90775527898213705205397436405")
+    }
+
+    @Test
+    fun lnOfEIsOne() {
+        tap("ln", "e")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun logBase10() {
+        tap("log", "2")
+        tapEquals()
+        assertExpression("0.301029995663981195213738894724")
+    }
+
+    @Test
+    fun logOfAPowerOfTenIsExact() {
+        tap("log", "1", "0", "0", "0")
+        tapEquals()
+        assertExpression("3")
+        tap("AC", "log", "0", ".", "0", "1")
+        tapEquals()
+        assertExpression("-2")
+    }
+
+    @Test
+    fun logarithmOfZeroOrANegativeIsAnError() {
+        tap("ln", "0")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+        tap("AC", "log", "5", "+/−")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun anOperatorStepsOutOfAFunction() {
+        // ln 2 + 1 = ln(2) + 1, not ln(2 + 1)
+        tap("ln", "2", "+", "1")
+        assertExpression("ln(2)+1")
+        tapEquals()
+        assertExpression("1.69314718055994530941723212146")
+    }
+
+    @Test
+    fun aNumberBeforeAFunctionMultiplies() {
+        tap("2", "ln", "3")
+        assertExpression("2ln(3)")
+        tapEquals()
+        assertExpression("2.19722457733621938279049047385")
+    }
+
+    @Test
+    fun backspaceRemovesAFunctionWithItsBrackets() {
+        tap("5", "+", "log", "⌫")
+        assertExpression("5+")
+        tap("ln", "7", "⌫", "⌫")
+        assertExpression("5+")
+    }
+
+    @Test
+    fun theCursorCantLandInsideAFunctionName() {
+        tap("2", "+", "log", "1", "0")
+        assertExpression("2+log(10)")
+        vm.moveCursorTo(4) // between "l" and "o"
+        assertEquals(2, vm.cursorPosition)
+    }
+
+    @Test
+    fun anEmptyFunctionIsDroppedOnEquals() {
+        tap("9", "+", "ln")
+        tapEquals()
+        assertExpression("9")
+    }
+
+    @Test
+    fun factorialOfAFractionUsesTheGammaFunction() {
+        // 0.5! = Γ(1.5) = √π / 2; 2.5! = Γ(3.5). Shown to 15 digits.
+        tap("0", ".", "5", "!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("0.8862269254527"))
+        tap("AC", "2", ".", "5", "!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("3.3233509704478"))
+    }
+
+    @Test
+    fun aResultWithAFractionalFactorialShowsOnly15Digits() {
+        // 2 ln 10 + e! = 4.605170185988091… + 4.260820476357003… ; e! is good to about 15 digits,
+        // so the sum mustn't show the 30 digits ln 10 alone would have.
+        tap("2", "ln", "1", "0", "+", "e", "!")
+        tapEquals()
+        assertExpression("8.86599066234509")
+    }
+
+    @Test
+    fun factorialOfWholeNumbersStaysExact() {
+        tap("2", "0", "!")
+        tapEquals()
+        assertExpression("2432902008176640000")
+    }
+
+    @Test
+    fun factorialOfANegativeWholeNumberIsAnError() {
+        tap("( )", "3", "+/−", "( )", "!")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun scientificNotationStillWorks() {
+        // A history result in E notation is still read as a number, not as the constant e.
+        vm.loadHistoryEntry(HistoryEntry("10^20", "1E+20"))
+        tap("÷", "1", "0")
+        tapEquals()
+        assertExpression("10000000000000000000")
+    }
+
+    // ── sin, cos, tan (#74, phase 3) ──────────────────────────────────
+    // Expected values from Taylor series in Python's decimal module at 80 digits.
+
+    @Test
+    fun degreesAreTheDefault() {
+        assertTrue(vm.degrees)
+        tap("sin", "3", "0")
+        tapEquals()
+        assertExpression("0.5")
+    }
+
+    @Test
+    fun standardAnglesAreExact() {
+        fun check(expected: String, vararg keys: String) {
+            tap("AC", *keys)
+            tapEquals()
+            assertEquals(keys.joinToString(""), expected, vm.expression)
+        }
+        check("1", "sin", "9", "0")
+        check("0", "sin", "1", "8", "0")
+        check("0", "cos", "9", "0")
+        check("-1", "cos", "1", "8", "0")
+        check("0.5", "cos", "6", "0")
+        check("1", "tan", "4", "5")
+        check("-0.5", "sin", "3", "0", "+/−")
+        check("0", "sin", "3", "6", "0", "0", "0", "0")
+    }
+
+    @Test
+    fun sin45Degrees() {
+        tap("sin", "4", "5")
+        tapEquals()
+        assertExpression("0.707106781186547524400844362105")
+    }
+
+    @Test
+    fun tanOf90DegreesIsAnError() {
+        tap("tan", "9", "0")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun radians() {
+        vm.toggleDegrees()
+        assertTrue(!vm.degrees)
+        tap("sin", "1")
+        tapEquals()
+        assertExpression("0.84147098480789650665250232163")
+        tap("AC", "cos", "1")
+        tapEquals()
+        assertExpression("0.540302305868139717400936607443")
+        tap("AC", "tan", "1")
+        tapEquals()
+        assertExpression("1.55740772465490223050697480746")
+    }
+
+    @Test
+    fun multiplesOfPiAreExactInRadians() {
+        vm.toggleDegrees()
+        tap("sin", "π")
+        tapEquals()
+        assertExpression("0")
+        tap("AC", "cos", "2", "π")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun switchingTheUnitUpdatesThePreview() {
+        tap("cos", "0", "+", "sin", "9", "0")
+        assertResult("2")
+        vm.toggleDegrees()
+        // cos 0 + sin(90 rad) = 1 + 0.8939…
+        assertTrue(vm.result, vm.result.startsWith("1.893996663"))
+    }
+
+    @Test
+    fun trigFunctionsCombine() {
+        // sin²30° + cos²30° = 1; the ( ) key steps out of a function before ^
+        tap("sin", "3", "0", "( )", "^", "2", "+", "cos", "3", "0", "( )", "^", "2")
+        assertExpression("sin(30)^2+cos(30)^2")
+        tapEquals()
+        assertExpression("1")
+        tap("AC", "2", "sin", "3", "0")
+        tapEquals()
+        assertExpression("1")
+    }
+
     // ── √ in writing order: after an operator it starts a root ─────────
 
     @Test
@@ -1122,10 +1451,12 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun piFactorialBlocked() {
-        // ! requires digit or ) before it, π is neither
+    fun piFactorialUsesTheGammaFunction() {
+        // π! = Γ(π + 1) ≈ 7.18808272897603 (it used to be blocked: ! took whole numbers only)
         tap("π", "!")
-        assertExpression("π")
+        assertExpression("π!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("7.1880827289760"))
     }
 
     // ── Input guard stress tests ───────────────────────────────────────

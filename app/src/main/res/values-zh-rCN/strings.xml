@@ -51,6 +51,17 @@
     <string name="btn_pi">圆周率</string>
     <string name="btn_power">幂</string>
     <string name="btn_factorial">阶乘</string>
+    <string name="btn_parentheses">括号</string>
+    <string name="btn_e">自然常数 e</string>
+    <string name="btn_ln">自然对数</string>
+    <string name="btn_log">常用对数</string>
+    <string name="btn_more_functions">更多函数</string>
+    <string name="btn_fewer_functions">收起函数</string>
+    <string name="btn_sin">正弦</string>
+    <string name="btn_cos">余弦</string>
+    <string name="btn_tan">正切</string>
+    <string name="angle_degrees">角度单位：度。点按切换为弧度。</string>
+    <string name="angle_radians">角度单位：弧度。点按切换为度。</string>
 
     <!-- 相机 / AI 扫描 -->
     <string name="scan_hint">拍摄或选择一张手写数学算式的照片</string>

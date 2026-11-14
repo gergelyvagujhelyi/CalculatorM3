@@ -137,6 +137,46 @@ class CalculatorUiTest {
     }
 
     @Test
+    fun bracketKey() {
+        launch()
+        // (2 + 3) × 4
+        tap("( )", "2", "+", "3", "( )", "×", "4", "=")
+        displayShows("20")
+    }
+
+    @Test
+    fun moreFunctionsPanel() {
+        launch()
+        val more = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.btn_more_functions)
+        composeTestRule.onNodeWithContentDescription(more).performClick()
+        // log 1000 = 3, then × e^0 = 1 keeps it 3
+        tap("log", "1", "0", "0", "0", "×", "e", "^", "0", "=")
+        displayShows("3")
+    }
+
+    @Test
+    fun trigonometryAndTheAngleUnit() {
+        launch()
+        val more = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.btn_more_functions)
+        composeTestRule.onNodeWithContentDescription(more).performClick()
+        tap("sin", "3", "0", "=")
+        displayShows("0.5")
+        // DEG → RAD: cos 0 is 1 either way, sin π only in radians is 0
+        composeTestRule.onNode(hasText("DEG") and hasClickAction()).performClick()
+        composeTestRule.onNode(hasText("RAD") and hasClickAction()).assertExists()
+        tap("AC", "cos", "0", "+", "sin", "π", "=")
+        displayShows("1")
+    }
+
+    @Test
+    fun sqrtAfterAnOperator() {
+        launch()
+        // 9 + √4 + 1, typed in writing order
+        tap("9", "+", "√", "4", "+", "1", "=")
+        displayShows("12")
+    }
+
+    @Test
     fun toggleSign() {
         launch()
         tap("5")

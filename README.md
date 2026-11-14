@@ -52,7 +52,7 @@
 ## Features
 - Full expression evaluation with parentheses and operator precedence
 - Live result preview as you type
-- Scientific functions — square root, pi, power, factorial
+- Scientific functions — brackets, square root, π, e, powers, factorial (fractions too), ln, log, and sin, cos and tan in degrees or radians (tap the arrow at the end of the scientific row for the second row)
 - Calculation history — persists across restarts
 - Expression cursor — tap to edit mid-expression
 - **AI Math Solver** — photograph handwritten math, write it on screen, or type a problem, and solve it on-device with step-by-step working (optional; needs a 6 GB+ device and a one-time model download)

@@ -51,6 +51,17 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Macht</string>
     <string name="btn_factorial">Faculteit</string>
+    <string name="btn_parentheses">Haakjes</string>
+    <string name="btn_e">Getal van Euler e</string>
+    <string name="btn_ln">Natuurlijke logaritme</string>
+    <string name="btn_log">Logaritme met grondtal 10</string>
+    <string name="btn_more_functions">Meer functies</string>
+    <string name="btn_fewer_functions">Minder functies</string>
+    <string name="btn_sin">Sinus</string>
+    <string name="btn_cos">Cosinus</string>
+    <string name="btn_tan">Tangens</string>
+    <string name="angle_degrees">Hoeken in graden. Tik voor radialen.</string>
+    <string name="angle_radians">Hoeken in radialen. Tik voor graden.</string>
 
     <!-- Camera / AI-scan -->
     <string name="scan_hint">Maak of kies een foto van een handgeschreven wiskundige uitdrukking</string>
