@@ -29,7 +29,7 @@ AI = "On-device AI · nothing leaves your phone"
 # Extras: badge = a lock badge above the headline; languages = chips listing LANGUAGES.
 SHOTS = {
     1: ("Calculator, *refined*", "Clean, fast and private. No ads, no tracking.", {}),
-    2: ("Scientific, *simply*", "Roots, powers, π and factorials, with a live result.", {}),
+    2: ("Scientific, *simply*", "Brackets, roots, powers, e, ln, log, sin, cos and tan.", {}),
     3: ("History, *kept*", "Every calculation, one tap away.", {}),
     4: ("Made for *every screen*", "Turn it sideways and your history sits right beside the keys.", {}),
     5: ("Solve it *with AI*", "Snap a photo, write it by hand, or type it.", {"badge": AI}),
