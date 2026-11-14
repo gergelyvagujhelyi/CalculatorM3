@@ -28,7 +28,6 @@
     <string name="btn_factorial">Factorial</string>
 
     <!-- Camera / AI scan -->
-    <string name="scan_expression">Scan expression</string>
     <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>
     <string name="take_photo">Take photo</string>
     <string name="choose_from_gallery">Choose from gallery</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Balanced</string>
     <string name="scan_quality_accurate">Accurate</string>
     <string name="scan_quality_hint">Faster settings look at the photo in less detail.</string>
+    <string name="ai_menu_title">Solve with AI</string>
+    <string name="ai_menu_camera">Camera</string>
+    <string name="ai_menu_gallery">Gallery</string>
+    <string name="ai_settings">AI settings</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_speed">Speed</string>
+    <string name="scan_quality_unavailable">Available with the Gemma 4 models.</string>
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
     <string name="use_expression">Use</string>
@@ -71,9 +77,16 @@
     <string name="error_prefill_timeout">The model got stuck before producing an answer. Please try again.</string>
     <string name="error_stall_timeout">The answer stopped midway through. Please try again.</string>
     <string name="error_total_timeout">The scan took too long and was stopped. Please try again with a clearer photo.</string>
-    <string name="choose_model">Choose AI model</string>
     <string name="choose_model_description">Your device has %1$d GB RAM. Larger models are more accurate but slower. All models run entirely on your device.</string>
     <string name="model_too_large">Needs %1$d GB RAM — your device has %2$d GB</string>
+    <string name="model_recommended">Recommended</string>
+    <string name="model_desc_gemma4_e2b">Quick and accurate</string>
+    <string name="model_desc_gemma4_e4b">Most accurate, but slower</string>
+    <string name="model_desc_gemma3n_e2b">Previous generation</string>
+    <string name="model_desc_gemma3n_e4b">Previous generation, more accurate but slower</string>
+    <string name="model_size_download_ram">%1$s download · needs %2$d GB RAM</string>
+    <string name="model_size_download">%1$s download</string>
+    <string name="model_size_downloaded">Downloaded · %1$s</string>
     <string name="download_model">Download</string>
     <string name="downloaded">Downloaded</string>
     <string name="downloading_model">Downloading AI model</string>

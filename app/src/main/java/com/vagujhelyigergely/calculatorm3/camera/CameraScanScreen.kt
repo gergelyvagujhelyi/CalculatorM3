@@ -40,6 +40,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,7 +57,6 @@ import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -99,6 +99,8 @@ import java.io.File
 @Composable
 fun CameraScanScreen(
     viewModel: ScanViewModel,
+    /** What the AI menu opened this window for: a picture source, or the settings page. */
+    entry: AiEntry,
     onExpressionRecognized: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -138,15 +140,17 @@ fun CameraScanScreen(
 
     // Initialize on a genuine screen entry only — NOT on every rotation. The ScanViewModel is
     // Activity-scoped, so a config change recreates this Composable while the ViewModel keeps its
-    // in-flight Processing/Success state; re-running initialize() then would reset the screen back
-    // to the capture chooser. rememberSaveable survives rotation but is dropped when the screen
+    // in-flight Processing/Success state; re-running initialize() then would reset the screen and
+    // reopen the camera. rememberSaveable survives rotation but is dropped when the screen
     // leaves composition, so a real reopen still re-initializes. The extra Idle check covers process
     // death, which restores the saved flag but recreates the ViewModel fresh (uiState == Idle).
     var didInitialize by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (!didInitialize || viewModel.uiState is ScanUiState.Idle) {
+        if (!didInitialize) {
             didInitialize = true
-            viewModel.initialize()
+            viewModel.initialize(entry)
+        } else if (viewModel.uiState is ScanUiState.Idle) {
+            viewModel.initialize(entry, resumed = true)
         }
     }
 
@@ -269,13 +273,13 @@ fun CameraScanScreen(
                                 onDismiss = onDismiss
                             )
                             is ScanUiState.Capturing -> CameraContent(
-                                modelName = viewModel.selectedModelName,
-                                scanQuality = viewModel.scanQuality.takeIf { viewModel.scanQualityApplies },
-                                onScanQualityChange = { viewModel.updateScanQuality(it) },
+                                // SETTINGS never reaches Capturing; treat it as the camera anyway.
+                                fromGallery = viewModel.entry == AiEntry.GALLERY,
+                                autoLaunch = state.autoLaunch,
+                                onLaunched = { viewModel.onCaptureLaunched() },
                                 onPhotoCaptured = { path -> viewModel.onPhotoCaptured(path) },
                                 onCaptureError = { msg -> viewModel.onCaptureError(msg) },
                                 onPickedImageUnreadable = { viewModel.onPickedImageUnreadable() },
-                                onSwitchModel = { viewModel.showModelSelection() },
                                 onDismiss = onDismiss
                             )
                             is ScanUiState.Processing -> ProcessingContent(
@@ -366,6 +370,8 @@ fun CameraScanScreen(
                                 selectedModel = state.selectedModel,
                                 downloadedModels = state.downloadedModels,
                                 deviceRamGb = state.deviceRamGb,
+                                scanQuality = viewModel.scanQuality,
+                                onScanQualityChange = { viewModel.updateScanQuality(it) },
                                 onSelectModel = { viewModel.selectModel(it) },
                                 onDownloadModel = startDownloadWithNotifPrompt,
                                 onDismiss = onDismiss
@@ -595,16 +601,20 @@ private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTo
     }
 }
 
+/**
+ * The picture source the AI menu was opened for: the system camera, or the photo picker if
+ * [fromGallery]. With [autoLaunch] it opens straight away (then reports [onLaunched]); backing out
+ * of a source opened that way closes the window, since the user never saw this screen. Otherwise
+ * it shows one button for the source, and backing out stays here.
+ */
 @Composable
 private fun CameraContent(
-    modelName: String,
-    /** The speed/quality setting, or null when the selected model doesn't support it (hidden). */
-    scanQuality: ScanQuality?,
-    onScanQualityChange: (ScanQuality) -> Unit,
+    fromGallery: Boolean,
+    autoLaunch: Boolean,
+    onLaunched: () -> Unit,
     onPhotoCaptured: (String) -> Unit,
     onCaptureError: (String) -> Unit,
     onPickedImageUnreadable: () -> Unit,
-    onSwitchModel: () -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -613,6 +623,9 @@ private fun CameraContent(
     // activity being recreated while the camera is foreground (memory pressure) —
     // otherwise the returned photo would be dropped and the scan lost.
     var pendingPhotoPath by rememberSaveable { mutableStateOf<String?>(null) }
+    // Whether the source now open was opened automatically (see the doc above).
+    var openedAutomatically by rememberSaveable { mutableStateOf(false) }
+    val onBackedOut = { if (openedAutomatically) onDismiss() }
 
     val takePhotoLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture()
@@ -622,8 +635,9 @@ private fun CameraContent(
         if (success && file != null) {
             onPhotoCaptured(file.absolutePath)
         } else {
-            // Cancelled or failed — discard the empty file and stay on this screen.
+            // Cancelled or failed — discard the empty file.
             file?.delete()
+            onBackedOut()
         }
     }
 
@@ -636,27 +650,39 @@ private fun CameraContent(
                 if (path != null) onPhotoCaptured(path)
                 else onPickedImageUnreadable()
             }
+        } else {
+            onBackedOut()
+        }
+    }
+
+    val openSource: (automatic: Boolean) -> Unit = { automatic ->
+        openedAutomatically = automatic
+        try {
+            if (fromGallery) {
+                pickImageLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            } else {
+                val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
+                pendingPhotoPath = file.absolutePath
+                takePhotoLauncher.launch(fileProviderUri(context, file))
+            }
+        } catch (e: android.content.ActivityNotFoundException) {
+            // No camera app (or picker) on the device.
+            pendingPhotoPath?.let { File(it).delete() }
+            pendingPhotoPath = null
+            onCaptureError(e.message ?: e.javaClass.simpleName)
+        }
+    }
+
+    LaunchedEffect(autoLaunch) {
+        if (autoLaunch) {
+            onLaunched()
+            openSource(true)
         }
     }
 
     AiStateScaffold(onDismiss = onDismiss) {
-        // Model switcher, top-end (close button is supplied by the scaffold, top-start).
-        AssistChip(
-            onClick = onSwitchModel,
-            label = { Text(text = modelName, style = MaterialTheme.typography.labelLarge) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.SwapHoriz,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .statusBarsPadding()
-                .padding(8.dp)
-        )
-
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -665,45 +691,17 @@ private fun CameraContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            AiHero(
-                title = stringResource(R.string.scan_hint),
-                icon = Icons.Default.PhotoCamera
-            )
+            val icon = if (fromGallery) Icons.Default.PhotoLibrary else Icons.Default.PhotoCamera
+            AiHero(title = stringResource(R.string.scan_hint), icon = icon)
             Spacer(modifier = Modifier.height(12.dp))
-            Button(
-                onClick = {
-                    val file = File(context.cacheDir, "scan_${System.currentTimeMillis()}.jpg")
-                    pendingPhotoPath = file.absolutePath
-                    takePhotoLauncher.launch(fileProviderUri(context, file))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PhotoCamera,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+            Button(onClick = { openSource(false) }, modifier = Modifier.fillMaxWidth()) {
+                Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.take_photo))
-            }
-            OutlinedButton(
-                onClick = {
-                    pickImageLauncher.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                Text(
+                    text = stringResource(
+                        if (fromGallery) R.string.choose_from_gallery else R.string.take_photo
                     )
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PhotoLibrary,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.choose_from_gallery))
-            }
-            if (scanQuality != null) {
-                ScanQualitySwitch(scanQuality, onScanQualityChange)
             }
         }
     }
@@ -711,10 +709,15 @@ private fun CameraContent(
 
 /**
  * Fast / Balanced / Accurate: how much detail the model takes from the photo
- * ([ScanQuality]). Applies from the next scan.
+ * ([ScanQuality]). Applies from the next scan. Shown disabled, with a note instead of the
+ * hint, when the selected model doesn't support it (![enabled]).
  */
 @Composable
-internal fun ScanQualitySwitch(quality: ScanQuality, onChange: (ScanQuality) -> Unit) {
+internal fun ScanQualitySwitch(
+    quality: ScanQuality,
+    enabled: Boolean = true,
+    onChange: (ScanQuality) -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -729,6 +732,7 @@ internal fun ScanQualitySwitch(quality: ScanQuality, onChange: (ScanQuality) -> 
                 SegmentedButton(
                     selected = option == quality,
                     onClick = { onChange(option) },
+                    enabled = enabled,
                     shape = SegmentedButtonDefaults.itemShape(index, options.size)
                 ) {
                     // Shrinks rather than clipping a long label (e.g. a selected one with its check mark).
@@ -741,7 +745,9 @@ internal fun ScanQualitySwitch(quality: ScanQuality, onChange: (ScanQuality) -> 
             }
         }
         Text(
-            text = stringResource(R.string.scan_quality_hint),
+            text = stringResource(
+                if (enabled) R.string.scan_quality_hint else R.string.scan_quality_unavailable
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -1022,11 +1028,17 @@ internal fun ModelUnusableContent(
     }
 }
 
+/**
+ * The AI settings page (the menu's gear): which model to use, and the speed for pictures. Also
+ * where the window sends the user when no usable model is downloaded yet.
+ */
 @Composable
 private fun ModelSelectionContent(
     selectedModel: AiModel,
     downloadedModels: List<AiModel>,
     deviceRamGb: Int,
+    scanQuality: ScanQuality,
+    onScanQualityChange: (ScanQuality) -> Unit,
     onSelectModel: (AiModel) -> Unit,
     onDownloadModel: (AiModel) -> Unit,
     onDismiss: () -> Unit
@@ -1037,6 +1049,7 @@ private fun ModelSelectionContent(
     // that need a HuggingFace login. Today these coincide exactly with the requiresAuth split.
     val gemma4Models = AiModel.entries.filter { !it.requiresAuth }
     val loginModels = AiModel.entries.filter { it.requiresAuth }
+    val recommended = AiModel.recommendedFor(deviceRamGb)
 
     Scaffold(
         modifier = Modifier
@@ -1045,7 +1058,7 @@ private fun ModelSelectionContent(
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
             LargeTopAppBar(
-                title = { Text(stringResource(R.string.choose_model)) },
+                title = { Text(stringResource(R.string.ai_settings)) },
                 navigationIcon = {
                     CloseButton(onDismiss = onDismiss, modifier = Modifier.aiSharedElement("close"))
                 },
@@ -1057,8 +1070,15 @@ private fun ModelSelectionContent(
             )
         }
     ) { innerPadding ->
+        val listState = rememberLazyListState()
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            // The scroll bar shows there's more than fits (the model list runs below the fold).
+            modifier = Modifier.fillMaxSize().lazyListScrollbar(
+                listState,
+                topInset = innerPadding.calculateTopPadding() + 8.dp,
+                bottomInset = innerPadding.calculateBottomPadding() + 8.dp
+            ),
             // Fold the Scaffold insets into contentPadding (rather than Modifier.padding) so the
             // list fills the screen and items scroll behind the translucent nav bar, while the
             // first/last items stay clear of the app bar and system bars (incl. landscape cutouts).
@@ -1070,6 +1090,7 @@ private fun ModelSelectionContent(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            item { SettingsSectionHeader(stringResource(R.string.ai_settings_model)) }
             item {
                 AiHint(
                     text = stringResource(R.string.choose_model_description, deviceRamGb),
@@ -1082,18 +1103,46 @@ private fun ModelSelectionContent(
                 item { ModelGroupHeader(stringResource(R.string.models_group_gemma4)) }
                 items(gemma4Models, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
-                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
+                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel,
+                        isRecommended = model == recommended)
                 }
             }
             if (loginModels.isNotEmpty()) {
                 item { ModelGroupHeader(stringResource(R.string.models_group_login)) }
                 items(loginModels, key = { it.id }) { model ->
                     ModelCard(model, model in downloadedModels, model == selectedModel,
-                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel)
+                        model.minRamGb > deviceRamGb, deviceRamGb, onSelectModel, onDownloadModel,
+                        isRecommended = model == recommended)
                 }
+            }
+            // Below the fold on most phones; the scroll bar shows the page goes on.
+            item {
+                SettingsSectionHeader(
+                    stringResource(R.string.ai_settings_speed),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+            item {
+                // Disabled rather than hidden for models without it, so it doesn't seem to vanish.
+                ScanQualitySwitch(
+                    quality = scanQuality,
+                    onChange = onScanQualityChange,
+                    enabled = selectedModel.supportsScanQuality
+                )
             }
         }
     }
+}
+
+@Composable
+private fun SettingsSectionHeader(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.fillMaxWidth()
+    )
 }
 
 @Composable
@@ -1117,7 +1166,9 @@ internal fun ModelCard(
     tooLarge: Boolean,
     deviceRamGb: Int,
     onSelectModel: (AiModel) -> Unit,
-    onDownloadModel: (AiModel) -> Unit
+    onDownloadModel: (AiModel) -> Unit,
+    /** Labelled "Recommended": the biggest current model this device can run. */
+    isRecommended: Boolean = false
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -1166,18 +1217,44 @@ internal fun ModelCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = model.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    if (isRecommended) {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        ) {
+                            Text(
+                                text = stringResource(R.string.model_recommended),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
                 Text(
-                    text = model.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = model.description,
+                    text = stringResource(model.descriptionRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${model.totalSizeDisplay} · ${model.minRamGb} GB+ RAM",
+                    // Downloaded: say so. Not yet: the download size, plus the RAM it needs
+                    // unless the red line below already says that.
+                    text = when {
+                        isDownloaded -> stringResource(R.string.model_size_downloaded, model.totalSizeDisplay)
+                        tooLarge -> stringResource(R.string.model_size_download, model.totalSizeDisplay)
+                        else -> stringResource(
+                            R.string.model_size_download_ram, model.totalSizeDisplay, model.minRamGb
+                        )
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

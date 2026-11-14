@@ -28,7 +28,6 @@
     <string name="btn_factorial">Giai thừa</string>
 
     <!-- Máy ảnh / Quét AI -->
-    <string name="scan_expression">Quét biểu thức</string>
     <string name="scan_hint">Chụp hoặc chọn ảnh một biểu thức toán học viết tay</string>
     <string name="take_photo">Chụp ảnh</string>
     <string name="choose_from_gallery">Chọn từ thư viện</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Cân bằng</string>
     <string name="scan_quality_accurate">Chính xác</string>
     <string name="scan_quality_hint">Chế độ nhanh hơn xem ảnh ít chi tiết hơn.</string>
+    <string name="ai_menu_title">Giải bằng AI</string>
+    <string name="ai_menu_camera">Máy ảnh</string>
+    <string name="ai_menu_gallery">Thư viện</string>
+    <string name="ai_settings">Cài đặt AI</string>
+    <string name="ai_settings_model">Mô hình</string>
+    <string name="ai_settings_speed">Tốc độ</string>
+    <string name="scan_quality_unavailable">Có sẵn với các mô hình Gemma 4.</string>
     <string name="answer_found">Đáp án</string>
     <string name="recognized_in">Đã giải trong %1$s</string>
     <string name="use_expression">Dùng</string>
@@ -58,9 +64,16 @@
     <string name="stop">Dừng</string>
     <string name="close">Đóng</string>
     <string name="recognition_error">Nhận dạng thất bại</string>
-    <string name="choose_model">Chọn mô hình AI</string>
     <string name="choose_model_description">Thiết bị của bạn có %1$d GB RAM. Mô hình lớn hơn chính xác hơn nhưng chậm hơn. Tất cả mô hình chạy hoàn toàn trên thiết bị của bạn.</string>
     <string name="model_too_large">Cần %1$d GB RAM — thiết bị của bạn có %2$d GB</string>
+    <string name="model_recommended">Đề xuất</string>
+    <string name="model_desc_gemma4_e2b">Nhanh và chính xác</string>
+    <string name="model_desc_gemma4_e4b">Chính xác nhất, nhưng chậm hơn</string>
+    <string name="model_desc_gemma3n_e2b">Thế hệ trước</string>
+    <string name="model_desc_gemma3n_e4b">Thế hệ trước, chính xác hơn nhưng chậm hơn</string>
+    <string name="model_size_download_ram">Tải xuống %1$s · cần %2$d GB RAM</string>
+    <string name="model_size_download">Tải xuống %1$s</string>
+    <string name="model_size_downloaded">Đã tải xuống · %1$s</string>
     <string name="download_model">Tải xuống</string>
     <string name="downloaded">Đã tải xuống</string>
     <string name="downloading_model">Đang tải mô hình AI</string>

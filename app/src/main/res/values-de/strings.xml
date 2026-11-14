@@ -28,7 +28,6 @@
     <string name="btn_factorial">Fakultät</string>
 
     <!-- Kamera / KI-Scan -->
-    <string name="scan_expression">Ausdruck scannen</string>
     <string name="scan_hint">Mache oder wähle ein Foto eines handgeschriebenen mathematischen Ausdrucks</string>
     <string name="take_photo">Foto aufnehmen</string>
     <string name="choose_from_gallery">Aus Galerie wählen</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Ausgewogen</string>
     <string name="scan_quality_accurate">Genau</string>
     <string name="scan_quality_hint">Schnellere Einstellungen betrachten das Foto weniger detailliert.</string>
+    <string name="ai_menu_title">Mit KI lösen</string>
+    <string name="ai_menu_camera">Kamera</string>
+    <string name="ai_menu_gallery">Galerie</string>
+    <string name="ai_settings">KI-Einstellungen</string>
+    <string name="ai_settings_model">Modell</string>
+    <string name="ai_settings_speed">Geschwindigkeit</string>
+    <string name="scan_quality_unavailable">Verfügbar mit den Gemma-4-Modellen.</string>
     <string name="answer_found">Antwort</string>
     <string name="recognized_in">Gelöst in %1$s</string>
     <string name="use_expression">Verwenden</string>
@@ -58,9 +64,16 @@
     <string name="stop">Stoppen</string>
     <string name="close">Schließen</string>
     <string name="recognition_error">Erkennung fehlgeschlagen</string>
-    <string name="choose_model">KI-Modell wählen</string>
     <string name="choose_model_description">Dein Gerät hat %1$d GB RAM. Größere Modelle sind genauer, aber langsamer. Alle Modelle laufen vollständig auf deinem Gerät.</string>
     <string name="model_too_large">Benötigt %1$d GB RAM — dein Gerät hat %2$d GB</string>
+    <string name="model_recommended">Empfohlen</string>
+    <string name="model_desc_gemma4_e2b">Schnell und genau</string>
+    <string name="model_desc_gemma4_e4b">Am genauesten, aber langsamer</string>
+    <string name="model_desc_gemma3n_e2b">Vorherige Generation</string>
+    <string name="model_desc_gemma3n_e4b">Vorherige Generation, genauer, aber langsamer</string>
+    <string name="model_size_download_ram">Download %1$s · benötigt %2$d GB RAM</string>
+    <string name="model_size_download">Download %1$s</string>
+    <string name="model_size_downloaded">Heruntergeladen · %1$s</string>
     <string name="download_model">Herunterladen</string>
     <string name="downloaded">Heruntergeladen</string>
     <string name="downloading_model">KI-Modell wird heruntergeladen</string>

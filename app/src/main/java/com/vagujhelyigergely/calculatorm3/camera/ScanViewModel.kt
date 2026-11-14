@@ -37,7 +37,13 @@ sealed interface ScanUiState {
         val isUpdate: Boolean,
         val startTimeMs: Long = System.currentTimeMillis()
     ) : ScanUiState
-    data object Capturing : ScanUiState
+    /**
+     * Ready for a picture from the source the AI menu was opened for ([ScanViewModel.entry]).
+     * [autoLaunch]: open the camera or photo picker straight away — when the user just asked for
+     * it (the menu, Retry). False after a detour they may have walked away from (a download,
+     * the one-time preparation, a stopped scan): the screen then offers a button instead.
+     */
+    data class Capturing(val autoLaunch: Boolean = true) : ScanUiState
     data class Processing(
         val partialRaw: String = "",
         /** Start of the current inference attempt (a GPU→CPU retry starts a new one). */
@@ -114,7 +120,11 @@ class ScanViewModel(
     /** Image-token budget the loaded model was built with; a different setting needs a reload. */
     private var loadedBudget: Int? = null
 
-    /** The speed/quality switch on the capture screen (Gemma 4 models only). */
+    /** What the AI window was opened for from the AI menu; set by [initialize]. */
+    var entry by mutableStateOf(AiEntry.CAMERA)
+        private set
+
+    /** The speed/quality setting on the AI settings page (Gemma 4 models only). */
     var scanQuality by mutableStateOf(modelManager.scanQuality)
         private set
 
@@ -135,9 +145,41 @@ class ScanViewModel(
     /** The background release started by [releaseAll]; the next load must wait for it. */
     private var releaseJob: Job? = null
 
-    fun initialize() {
+    /**
+     * Where the window goes once a model is ready: the capture source for [AiEntry.CAMERA] and
+     * [AiEntry.GALLERY] (opened right away if [autoLaunch]), or the settings page.
+     */
+    private fun showReady(autoLaunch: Boolean) {
+        uiState = if (entry == AiEntry.SETTINGS) settingsState() else ScanUiState.Capturing(autoLaunch)
+    }
+
+    /** False for an [initialize] that resumes a recreated window (see there). */
+    private var autoLaunchAllowed = true
+
+    /**
+     * The screen has opened the camera/picker for a [ScanUiState.Capturing] with autoLaunch: keep
+     * the state but drop the flag, so a recomposition (rotation) can't open it a second time.
+     */
+    fun onCaptureLaunched() {
+        if ((uiState as? ScanUiState.Capturing)?.autoLaunch == true) {
+            uiState = ScanUiState.Capturing(autoLaunch = false)
+        }
+    }
+
+    private fun settingsState() = ScanUiState.ModelSelection(
+        modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb
+    )
+
+    /**
+     * Set up the window for [entry]. [resumed]: the window was already open and Android
+     * recreated the app (e.g. while the system camera was in front); the camera's pending result
+     * may still arrive, so don't open the camera again on top of it.
+     */
+    fun initialize(entry: AiEntry = AiEntry.CAMERA, resumed: Boolean = false) {
+        this.entry = entry
+        autoLaunchAllowed = !resumed
         // A preparation started earlier is still running (the window was closed and reopened):
-        // keep showing it rather than starting a second one.
+        // keep showing it rather than starting a second one. It ends at the new entry's screen.
         if (preparationJob?.isActive == true) return
         viewModelScope.launch {
             // Re-attach to a download already running in the background (e.g. started
@@ -150,15 +192,15 @@ class ScanViewModel(
                 return@launch
             }
             val downloaded = modelManager.downloadedModels()
-            if (downloaded.isEmpty()) {
+            // The first-time explanation leads to choosing a model; opened from the settings
+            // gear, the user is already there.
+            if (downloaded.isEmpty() && entry != AiEntry.SETTINGS) {
                 uiState = ScanUiState.FirstTimeWarning
                 return@launch
             }
             val selected = modelManager.selectedModel
             if (!modelManager.areModelsAvailable(selected)) {
-                uiState = ScanUiState.ModelSelection(
-                    selected, downloaded, modelManager.deviceRamGb
-                )
+                uiState = settingsState()
                 return@launch
             }
             // A new AI engine version prepares the model on its first load, which is slow
@@ -167,15 +209,15 @@ class ScanViewModel(
                 prepareModel(selected, isUpdate = true)
                 return@launch
             }
-            // Don't load the model yet — show the capture chooser. The model is
+            // Don't load the model yet — open the camera/picker (or settings). The model is
             // loaded lazily in onPhotoCaptured, once a photo exists.
-            uiState = ScanUiState.Capturing
+            showReady(autoLaunch = autoLaunchAllowed)
         }
     }
 
     /**
      * Load [model] once so the engine does its one-time preparation, then release it again so
-     * it isn't resident while the system camera opens; then show the capture chooser. Shows
+     * it isn't resident while the system camera opens; then show the ready screen. Shows
      * [ScanUiState.PreparingModel] until finished. A failure here isn't fatal: the first scan
      * loads the model again and reports any error then.
      */
@@ -194,7 +236,8 @@ class ScanViewModel(
                 }
                 loadedModelId = null
                 modelManager.markPrepared(model)
-                uiState = ScanUiState.Capturing
+                // After a minute-long wait, offer the camera rather than springing it on the user.
+                showReady(autoLaunch = false)
             } catch (e: Exception) {
                 if (e is kotlinx.coroutines.CancellationException) throw e
                 android.util.Log.w("ScanViewModel", "Model preparation failed", e)
@@ -271,8 +314,9 @@ class ScanViewModel(
                 // instead of silently during the first scan.
                 prepareModel(model, isUpdate = true)
             } else {
-                // Loaded lazily on first photo, not here.
-                uiState = ScanUiState.Capturing
+                // Loaded lazily on first photo, not here. In settings, stay there with the new
+                // selection; reached on the way to the camera, offer it with a button.
+                showReady(autoLaunch = false)
             }
         } else {
             startDownload(model)
@@ -402,7 +446,7 @@ class ScanViewModel(
                         if (modelManager.needsPreparation(m)) {
                             prepareModel(m, isUpdate = false)
                         } else {
-                            uiState = ScanUiState.Capturing
+                            showReady(autoLaunch = false)
                         }
                     }
                     WorkInfo.State.FAILED -> {
@@ -569,8 +613,9 @@ class ScanViewModel(
         inferenceJob?.cancel()
         // Only snap back to capture if we were actually mid-scan; calling this from a dialog
         // dismiss in another state (Success, Downloading, …) must not disturb that state.
+        // Not straight back into the camera: the user just said stop.
         if (uiState is ScanUiState.Processing || uiState is ScanUiState.ModelLoading) {
-            uiState = ScanUiState.Capturing
+            uiState = ScanUiState.Capturing(autoLaunch = false)
         }
     }
 
@@ -656,24 +701,21 @@ class ScanViewModel(
     }
 
     fun retry() {
-        // Back to the capture chooser if the model is available (loaded lazily on
+        // Reopen the same source (camera or picker) if the model is available (loaded lazily on
         // the next photo); otherwise re-run the first-time / download flow.
         // A model that still needs its one-time preparation goes through initialize(), which
-        // prepares it (with the message) before the capture chooser.
+        // prepares it (with the message) first.
         if (modelManager.areModelsAvailable() && !modelManager.needsPreparation(modelManager.selectedModel)) {
-            uiState = ScanUiState.Capturing
+            showReady(autoLaunch = true)
         } else {
-            initialize()
+            initialize(entry)
         }
     }
 
+    /** The AI settings page: model choice and speed. */
     fun showModelSelection() {
-        uiState = ScanUiState.ModelSelection(
-            modelManager.selectedModel, modelManager.downloadedModels(), modelManager.deviceRamGb
-        )
+        uiState = settingsState()
     }
-
-    val selectedModelName: String get() = modelManager.selectedModel.displayName
 
     /** True if the device has enough RAM to run at least one AI model. */
     val canRunAnyModel: Boolean get() = modelManager.canRunAnyModel

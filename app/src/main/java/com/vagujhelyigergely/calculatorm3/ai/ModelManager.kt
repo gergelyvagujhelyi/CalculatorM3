@@ -1,6 +1,8 @@
 package com.vagujhelyigergely.calculatorm3.ai
 
+import androidx.annotation.StringRes
 import com.vagujhelyigergely.calculatorm3.BuildConfig
+import com.vagujhelyigergely.calculatorm3.R
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -116,7 +118,8 @@ data class ModelFile(
 enum class AiModel(
     val id: String,
     val displayName: String,
-    val description: String,
+    /** One-line summary on the model's card in AI settings. */
+    @StringRes val descriptionRes: Int,
     val totalSizeDisplay: String,
     /**
      * Minimum *total* device RAM (marketed GB) to run this model — well above the raw
@@ -133,7 +136,7 @@ enum class AiModel(
     GEMMA4_E2B(
         id = "gemma4-e2b",
         displayName = "Gemma 4 E2B",
-        description = "Balanced speed and quality, no account needed",
+        descriptionRes = R.string.model_desc_gemma4_e2b,
         totalSizeDisplay = "~2.6 GB",
         minRamGb = 6,
         primaryFilename = "gemma-4-E2B-it.litertlm",
@@ -148,7 +151,7 @@ enum class AiModel(
     GEMMA3N_E2B(
         id = "gemma3n-e2b",
         displayName = "Gemma 3n E2B",
-        description = "Fast, edge optimized",
+        descriptionRes = R.string.model_desc_gemma3n_e2b,
         totalSizeDisplay = "~3.7 GB",
         minRamGb = 6,
         primaryFilename = "gemma-3n-E2B-it-int4.litertlm",
@@ -165,7 +168,7 @@ enum class AiModel(
     GEMMA4_E4B(
         id = "gemma4-e4b",
         displayName = "Gemma 4 E4B",
-        description = "Best quality, needs powerful device",
+        descriptionRes = R.string.model_desc_gemma4_e4b,
         totalSizeDisplay = "~3.7 GB",
         minRamGb = 8,
         primaryFilename = "gemma-4-E4B-it.litertlm",
@@ -180,7 +183,7 @@ enum class AiModel(
     GEMMA3N_E4B(
         id = "gemma3n-e4b",
         displayName = "Gemma 3n E4B",
-        description = "Better quality, edge optimized",
+        descriptionRes = R.string.model_desc_gemma3n_e4b,
         totalSizeDisplay = "~4.9 GB",
         minRamGb = 8,
         primaryFilename = "gemma-3n-E4B-it-int4.litertlm",
@@ -200,6 +203,17 @@ enum class AiModel(
      * is documented for Gemma 4 only, so the Gemma 3n models always use the engine default.
      */
     val supportsScanQuality: Boolean get() = this == GEMMA4_E2B || this == GEMMA4_E4B
+
+    companion object {
+        /**
+         * The model to recommend on a device with [ramGb] RAM: the biggest current-generation
+         * (Gemma 4, no account) model that fits. The Gemma 3n models are larger downloads but the
+         * previous generation and need a login, so they're never the recommendation. A device
+         * too small for any of them still gets E2B, which then shows why it doesn't fit.
+         */
+        fun recommendedFor(ramGb: Int): AiModel =
+            listOf(GEMMA4_E4B, GEMMA4_E2B).firstOrNull { it.minRamGb <= ramGb } ?: GEMMA4_E2B
+    }
 }
 
 /**
@@ -233,10 +247,16 @@ class ModelManager(private val context: Context) {
             prefs.edit { putString("scan_quality", value.name) }
         }
 
+    /**
+     * The model scans use. Until one is chosen: a model that's already downloaded, else the
+     * [recommended] one, so the preselected card and the "Recommended" label agree.
+     */
     var selectedModel: AiModel
         get() {
-            val id = prefs.getString("selected_model", AiModel.GEMMA4_E2B.id)
-            return AiModel.entries.find { it.id == id } ?: AiModel.GEMMA4_E2B
+            val id = prefs.getString("selected_model", null)
+            return AiModel.entries.find { it.id == id }
+                ?: downloadedModels().firstOrNull()
+                ?: recommendedModel
         }
         set(value) {
             prefs.edit().putString("selected_model", value.id).apply()
@@ -275,6 +295,9 @@ class ModelManager(private val context: Context) {
         }
 
     fun isModelTooLarge(model: AiModel): Boolean = model.minRamGb > deviceRamGb
+
+    /** The model AI settings labels "Recommended" on this device ([AiModel.recommendedFor]). */
+    val recommendedModel: AiModel get() = AiModel.recommendedFor(deviceRamGb)
 
     /** True if the device has enough RAM to run at least one model. */
     val canRunAnyModel: Boolean

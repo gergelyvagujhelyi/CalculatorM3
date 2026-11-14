@@ -40,10 +40,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -318,3 +324,57 @@ internal fun rememberPulseScale(): Float {
     )
     return scale
 }
+
+/**
+ * The standard Android scroll bar on a LazyColumn using [state]: a thin neutral thumb along the
+ * end edge, no track. Like the platform's, it shows briefly when the page opens (so a page taller
+ * than the screen says so) and while scrolling, then fades out. Compose has no built-in one, so
+ * it's drawn from the list's exact [androidx.compose.foundation.ScrollIndicatorState].
+ * [topInset]/[bottomInset] keep it clear of the app bar and navigation bar.
+ */
+@Composable
+internal fun Modifier.lazyListScrollbar(
+    state: androidx.compose.foundation.lazy.LazyListState,
+    topInset: androidx.compose.ui.unit.Dp = 0.dp,
+    bottomInset: androidx.compose.ui.unit.Dp = 0.dp,
+): Modifier {
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    // Shown on open, then whenever a scroll is in progress; fades after a short delay.
+    var awake by remember { mutableStateOf(true) }
+    LaunchedEffect(state.isScrollInProgress) {
+        if (state.isScrollInProgress) {
+            awake = true
+        } else {
+            delay(SCROLLBAR_FADE_DELAY_MS)
+            awake = false
+        }
+    }
+    val alpha by animateFloatAsState(
+        targetValue = if (awake) 0.5f else 0f,
+        animationSpec = tween(durationMillis = if (awake) 150 else 500),
+        label = "scrollbarAlpha"
+    )
+    return drawWithContent {
+        drawContent()
+        val indicator = state.scrollIndicatorState ?: return@drawWithContent
+        val content = indicator.contentSize.toFloat()
+        val viewport = indicator.viewportSize.toFloat()
+        if (alpha == 0f || content <= viewport) return@drawWithContent
+        val trackTop = topInset.toPx()
+        val track = size.height - trackTop - bottomInset.toPx()
+        val thumb = (track * viewport / content).coerceIn(24.dp.toPx(), track)
+        val progress = (indicator.scrollOffset / (content - viewport)).coerceIn(0f, 1f)
+        val width = 4.dp.toPx()
+        val x = if (layoutDirection == androidx.compose.ui.unit.LayoutDirection.Rtl) 2.dp.toPx()
+            else size.width - width - 2.dp.toPx()
+        drawRoundRect(
+            color = color.copy(alpha = alpha),
+            topLeft = Offset(x, trackTop + (track - thumb) * progress),
+            size = androidx.compose.ui.geometry.Size(width, thumb),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(width / 2)
+        )
+    }
+}
+
+/** How long the scroll bar stays after opening or scrolling before it fades (as on Android). */
+private const val SCROLLBAR_FADE_DELAY_MS = 1500L

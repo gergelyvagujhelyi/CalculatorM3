@@ -28,7 +28,6 @@
     <string name="btn_factorial">Factorial</string>
 
     <!-- Cámara / Escaneo con IA -->
-    <string name="scan_expression">Escanear expresión</string>
     <string name="scan_hint">Toma o elige una foto de una expresión matemática manuscrita</string>
     <string name="take_photo">Tomar foto</string>
     <string name="choose_from_gallery">Elegir de la galería</string>
@@ -50,6 +49,13 @@
     <string name="scan_quality_balanced">Equilibrado</string>
     <string name="scan_quality_accurate">Preciso</string>
     <string name="scan_quality_hint">Los ajustes más rápidos analizan la foto con menos detalle.</string>
+    <string name="ai_menu_title">Resolver con IA</string>
+    <string name="ai_menu_camera">Cámara</string>
+    <string name="ai_menu_gallery">Galería</string>
+    <string name="ai_settings">Ajustes de IA</string>
+    <string name="ai_settings_model">Modelo</string>
+    <string name="ai_settings_speed">Velocidad</string>
+    <string name="scan_quality_unavailable">Disponible con los modelos Gemma 4.</string>
     <string name="answer_found">Respuesta</string>
     <string name="recognized_in">Resuelto en %1$s</string>
     <string name="use_expression">Usar</string>
@@ -58,9 +64,16 @@
     <string name="stop">Detener</string>
     <string name="close">Cerrar</string>
     <string name="recognition_error">Error de reconocimiento</string>
-    <string name="choose_model">Elegir modelo de IA</string>
     <string name="choose_model_description">Tu dispositivo tiene %1$d GB de RAM. Los modelos más grandes son más precisos pero más lentos. Todos los modelos se ejecutan por completo en tu dispositivo.</string>
     <string name="model_too_large">Necesita %1$d GB de RAM — tu dispositivo tiene %2$d GB</string>
+    <string name="model_recommended">Recomendado</string>
+    <string name="model_desc_gemma4_e2b">Rápido y preciso</string>
+    <string name="model_desc_gemma4_e4b">El más preciso, pero más lento</string>
+    <string name="model_desc_gemma3n_e2b">Generación anterior</string>
+    <string name="model_desc_gemma3n_e4b">Generación anterior, más preciso pero más lento</string>
+    <string name="model_size_download_ram">Descarga de %1$s · necesita %2$d GB de RAM</string>
+    <string name="model_size_download">Descarga de %1$s</string>
+    <string name="model_size_downloaded">Descargado · %1$s</string>
     <string name="download_model">Descargar</string>
     <string name="downloaded">Descargado</string>
     <string name="downloading_model">Descargando modelo de IA</string>
