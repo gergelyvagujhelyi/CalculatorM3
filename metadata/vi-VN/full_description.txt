@@ -36,20 +36,20 @@ Nhập các biểu thức toán học đầy đủ với thứ tự ưu tiên ph
 - Chạm vào các mục để tải lại
 - Xóa lịch sử khi cần
 
-📷 TRÌNH GIẢI TOÁN AI (TÙY CHỌN, THỬ NGHIỆM)
+📷 TRÌNH GIẢI TOÁN AI (TÙY CHỌN)
 
-Một tính năng bổ sung thử nghiệm cho các thiết bị có nhiều RAM hơn: chụp ảnh một biểu thức toán học viết tay và để mô hình AI trên thiết bị đọc và giải nó — hoàn toàn trên thiết bị của bạn, không gửi bất cứ thứ gì đến bất kỳ máy chủ nào.
+Chụp ảnh bài toán viết tay, viết lên màn hình hoặc nhập một bài toán — cả bài toán có lời văn — và mô hình AI trên thiết bị sẽ giải từng bước. Không có gì được gửi lên máy chủ.
 
-➡️ CÁCH BẬT: các tính năng AI bị ẩn cho đến khi bạn mở khóa. Trong máy tính, chạm nút "AC" (xóa tất cả) 7 lần liên tiếp thật nhanh — một bộ đếm ngược sẽ hướng dẫn những lần chạm cuối. Sau đó một biểu tượng máy ảnh xuất hiện ở góc trên bên trái, và việc mở khóa được ghi nhớ.
-
-- Cần thiết bị 6 GB+ và tải mô hình thị giác một lần (2,6–4,9 GB)
-- Chụp ảnh bằng camera hệ thống, hoặc chọn một ảnh từ thư viện
-- Chọn từ nhiều mô hình thị giác mở (Gemma 4, Gemma 3n)
-- Các mô hình chạy hoàn toàn trên thiết bị, có tăng tốc GPU ở nơi được hỗ trợ
-- Chọn Nhanh, Cân bằng hoặc Chính xác: chế độ nhanh hơn xem ảnh ít chi tiết hơn và có thể trả lời trong khoảng một nửa thời gian
-- Lời giải được hiển thị với toán học được định dạng gọn gàng — phân số, căn và lũy thừa
-- Internet chỉ được dùng một lần, để tải mô hình bạn chọn
-- Không có ảnh, phép tính hay dữ liệu sử dụng nào rời khỏi thiết bị của bạn
+- Nút AI (góc trên bên trái): Máy ảnh, Thư viện, Viết tay hoặc Nhập
+- Cần thiết bị 6 GB+ và tải mô hình một lần (2,6–4,9 GB)
+- Phép tính đơn giản bạn nhập được máy tính trả lời ngay
+- Hỏi tối đa hai câu hỏi tiếp theo về một câu trả lời
+- Lịch sử AI nằm trên thiết bị; xóa bất cứ lúc nào
+- Một số chỉ được đưa vào máy tính nếu khớp với lời giải của mô hình
+- Tốc độ: Nhanh, Cân bằng hoặc Chính xác
+- Mô hình mở (Gemma 4, Gemma 3n), chạy hoàn toàn trên thiết bị, tăng tốc GPU
+- Chỉ dùng Internet một lần để tải mô hình — mặc định qua Wi-Fi
+- Không cần? Tắt "Hiện nút AI" trong cài đặt AI
 
 🎨 THIẾT KẾ MATERIAL 3
 

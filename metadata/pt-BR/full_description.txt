@@ -36,20 +36,20 @@ Digite expressões matemáticas completas com a ordem correta das operações e 
 - Toque nas entradas para recarregá-las
 - Limpe o histórico quando quiser
 
-📷 SOLUCIONADOR DE MATEMÁTICA IA (OPCIONAL, EXPERIMENTAL)
+📷 SOLUCIONADOR DE MATEMÁTICA COM IA (OPCIONAL)
 
-Um extra experimental para dispositivos com mais RAM: fotografe uma expressão matemática manuscrita e deixe um modelo de IA no dispositivo lê-la e resolvê-la — totalmente no seu dispositivo, sem enviar nada a nenhum servidor.
+Fotografe matemática escrita à mão, escreva na tela ou digite um problema (inclusive de texto) e um modelo de IA no aparelho resolve passo a passo. Nada é enviado a nenhum servidor.
 
-➡️ COMO ATIVAR: os recursos de IA ficam ocultos até você desbloqueá-los. Na calculadora, toque no botão "AC" (limpar tudo) 7 vezes seguidas — uma contagem regressiva guia os toques finais. Um ícone de câmera aparece no canto superior esquerdo, e o desbloqueio é lembrado.
-
-- Precisa de um dispositivo com 6 GB+ e um download único do modelo de visão (2,6–4,9 GB)
-- Tire uma foto com a câmera do sistema ou escolha uma da galeria
-- Escolha entre vários modelos de visão abertos (Gemma 4, Gemma 3n)
-- Os modelos rodam totalmente no dispositivo, com aceleração por GPU quando há suporte
-- Escolha Rápido, Equilibrado ou Preciso: configurações mais rápidas analisam a foto com menos detalhes e podem responder em cerca de metade do tempo
-- A solução é exibida com matemática bem formatada — frações, raízes e expoentes
-- A internet é usada apenas uma vez, para baixar o modelo que você escolher
-- Nenhuma foto, cálculo ou dado de uso sai do seu dispositivo
+- Botão de IA (canto superior esquerdo): Câmera, Galeria, Escrever ou Digitar
+- Requer um aparelho com 6 GB+ e um download único do modelo (2,6–4,9 GB)
+- Contas simples digitadas são respondidas na hora pela calculadora
+- Faça até duas perguntas de acompanhamento sobre uma resposta
+- O histórico de IA fica no seu aparelho; apague quando quiser
+- Um número só vai para a calculadora se bater com o raciocínio do modelo
+- Velocidade: Rápido, Equilibrado ou Preciso
+- Modelos abertos (Gemma 4, Gemma 3n), totalmente no aparelho, acelerados por GPU
+- Internet só uma vez, para baixar o modelo — por Wi-Fi por padrão
+- Não quer? Desative "Mostrar botão de IA" nas configurações de IA
 
 🎨 DESIGN MATERIAL 3
 

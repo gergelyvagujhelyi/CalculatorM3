@@ -36,20 +36,20 @@ Wpisuj pełne wyrażenia matematyczne z poprawną kolejnością działań i nawi
 - Dotknij wpisu, aby go ponownie wczytać
 - Wyczyść historię, gdy zajdzie potrzeba
 
-📷 SOLVER MATEMATYCZNY AI (OPCJONALNY, EKSPERYMENTALNY)
+📷 SOLVER MATEMATYCZNY AI (OPCJONALNY)
 
-Eksperymentalny dodatek dla urządzeń z większą ilością RAM: sfotografuj odręczne wyrażenie matematyczne i pozwól modelowi AI na urządzeniu odczytać je i rozwiązać — w całości na Twoim urządzeniu, bez wysyłania czegokolwiek na serwer.
+Zrób zdjęcie odręcznej matematyki, napisz ją na ekranie albo wpisz zadanie – także tekstowe – a model AI na urządzeniu rozwiąże je krok po kroku. Nic nie trafia na żaden serwer.
 
-➡️ JAK WŁĄCZYĆ: funkcje AI są ukryte, dopóki ich nie odblokujesz. W kalkulatorze dotknij przycisku "AC" (wyczyść wszystko) 7 razy pod rząd — odliczanie poprowadzi Cię przez ostatnie dotknięcia. Następnie w lewym górnym rogu pojawi się ikona aparatu, a odblokowanie zostanie zapamiętane.
-
-- Wymaga urządzenia z 6 GB+ i jednorazowego pobrania modelu wizyjnego (2,6–4,9 GB)
-- Zrób zdjęcie aparatem systemowym lub wybierz je z galerii
-- Wybieraj spośród kilku otwartych modeli wizyjnych (Gemma 4, Gemma 3n)
-- Modele działają w całości na urządzeniu, z akceleracją GPU tam, gdzie jest obsługiwana
-- Wybierz Szybko, Zrównoważony lub Dokładnie: szybsze ustawienia analizują zdjęcie mniej szczegółowo i mogą odpowiedzieć w mniej więcej o połowę krótszym czasie
-- Rozwiązanie jest pokazywane z ładnie sformatowaną matematyką — ułamki, pierwiastki i wykładniki
-- Internet jest używany tylko raz, do pobrania wybranego modelu
-- Żadne zdjęcie, obliczenie ani dane o użyciu nigdy nie opuszczają Twojego urządzenia
+- Przycisk AI (lewy górny róg): Aparat, Galeria, Pisz lub Wpisz
+- Wymaga urządzenia z 6 GB+ i jednorazowego pobrania modelu (2,6–4,9 GB)
+- Proste działania wpisane z klawiatury kalkulator liczy od razu sam
+- Do dwóch pytań uzupełniających o każdą odpowiedź
+- Historia AI zostaje na urządzeniu; możesz ją usunąć w każdej chwili
+- Liczba trafia do kalkulatora tylko, jeśli zgadza się z obliczeniami modelu
+- Szybkość: Szybko, Zrównoważenie lub Dokładnie
+- Otwarte modele (Gemma 4, Gemma 3n), w całości na urządzeniu, z akceleracją GPU
+- Internet tylko raz, do pobrania modelu – domyślnie przez Wi-Fi
+- Nie potrzebujesz? Wyłącz „Pokaż przycisk AI" w ustawieniach AI
 
 🎨 PROJEKT MATERIAL 3
 

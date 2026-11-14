@@ -36,20 +36,20 @@ Más számológépekkel ellentétben ez az alkalmazás nem küldözget adatokat 
 - Koppints egy bejegyzésre az újratöltéséhez
 - Töröld az előzményeket, amikor szükséges
 
-📷 MI MATEMATIKAI MEGOLDÓ (OPCIONÁLIS, KÍSÉRLETI)
+📷 MI MATEMATIKAI MEGOLDÓ (OPCIONÁLIS)
 
-Kísérleti extra a több RAM-mal rendelkező eszközökhöz: fényképezz le egy kézzel írt matematikai kifejezést, és hagyd, hogy egy eszközön futó MI-modell beolvassa és megoldja – teljes egészében a te eszközödön, anélkül, hogy bármi szerverre kerülne.
+Fényképezz le kézzel írt matekot, írd fel a képernyőre, vagy gépelj be egy feladatot – szöveges feladatot is –, és az eszközön futó MI-modell lépésről lépésre megoldja. Semmi sem kerül szerverre.
 
-➡️ HOGYAN KAPCSOLD BE: az MI-funkciók rejtve vannak, amíg fel nem oldod őket. A számológépben koppints az „AC" (összes törlése) gombra 7-szer gyors egymásutánban – egy visszaszámláló segít az utolsó koppintásoknál. Ezután egy kamera ikon jelenik meg a bal felső sarokban, és a feloldás megjegyződik.
-
-- 6 GB+ eszközt és a vizuális modell egyszeri letöltését igényli (2,6–4,9 GB)
-- Készíts fényképet a rendszerkamerával, vagy válassz egyet a galériádból
-- Válassz több nyílt vizuális modell közül (Gemma 4, Gemma 3n)
-- A modellek teljesen az eszközön futnak, GPU-gyorsítással, ahol támogatott
-- Válaszd a Gyors, Közepes vagy Pontos beállítást: a gyorsabb beállítások kevésbé részletesen nézik meg a fényképet, és nagyjából feleannyi idő alatt válaszolhatnak
-- A megoldás szépen formázott matematikával jelenik meg – törtek, gyökök és kitevők
-- Az internetet csak egyszer használja, a kiválasztott modell letöltéséhez
-- Semmilyen fénykép, számítás vagy használati adat nem hagyja el az eszközödet
+- MI gomb (bal fent): Kamera, Galéria, Kézírás vagy Begépelés
+- 6 GB+ RAM-os eszköz és egyszeri modellletöltés (2,6–4,9 GB) kell
+- A begépelt egyszerű számításokra a számológép azonnal válaszol
+- Legfeljebb két további kérdés egy válaszról
+- Az MI-előzmények az eszközödön maradnak; bármikor törölheted
+- Szám csak akkor kerül a számológépbe, ha egyezik a modell levezetésével
+- Sebesség: Gyors, Közepes vagy Pontos
+- Nyílt modellek (Gemma 4, Gemma 3n), teljesen az eszközön, GPU-gyorsítással
+- Internet csak egyszer, a modell letöltéséhez – alapból Wi-Fin
+- Nem kell? Kapcsold ki az „MI gomb megjelenítése" opciót az MI-beállításokban
 
 🎨 MATERIAL 3 DIZÁJN
 

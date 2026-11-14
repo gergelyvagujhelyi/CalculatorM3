@@ -99,6 +99,9 @@
     <string name="ai_settings">Yapay zeka ayarları</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Hız</string>
+    <string name="ai_settings_button">Yapay zeka düğmesi</string>
+    <string name="ai_settings_show_button">Yapay zeka düğmesini göster</string>
+    <string name="ai_settings_show_button_hint">Sade bir hesap makinesi için kapatın. Geri getirmek için AC\'ye hızlıca 7 kez dokunun.</string>
     <string name="scan_quality_unavailable">Gemma 4 modelleriyle kullanılabilir.</string>
     <string name="answer_found">Yanıt</string>
     <string name="recognized_in">%1$s içinde çözüldü</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Hugging Face ile oturum aç</string>
     <string name="sign_in_again">Tekrar giriş yap</string>
     <string name="signing_in">Giriş yapılıyor…</string>
-    <string name="experimental_feature_title">Deneysel özellik</string>
-    <string name="experimental_feature_warning">Yapay Zeka Kamera özelliği deneyseldir ve hatalar veya beklenmedik davranışlar gösterebilir.</string>
-    <string name="accept">Kabul et</string>
 
     <!-- Gizli yapay zeka kilidi açma -->
     <string name="ai_unlocked">Yapay zeka özelliklerinin kilidi açıldı!</string>

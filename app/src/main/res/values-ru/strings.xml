@@ -99,6 +99,9 @@
     <string name="ai_settings">Настройки ИИ</string>
     <string name="ai_settings_model">Модель</string>
     <string name="ai_settings_speed">Скорость</string>
+    <string name="ai_settings_button">Кнопка ИИ</string>
+    <string name="ai_settings_show_button">Показывать кнопку ИИ</string>
+    <string name="ai_settings_show_button_hint">Выключите для обычного калькулятора. Чтобы вернуть, быстро нажмите AC 7 раз.</string>
     <string name="scan_quality_unavailable">Доступно для моделей Gemma 4.</string>
     <string name="answer_found">Ответ</string>
     <string name="recognized_in">Решено за %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Войти через Hugging Face</string>
     <string name="sign_in_again">Войти снова</string>
     <string name="signing_in">Вход…</string>
-    <string name="experimental_feature_title">Экспериментальная функция</string>
-    <string name="experimental_feature_warning">Функция камеры с ИИ является экспериментальной и может содержать ошибки или вести себя непредсказуемо.</string>
-    <string name="accept">Принять</string>
 
     <!-- Скрытая разблокировка ИИ -->
     <string name="ai_unlocked">Функции ИИ разблокированы!</string>

@@ -99,6 +99,9 @@
     <string name="ai_settings">Configurações de IA</string>
     <string name="ai_settings_model">Modelo</string>
     <string name="ai_settings_speed">Velocidade</string>
+    <string name="ai_settings_button">Botão de IA</string>
+    <string name="ai_settings_show_button">Mostrar botão de IA</string>
+    <string name="ai_settings_show_button_hint">Desative para uma calculadora simples. Toque em AC 7 vezes rapidamente para trazê-lo de volta.</string>
     <string name="scan_quality_unavailable">Disponível com os modelos Gemma 4.</string>
     <string name="answer_found">Resposta</string>
     <string name="recognized_in">Resolvido em %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Entrar com Hugging Face</string>
     <string name="sign_in_again">Entrar novamente</string>
     <string name="signing_in">Entrando…</string>
-    <string name="experimental_feature_title">Recurso experimental</string>
-    <string name="experimental_feature_warning">O recurso de Câmera IA é experimental e pode apresentar erros ou comportamentos inesperados.</string>
-    <string name="accept">Aceitar</string>
 
     <!-- Desbloqueio oculto da IA -->
     <string name="ai_unlocked">Recursos de IA desbloqueados!</string>

@@ -99,6 +99,9 @@
     <string name="ai_settings">Impostazioni IA</string>
     <string name="ai_settings_model">Modello</string>
     <string name="ai_settings_speed">Velocità</string>
+    <string name="ai_settings_button">Pulsante IA</string>
+    <string name="ai_settings_show_button">Mostra pulsante IA</string>
+    <string name="ai_settings_show_button_hint">Disattivalo per una calcolatrice semplice. Tocca AC 7 volte velocemente per farlo tornare.</string>
     <string name="scan_quality_unavailable">Disponibile con i modelli Gemma 4.</string>
     <string name="answer_found">Risposta</string>
     <string name="recognized_in">Risolto in %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Accedi con Hugging Face</string>
     <string name="sign_in_again">Accedi di nuovo</string>
     <string name="signing_in">Accesso in corso…</string>
-    <string name="experimental_feature_title">Funzione sperimentale</string>
-    <string name="experimental_feature_warning">La funzione Fotocamera IA è sperimentale e potrebbe presentare bug o comportamenti imprevisti.</string>
-    <string name="accept">Accetta</string>
 
     <!-- Sblocco IA nascosto -->
     <string name="ai_unlocked">Funzioni IA sbloccate!</string>

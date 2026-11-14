@@ -36,20 +36,20 @@ Doğru işlem önceliğiyle ve 20 seviyeye kadar iç içe parantezlerle tam mate
 - Yeniden yüklemek için girişlere dokunun
 - Gerektiğinde geçmişi temizleyin
 
-📷 YAPAY ZEKA MATEMATİK ÇÖZÜCÜ (İSTEĞE BAĞLI, DENEYSEL)
+📷 YAPAY ZEKA MATEMATİK ÇÖZÜCÜ (İSTEĞE BAĞLI)
 
-Daha fazla RAM'e sahip cihazlar için deneysel bir ek: elle yazılmış bir matematik ifadesinin fotoğrafını çekin ve cihazdaki bir yapay zeka modelinin onu okuyup çözmesine izin verin — tamamen cihazınızda, hiçbir sunucuya hiçbir şey gönderilmeden.
+El yazısı matematiğin fotoğrafını çekin, ekrana yazın ya da bir soru yazın — problemler de olur — cihazdaki yapay zeka modeli adım adım çözsün. Hiçbir şey sunucuya gönderilmez.
 
-➡️ NASIL AÇILIR: yapay zeka özellikleri, kilidini açana kadar gizlidir. Hesap makinesinde "AC" (tümünü temizle) düğmesine art arda 7 kez dokunun — bir geri sayım son dokunuşlarda size yol gösterir. Ardından sol üst köşede bir kamera simgesi belirir ve kilit açma hatırlanır.
-
-- 6 GB+ bir cihaz ve görüntü modelinin tek seferlik indirilmesini gerektirir (2,6–4,9 GB)
-- Sistem kameranızla bir fotoğraf çekin veya galerinizden birini seçin
-- Birkaç açık görüntü modeli arasından seçim yapın (Gemma 4, Gemma 3n)
-- Modeller tamamen cihazda çalışır, desteklenen yerlerde GPU hızlandırmalı
-- Hızlı, Dengeli veya Hassas seçin: daha hızlı ayarlar fotoğrafa daha az ayrıntıyla bakar ve yaklaşık yarı sürede yanıt verebilir
-- Çözüm, düzgün biçimlendirilmiş matematikle gösterilir — kesirler, kökler ve üsler
-- İnternet yalnızca bir kez, seçtiğiniz modeli indirmek için kullanılır
-- Hiçbir fotoğraf, hesaplama veya kullanım verisi cihazınızdan asla çıkmaz
+- Yapay zeka düğmesi (sol üst): Kamera, Galeri, Yazı veya Yaz
+- 6 GB+ cihaz ve tek seferlik model indirmesi (2,6–4,9 GB) gerekir
+- Yazdığınız basit işlemleri hesap makinesi hemen kendisi cevaplar
+- Bir cevap hakkında en fazla iki ek soru sorun
+- Yapay zeka geçmişi cihazınızda kalır; istediğiniz zaman silin
+- Bir sayı yalnızca modelin çözümüyle uyuşursa hesap makinesine geçer
+- Hız: Hızlı, Dengeli veya Hassas
+- Açık modeller (Gemma 4, Gemma 3n), tamamen cihazda, GPU hızlandırmalı
+- İnternet yalnızca bir kez, modeli indirmek için — varsayılan olarak Wi-Fi ile
+- İstemiyor musunuz? Yapay zeka ayarlarında "Yapay zeka düğmesini göster"i kapatın
 
 🎨 MATERIAL 3 TASARIMI
 

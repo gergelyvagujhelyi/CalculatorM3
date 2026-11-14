@@ -99,6 +99,9 @@
     <string name="ai_settings">AI-instellingen</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Snelheid</string>
+    <string name="ai_settings_button">AI-knop</string>
+    <string name="ai_settings_show_button">AI-knop tonen</string>
+    <string name="ai_settings_show_button_hint">Zet uit voor een gewone rekenmachine. Tik 7 keer snel op AC om hem terug te halen.</string>
     <string name="scan_quality_unavailable">Beschikbaar met de Gemma 4-modellen.</string>
     <string name="answer_found">Antwoord</string>
     <string name="recognized_in">Opgelost in %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Aanmelden met Hugging Face</string>
     <string name="sign_in_again">Opnieuw aanmelden</string>
     <string name="signing_in">Aanmelden…</string>
-    <string name="experimental_feature_title">Experimentele functie</string>
-    <string name="experimental_feature_warning">De AI-camerafunctie is experimenteel en kan bugs of onverwacht gedrag vertonen.</string>
-    <string name="accept">Accepteren</string>
 
     <!-- Verborgen AI-ontgrendeling -->
     <string name="ai_unlocked">AI-functies ontgrendeld!</string>

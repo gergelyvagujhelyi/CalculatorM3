@@ -39,6 +39,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -105,6 +107,9 @@ fun CameraScanScreen(
     rerunId: String? = null,
     /** A saved answer to open, to ask about it (Ask about this, in AI history), by id. */
     answerId: String? = null,
+    /** The "Show AI button" setting (AI settings), and how to change it. */
+    showAiButton: Boolean = true,
+    onShowAiButtonChange: (Boolean) -> Unit = {},
     onExpressionRecognized: (String) -> Unit,
     /** The calculator's own answer to typed text, if it's plain arithmetic (the Type screen). */
     instantAnswer: (String) -> InstantAnswer? = { null },
@@ -338,10 +343,6 @@ fun CameraScanScreen(
                                 // Typed and drawn problems: no photo, and the answer starts in seconds.
                                 fromText = viewModel.entry == AiEntry.TYPE || viewModel.entry == AiEntry.WRITE,
                                 partialRaw = state.partialRaw,
-                                startTimeMs = state.startTimeMs,
-                                tokenCount = state.tokenCount,
-                                backend = state.backend,
-                                firstTokenMs = state.firstTokenMs,
                                 onStop = { viewModel.stopInference() },
                                 onDismiss = onDismiss
                             )
@@ -365,10 +366,6 @@ fun CameraScanScreen(
                                 answer = state.answer,
                                 rawResponse = state.rawResponse,
                                 elapsedMs = state.elapsedMs,
-                                tokenCount = state.tokenCount,
-                                backend = state.backend,
-                                ttftMs = state.ttftMs,
-                                decodeTokensPerSec = state.decodeTokensPerSec,
                                 onUse = {
                                     onExpressionRecognized(state.answer)
                                     onDismiss()
@@ -445,7 +442,9 @@ fun CameraScanScreen(
                                 onScanQualityChange = { viewModel.updateScanQuality(it) },
                                 onSelectModel = { viewModel.selectModel(it) },
                                 onDownloadModel = startDownloadWithNotifPrompt,
-                                onDismiss = onDismiss
+                                onDismiss = onDismiss,
+                                showAiButton = showAiButton,
+                                onShowAiButtonChange = onShowAiButtonChange
                             )
                         }
                     }
@@ -567,10 +566,6 @@ private fun ModelLoadingContent(startTimeMs: Long, onDismiss: () -> Unit) {
 @Composable
 private fun ProcessingContent(
     partialRaw: String,
-    startTimeMs: Long,
-    tokenCount: Int,
-    backend: String,
-    firstTokenMs: Long?,
     onStop: () -> Unit,
     onDismiss: () -> Unit,
     /** A typed problem: there's no photo to process, and the answer starts within seconds. */
@@ -634,47 +629,12 @@ private fun ProcessingContent(
                 }
             }
 
-            PerfHud(startTimeMs = startTimeMs, tokenCount = tokenCount, backend = backend, firstTokenMs = firstTokenMs)
-
             // Abort a slow or wrong generation and return to capture. Stop is prompt during token
             // generation; during the initial image prefill it takes effect at the next boundary.
             OutlinedButton(onClick = onStop) {
                 Text(stringResource(R.string.stop))
             }
         }
-    }
-}
-
-/** TEMP debug HUD: live decode tok/s (excludes image prefill), TTFT, and the active backend. */
-@Composable
-private fun PerfHud(startTimeMs: Long, tokenCount: Int, backend: String, firstTokenMs: Long?) {
-    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(startTimeMs) {
-        while (true) {
-            nowMs = System.currentTimeMillis()
-            delay(250)
-        }
-    }
-    val label = backend.ifEmpty { "?" }
-    val text = if (firstTokenMs == null) {
-        // Still prefilling the image — no tokens generated yet.
-        "%s · prefill %.1fs".format(label, (nowMs - startTimeMs).coerceAtLeast(0L) / 1000.0)
-    } else {
-        val ttftSecs = (firstTokenMs - startTimeMs).coerceAtLeast(0L) / 1000.0
-        val decodeSecs = (nowMs - firstTokenMs).coerceAtLeast(0L) / 1000.0
-        val decodeTps = if (tokenCount > 1 && decodeSecs > 0.05) (tokenCount - 1) / decodeSecs else 0.0
-        "%s · %.1f tok/s · ttft %.1fs".format(label, decodeTps, ttftSecs)
-    }
-    Surface(
-        shape = RoundedCornerShape(percent = 50),
-        color = MaterialTheme.colorScheme.surfaceContainerHighest
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
     }
 }
 
@@ -907,10 +867,6 @@ internal fun SuccessContent(
     answer: String,
     rawResponse: String,
     elapsedMs: Long,
-    tokenCount: Int,
-    backend: String,
-    ttftMs: Long,
-    decodeTokensPerSec: Double,
     onUse: () -> Unit,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
@@ -947,17 +903,6 @@ internal fun SuccessContent(
                 text = stringResource(R.string.recognized_in, formatElapsed(elapsedMs)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            // TEMP debug: decode speed (excludes image prefill), TTFT, and the backend.
-            Text(
-                text = "%s · %.1f tok/s decode · ttft %s · %d tokens".format(
-                    backend.ifEmpty { "?" },
-                    decodeTokensPerSec,
-                    formatElapsed(ttftMs),
-                    tokenCount
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedButton(onClick = onRetry) {
@@ -1129,7 +1074,9 @@ private fun ModelSelectionContent(
     onScanQualityChange: (ScanQuality) -> Unit,
     onSelectModel: (AiModel) -> Unit,
     onDownloadModel: (AiModel) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    showAiButton: Boolean = true,
+    onShowAiButtonChange: (Boolean) -> Unit = {},
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
@@ -1218,7 +1165,38 @@ private fun ModelSelectionContent(
                     enabled = selectedModel.supportsScanQuality
                 )
             }
+            item {
+                SettingsSectionHeader(
+                    stringResource(R.string.ai_settings_button),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+            }
+            item { AiButtonSetting(showAiButton, onShowAiButtonChange) }
         }
+    }
+}
+
+/**
+ * "Show AI button": off makes the calculator plain again (the AI button goes away). It comes
+ * back from here, or with 7 quick taps on AC.
+ */
+@Composable
+internal fun AiButtonSetting(show: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = show, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
+            Text(stringResource(R.string.ai_settings_show_button), style = MaterialTheme.typography.bodyLarge)
+            Text(
+                stringResource(R.string.ai_settings_show_button_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Switch(checked = show, onCheckedChange = null)
     }
 }
 

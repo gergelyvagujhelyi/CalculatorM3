@@ -99,6 +99,9 @@
     <string name="ai_settings">Налаштування ШІ</string>
     <string name="ai_settings_model">Модель</string>
     <string name="ai_settings_speed">Швидкість</string>
+    <string name="ai_settings_button">Кнопка ШІ</string>
+    <string name="ai_settings_show_button">Показувати кнопку ШІ</string>
+    <string name="ai_settings_show_button_hint">Вимкніть для звичайного калькулятора. Щоб повернути, швидко натисніть AC 7 разів.</string>
     <string name="scan_quality_unavailable">Доступно для моделей Gemma 4.</string>
     <string name="answer_found">Відповідь</string>
     <string name="recognized_in">Розв’язано за %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Увійти через Hugging Face</string>
     <string name="sign_in_again">Увійти знову</string>
     <string name="signing_in">Вхід…</string>
-    <string name="experimental_feature_title">Експериментальна функція</string>
-    <string name="experimental_feature_warning">Функція камери зі ШІ є експериментальною і може містити помилки або поводитися несподівано.</string>
-    <string name="accept">Прийняти</string>
 
     <!-- Прихована розблокування ШІ -->
     <string name="ai_unlocked">Функції ШІ розблоковано!</string>

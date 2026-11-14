@@ -51,7 +51,7 @@
 - Scientific functions — square root, pi, power, factorial
 - Calculation history — persists across restarts
 - Expression cursor — tap to edit mid-expression
-- **AI Math Solver** — photograph handwritten math, write it on screen, or type a problem, and solve it on-device with step-by-step working (experimental; hidden until you unlock it — see below)
+- **AI Math Solver** — photograph handwritten math, write it on screen, or type a problem, and solve it on-device with step-by-step working (optional; needs a 6 GB+ device and a one-time model download)
 - Dynamic color theming that matches your wallpaper (Android 12+)
 - Automatic light and dark mode
 - Adaptive layout — portrait, landscape, and foldable support
@@ -64,10 +64,10 @@
 
 Point your camera at a handwritten math expression, write it on screen with your finger or a stylus, or type a problem (word problems too), and let an on-device AI model solve it for you. Everything runs locally — no data leaves your device.
 
-> **The AI Math Solver is hidden by default.** To reveal it, rapidly tap **AC** seven times — the same idea as Android's "tap Build number 7 times" to unlock developer options. A countdown toast guides the final taps, and once unlocked an AI icon appears in the top-left corner. The unlock is remembered across restarts.
+> **The AI button** (top-left) appears on devices with enough RAM to run a model. Nothing is downloaded until you choose a model. Prefer a plain calculator? Turn off **Show AI button** in AI settings; to bring it back, tap **AC** seven times quickly (a countdown guides the last taps).
 
 **How it works:**
-1. Unlock the feature (see above), then tap the AI icon (top-left). A small **Solve with AI** menu opens: **Camera**, **Gallery**, **Write**, **Type**, and a ⚙ for **AI settings**
+1. Tap the AI button (top-left). A small **Solve with AI** menu opens: **Camera**, **Gallery**, **Write**, **Type**, and a ⚙ for **AI settings**
 2. The first time, choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off). Gated models (Gemma 3n) first prompt a one-tap **Sign in with Hugging Face**
 3. **Camera** opens your camera app straight away; **Gallery** opens the photo picker; **Write** opens a drawing pad; **Type** opens a text box with a row of math symbols
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
@@ -86,7 +86,7 @@ Point your camera at a handwritten math expression, write it on screen with your
 
 **Questions about an answer:** under every answer you can ask the model about it, for example "Why this method?" or "Is there another way?", up to **2 questions per answer** (a counter shows how many are left). Each question is sent with the problem, the answer and the working as text, so a reply starts within a few seconds. While you're on the answer the model stays loaded; if it was freed (you left the app or closed the window) it's loaded again first. Replies can't be put into the calculator, and they're saved with the answer in AI history, where **Ask about this** picks the conversation up again.
 
-**AI history:** every solve is saved on your device in the **AI history** tab of the History sheet (it appears once AI is unlocked). The saved entry includes what you typed or drew, or a reduced copy of the photo, plus the model's complete output, the answer and steps, any questions asked about it, the model, the speed and how long it took. Open an entry to see it all, **Use** its number, **Solve again** with the same input (for example after switching model or speed), or **Delete** it. Swipe a row to delete it, or clear the whole AI history. The newest 200 entries are kept, only in the app's private storage.
+**AI history:** every solve is saved on your device in the **AI history** tab of the History sheet. The saved entry includes what you typed or drew, or a reduced copy of the photo, plus the model's complete output, the answer and steps, any questions asked about it, the model, the speed and how long it took. Open an entry to see it all, **Use** its number, **Solve again** with the same input (for example after switching model or speed), or **Delete** it. Swipe a row to delete it, or clear the whole AI history. The newest 200 entries are kept, only in the app's private storage.
 
 **Available models:**
 
@@ -100,7 +100,7 @@ All models are vision-capable and run on Google's [LiteRT-LM](https://github.com
 | Gemma 3n E4B | ~4.9 GB | 8 GB | HuggingFace sign-in |
 
 **Requirements:**
-- Android device with 6+ GB RAM — the smallest model (Gemma 4 E2B) needs 6 GB and the larger E4B models need 8 GB; on devices with less, the solver shows a "not enough RAM" notice
+- Android device with 6+ GB RAM — the smallest model (Gemma 4 E2B) needs 6 GB and the larger E4B models need 8 GB; on devices with less, the AI button isn't shown
 - A camera or gallery app (photos are taken via the system camera — no in-app camera permission required)
 - Internet for the one-time model download (Wi-Fi by default; the app asks before using mobile data)
 - Gemma 3n models require a free [HuggingFace](https://huggingface.co) account — you sign in once, in-app, and accept the model license; Gemma 4 models need no account ([setup](docs/huggingface-oauth-setup.md))
