@@ -25,7 +25,9 @@ Nhập các biểu thức toán học đầy đủ với thứ tự ưu tiên ph
 - Căn bậc hai (√)
 - Hằng số Pi (π)
 - Lũy thừa (^)
-- Giai thừa (!) cho các giá trị từ 0 đến 99
+- Giai thừa (!) từ 0 đến 99, và của phân số qua hàm gamma
+- e và lôgarit (ln, log)
+- sin, cos và tan, theo độ hoặc radian
 - Phần trăm (%) kiểu máy tính thông thường
 - Phép nhân ngầm (2π, 3√2, v.v.)
 

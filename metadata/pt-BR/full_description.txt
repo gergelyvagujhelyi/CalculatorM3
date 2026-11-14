@@ -25,7 +25,9 @@ Digite expressões matemáticas completas com a ordem correta das operações e 
 - Raiz quadrada (√)
 - Constante Pi (π)
 - Potência (^)
-- Fatorial (!) para valores de 0 a 99
+- Fatorial (!) de 0 a 99, e de frações pela função gama
+- e e logaritmos (ln, log)
+- sin, cos e tan, em graus ou radianos
 - Porcentagem (%) no estilo das calculadoras comuns
 - Multiplicação implícita (2π, 3√2, etc.)
 

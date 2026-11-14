@@ -57,6 +57,11 @@
     <string name="btn_log">常用対数</string>
     <string name="btn_more_functions">その他の関数</string>
     <string name="btn_fewer_functions">その他の関数を隠す</string>
+    <string name="btn_sin">サイン</string>
+    <string name="btn_cos">コサイン</string>
+    <string name="btn_tan">タンジェント</string>
+    <string name="angle_degrees">角度は度数法。タップでラジアン。</string>
+    <string name="angle_radians">角度はラジアン。タップで度数法。</string>
 
     <!-- カメラ / AIスキャン -->
     <string name="scan_hint">手書きの数式の写真を撮影または選択してください</string>

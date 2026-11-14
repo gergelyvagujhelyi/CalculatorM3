@@ -25,7 +25,9 @@ Typ volledige wiskundige uitdrukkingen met de juiste bewerkingsvolgorde en haakj
 - Vierkantswortel (√)
 - Constante pi (π)
 - Macht (^)
-- Faculteit (!) voor waarden van 0 tot 99
+- Faculteit (!) van 0 tot 99, en van breuken via de gammafunctie
+- e en logaritmen (ln, log)
+- sin, cos en tan, in graden of radialen
 - Procent (%) zoals bij gewone rekenmachines
 - Impliciete vermenigvuldiging (2π, 3√2, enz.)
 

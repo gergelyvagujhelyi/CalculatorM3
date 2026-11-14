@@ -26,7 +26,9 @@ Type complete mathematical expressions with proper operator precedence (PEMDAS) 
 - Square root (√)
 - Pi (π) constant
 - Power (^) exponentiation
-- Factorial (!) for values 0-99
+- Factorial (!) for 0–99, and for fractions via the Gamma function
+- e and logarithms (ln, log)
+- sin, cos and tan, in degrees or radians
 - Percent (%) with consumer-style support
 - Implicit multiplication (2π, 3√2, etc.)
 

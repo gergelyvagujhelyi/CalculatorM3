@@ -25,7 +25,9 @@ Más számológépekkel ellentétben ez az alkalmazás nem küldözget adatokat 
 - Négyzetgyök (√)
 - Pi (π) állandó
 - Hatványozás (^)
-- Faktoriális (!) a 0–99 értékekhez
+- Faktoriális (!) 0–99 között, törtekre a gamma-függvénnyel
+- e és logaritmus (ln, log)
+- sin, cos és tan, fokban vagy radiánban
 - Százalék (%) a hétköznapi számológépek stílusában
 - Implicit szorzás (2π, 3√2 stb.)
 

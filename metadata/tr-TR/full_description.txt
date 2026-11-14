@@ -25,7 +25,9 @@ Doğru işlem önceliğiyle ve 20 seviyeye kadar iç içe parantezlerle tam mate
 - Karekök (√)
 - Pi (π) sabiti
 - Üs (^)
-- 0-99 değerleri için faktöriyel (!)
+- 0-99 için faktöriyel (!), kesirler için gama fonksiyonuyla
+- e ve logaritma (ln, log)
+- sin, cos ve tan, derece veya radyan cinsinden
 - Günlük hesap makinesi tarzında yüzde (%)
 - Örtük çarpma (2π, 3√2 vb.)
 

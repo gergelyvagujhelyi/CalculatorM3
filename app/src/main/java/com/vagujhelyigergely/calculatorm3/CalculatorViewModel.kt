@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.SavedStateHandle
@@ -52,13 +53,38 @@ class CalculatorViewModel(
         private set
     var maxDisplayLength = 24
 
-    /** The scientific row's second row (e, ln, log) is open. */
+    /** The scientific row's second row (e, ln, log, sin, cos, tan) is open. Kept across launches. */
     var moreFunctions by mutableStateOf(savedState.get<Boolean>(KEY_MORE_FUNCTIONS) ?: false)
+        private set
+
+    /** sin, cos and tan take degrees (the default) or radians. Kept across launches. */
+    var degrees by mutableStateOf(savedState.get<Boolean>(KEY_DEGREES) ?: true)
         private set
 
     fun toggleMoreFunctions() {
         moreFunctions = !moreFunctions
         savedState[KEY_MORE_FUNCTIONS] = moreFunctions
+        saveSetting(MORE_FUNCTIONS_PREF, moreFunctions)
+    }
+
+    fun toggleDegrees() {
+        degrees = !degrees
+        savedState[KEY_DEGREES] = degrees
+        saveSetting(DEGREES_PREF, degrees)
+        // The same expression means something else now.
+        updatePreview()
+    }
+
+    private fun saveSetting(key: Preferences.Key<Boolean>, value: Boolean) {
+        val store = dataStore ?: return
+        persistScope.launch {
+            try {
+                store.edit { it[key] = value }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // Best effort, like the history: the setting just won't survive a restart.
+            }
+        }
     }
 
     /**
@@ -96,6 +122,18 @@ class CalculatorViewModel(
     private var restoreJob: Job? = null
 
     init {
+        // The panel and angle unit from disk, unless saved state (process death) already has them.
+        if (dataStore != null && savedState.get<Boolean>(KEY_DEGREES) == null) {
+            viewModelScope.launch {
+                try {
+                    val prefs = dataStore.data.first()
+                    prefs[MORE_FUNCTIONS_PREF]?.let { moreFunctions = it }
+                    prefs[DEGREES_PREF]?.let { if (it != degrees) { degrees = it; updatePreview() } }
+                } catch (e: Exception) {
+                    if (e is CancellationException) throw e
+                }
+            }
+        }
         // Restore history list: prefer saved state (process death), fall back to disk
         if (restoreHistoryFromSavedState() || dataStore == null) {
             historyLoaded = true
@@ -261,13 +299,53 @@ class CalculatorViewModel(
 
         private val LN10: BigDecimal = lnNear(BigDecimal.TEN)
 
+        private val NINETY = BigDecimal(90)
+        private val ONE_EIGHTY = BigDecimal(180)
+        private val HALF_PI: BigDecimal = BigDecimal("3.14159265358979323846264338327950288").divide(BigDecimal(2))
+
+        /** Beyond this, an angle has too few digits left after the reduction to mean anything. */
+        private val MAX_TRIG_ARGUMENT = BigDecimal("1E+15")
+
+        /** sin r by its Taylor series, for |r| ≤ π/4. */
+        private fun sinSeries(r: BigDecimal): BigDecimal {
+            val r2 = r.multiply(r, LN_MC)
+            var term = r
+            var sum = r
+            var n = 1
+            val epsilon = BigDecimal.ONE.movePointLeft(LN_MC.precision + 2)
+            while (term.abs() > epsilon) {
+                term = term.multiply(r2, LN_MC).divide(BigDecimal((2L * n) * (2L * n + 1)), LN_MC).negate()
+                sum = sum.add(term, LN_MC)
+                n++
+            }
+            return sum
+        }
+
+        /** cos r by its Taylor series, for |r| ≤ π/4. */
+        private fun cosSeries(r: BigDecimal): BigDecimal {
+            val r2 = r.multiply(r, LN_MC)
+            var term = BigDecimal.ONE
+            var sum = BigDecimal.ONE
+            var n = 1
+            val epsilon = BigDecimal.ONE.movePointLeft(LN_MC.precision + 2)
+            while (term.abs() > epsilon) {
+                term = term.multiply(r2, LN_MC).divide(BigDecimal((2L * n - 1) * (2L * n)), LN_MC).negate()
+                sum = sum.add(term, LN_MC)
+                n++
+            }
+            return sum
+        }
+
         /** Functions written before a bracket; longest first, so "log" isn't read as "lo" + … */
-        private val FUNCTION_NAMES = listOf("log", "ln", "√")
+        private val FUNCTION_NAMES = listOf("log", "sin", "cos", "tan", "ln", "√")
 
         /** Before the cursor, these leave nothing to take the root of: √ starts a new root. */
         private val ROOT_STARTERS = setOf('+', '−', '×', '÷', '^', '(', '-')
         private const val KEY_JUST_EVALUATED = "justEvaluated"
         private const val KEY_MORE_FUNCTIONS = "moreFunctions"
+        private const val KEY_DEGREES = "degrees"
+        private val MORE_FUNCTIONS_PREF = booleanPreferencesKey("more_functions")
+        private val DEGREES_PREF = booleanPreferencesKey("angle_degrees")
         private const val KEY_ANSWER_ALLOWANCE = "answerAllowance"
 
         /**
@@ -286,7 +364,7 @@ class CalculatorViewModel(
         private const val MAX_EXACT_POW_EXPONENT = 999_999_999
 
         /** Keys that begin a new entry when pressed right after "=" (see [justEvaluated]). */
-        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "e", "( )", "ln", "log")
+        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "e", "( )", "ln", "log", "sin", "cos", "tan")
 
         /**
          * Upper bound on the coefficient digits an exact addition/subtraction may need after
@@ -559,7 +637,7 @@ class CalculatorViewModel(
             "e" -> {
                 insertAtCursor("e")
             }
-            "ln", "log" -> {
+            "ln", "log", "sin", "cos", "tan" -> {
                 // Like √ after an operator: the function and its brackets, typed into. After a
                 // number it multiplies (2 ln(3) = 2 × ln(3)).
                 val opened = expression.substring(0, cursorPosition) + "$label()" + expression.substring(cursorPosition)
@@ -781,8 +859,8 @@ class CalculatorViewModel(
     private val reRParenPi = Regex("\\)([πe])")
     private val rePiLParen = Regex("([πe])\\(")
     private val rePiSqrt = Regex("([πe])√")
-    // Before a function (internal codes: L = ln, G = log): 2ln(3), π log(10), (2)ln(e).
-    private val reBeforeFunction = Regex("([\\d)πe!%])([LG])")
+    // Before a function (internal codes: L = ln, G = log, S/C/T = sin/cos/tan): 2ln(3), π sin(…).
+    private val reBeforeFunction = Regex("([\\d)πe!%])([LGSCT])")
     private val reRParenDigit = Regex("\\)(\\d)")
     private val reDigitLParen = Regex("(\\d)\\(")
     private val reDigitSqrt = Regex("(\\d)√")
@@ -798,6 +876,9 @@ class CalculatorViewModel(
                 // Function names become one-letter codes for the tokenizer.
                 .replace("log", "G")
                 .replace("ln", "L")
+                .replace("sin", "S")
+                .replace("cos", "C")
+                .replace("tan", "T")
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
@@ -923,7 +1004,7 @@ class CalculatorViewModel(
                 c == '*' -> tokens.add(Token.Op('*', 2))
                 c == '/' -> tokens.add(Token.Op('/', 2))
                 c == '^' -> tokens.add(Token.Op('^', 4, leftAssoc = false))
-                c == '√' || c == 'L' || c == 'G' -> tokens.add(Token.UnaryOp(c))
+                c == '√' || c in "LGSCT" -> tokens.add(Token.UnaryOp(c))
                 c == '!' -> tokens.add(Token.UnaryOp('!'))
                 c == '%' -> tokens.add(Token.UnaryOp('%'))
             }
@@ -1041,6 +1122,9 @@ class CalculatorViewModel(
                             stack.addLast(SVal(bigSqrt(a.v)))
                         }
                         'L' -> stack.addLast(SVal(bigLn(a.v)))
+                        'S' -> stack.addLast(SVal(trig(a.v, 'S')))
+                        'C' -> stack.addLast(SVal(trig(a.v, 'C')))
+                        'T' -> stack.addLast(SVal(trig(a.v, 'T')))
                         'G' -> stack.addLast(SVal(bigLog10(a.v)))
                         '!' -> {
                             val intVal = try { a.v.intValueExact() } catch (_: ArithmeticException) { null }
@@ -1195,6 +1279,34 @@ class CalculatorViewModel(
         for (k in 1 until LANCZOS.size) sum += LANCZOS[k] / (zz + k)
         val t = zz + LANCZOS_G + 0.5
         return Math.sqrt(2 * Math.PI) * Math.pow(t, zz + 0.5) * Math.exp(-t) * sum
+    }
+
+    /**
+     * sin, cos or tan ([which] = S, C, T) of [x] in the current unit ([degrees]). The angle is
+     * first reduced to x = k·90° + r (or k·π/2 + r) with exact arithmetic, so a multiple of 90°
+     * gives an exact 0 or ±1 (sin 180° = 0, not 1E-50) and tan 90° is an error, not a huge number;
+     * the series then only sees |r| ≤ 45°.
+     */
+    private fun trig(x: BigDecimal, which: Char): BigDecimal {
+        if (x.abs() > MAX_TRIG_ARGUMENT) throw ArithmeticException("Angle out of range")
+        val quarter = if (degrees) NINETY else HALF_PI
+        val k = x.divide(quarter, 0, RoundingMode.HALF_EVEN)
+        val rest = x.subtract(quarter.multiply(k))
+        val r = if (degrees) rest.multiply(PI, LN_MC).divide(ONE_EIGHTY, LN_MC) else rest
+        val s = if (r.signum() == 0) BigDecimal.ZERO else sinSeries(r)
+        val c = if (r.signum() == 0) BigDecimal.ONE else cosSeries(r)
+        // sin(k·90° + r) and cos(k·90° + r) for k mod 4 = 0, 1, 2, 3.
+        val quadrant = k.toBigInteger().mod(java.math.BigInteger.valueOf(4)).toInt()
+        val sin = when (quadrant) { 0 -> s; 1 -> c; 2 -> s.negate(); else -> c.negate() }
+        val cos = when (quadrant) { 0 -> c; 1 -> s.negate(); 2 -> c.negate(); else -> s }
+        return when (which) {
+            'S' -> sin
+            'C' -> cos
+            else -> {
+                if (cos.signum() == 0) throw ArithmeticException("Invalid tangent")
+                sin.divide(cos, LN_MC)
+            }
+        }
     }
 
     /** ln x to [LN_MC], for x > 0: x = m·10^k with 1 ≤ m < 10, so ln x = ln m + k·ln 10. */

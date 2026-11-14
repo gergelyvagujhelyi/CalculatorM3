@@ -422,6 +422,8 @@ private fun PortraitLayout(
                     onClick = onAiButtonTap
                 )
             }
+            Spacer(modifier = Modifier.weight(1f))
+            AngleUnitButton(viewModel)
             IconButton(onClick = onShowHistory) {
                 Icon(
                     imageVector = Icons.Default.AccessTime,
@@ -513,6 +515,8 @@ private fun LandscapeLayout(
                         onClick = onAiButtonTap
                     )
                 }
+                Spacer(modifier = Modifier.weight(1f))
+                AngleUnitButton(viewModel)
                 IconButton(onClick = onShowHistory) {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
@@ -580,6 +584,9 @@ private fun ScientificRow(
         "e" to stringResource(R.string.btn_e),
         "ln" to stringResource(R.string.btn_ln),
         "log" to stringResource(R.string.btn_log),
+        "sin" to stringResource(R.string.btn_sin),
+        "cos" to stringResource(R.string.btn_cos),
+        "tan" to stringResource(R.string.btn_tan),
     )
     val padding = Modifier.padding(horizontal = if (compact) 4.dp else 16.dp, vertical = if (compact) 0.dp else 4.dp)
     Column(modifier = Modifier.fillMaxWidth().animateContentSize()) {
@@ -606,10 +613,25 @@ private fun ScientificRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 second.forEach { (label, desc) -> ScientificKey(label, desc, compact) { viewModel.onButtonPress(label) } }
-                // Room for more functions; keeps the columns aligned with the row above.
-                repeat(6 - second.size) { Spacer(modifier = Modifier.weight(1f)) }
             }
         }
+    }
+}
+
+/** DEG or RAD for sin, cos and tan; shown while the second scientific row is open. */
+@Composable
+private fun AngleUnitButton(viewModel: CalculatorViewModel) {
+    if (!viewModel.moreFunctions) return
+    val description = stringResource(if (viewModel.degrees) R.string.angle_degrees else R.string.angle_radians)
+    TextButton(
+        onClick = { viewModel.toggleDegrees() },
+        modifier = Modifier.semantics { contentDescription = description }
+    ) {
+        Text(
+            text = if (viewModel.degrees) "DEG" else "RAD",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
     }
 }
 

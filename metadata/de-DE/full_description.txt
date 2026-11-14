@@ -25,7 +25,9 @@ Gib vollständige mathematische Ausdrücke mit korrekter Operatorrangfolge (Punk
 - Quadratwurzel (√)
 - Konstante Pi (π)
 - Potenz (^)
-- Fakultät (!) für Werte von 0 bis 99
+- Fakultät (!) für 0 bis 99 und für Brüche über die Gammafunktion
+- e und Logarithmen (ln, log)
+- sin, cos und tan, in Grad oder Bogenmaß
 - Prozent (%) im Stil von Alltagsrechnern
 - Implizite Multiplikation (2π, 3√2 usw.)
 

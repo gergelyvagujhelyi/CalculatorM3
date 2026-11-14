@@ -57,6 +57,11 @@
     <string name="btn_log">Logarithm base 10</string>
     <string name="btn_more_functions">More functions</string>
     <string name="btn_fewer_functions">Fewer functions</string>
+    <string name="btn_sin">Sine</string>
+    <string name="btn_cos">Cosine</string>
+    <string name="btn_tan">Tangent</string>
+    <string name="angle_degrees">Angles in degrees. Tap for radians.</string>
+    <string name="angle_radians">Angles in radians. Tap for degrees.</string>
 
     <!-- Camera / AI scan -->
     <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>

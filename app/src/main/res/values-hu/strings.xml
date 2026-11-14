@@ -57,6 +57,11 @@
     <string name="btn_log">Tízes alapú logaritmus</string>
     <string name="btn_more_functions">További függvények</string>
     <string name="btn_fewer_functions">Kevesebb függvény</string>
+    <string name="btn_sin">Szinusz</string>
+    <string name="btn_cos">Koszinusz</string>
+    <string name="btn_tan">Tangens</string>
+    <string name="angle_degrees">Szögek fokban. Koppints a radiánhoz.</string>
+    <string name="angle_radians">Szögek radiánban. Koppints a fokhoz.</string>
 
     <!-- Kamera / MI-beolvasás -->
     <string name="scan_hint">Készíts vagy válassz fényképet egy kézzel írt matematikai kifejezésről</string>
