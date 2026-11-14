@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -188,11 +189,13 @@ internal fun StepsSuccessContent(
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val fromPicture = source != AiEntry.TYPE
+    val scroll = rememberScrollState()
+    val follower = rememberEndFollower(scroll)
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(horizontal = 24.dp)
                 .padding(top = 72.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -272,7 +275,7 @@ internal fun StepsSuccessContent(
                     }
                 }
             }
-            extra()
+            CompositionLocalProvider(LocalEndFollower provides follower) { extra() }
         }
     }
 }

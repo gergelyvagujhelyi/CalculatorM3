@@ -633,9 +633,15 @@ private fun ProcessingContent(
             // One card spans the whole "answer" lifecycle: a shimmering skeleton while the
             // model prefills the image (no tokens yet), then the live streaming text. Tagged
             // as the shared "answer-card" so it morphs straight into the Success result card.
+            // Follow the text as it grows (after layout, so the new end is known), unless the
+            // user has scrolled back to read: then wait until they return to the end. Jump
+            // rather than animate, so animations restarted on every update don't stutter.
             val scrollState = rememberScrollState()
-            LaunchedEffect(partialRaw) {
-                scrollState.animateScrollTo(scrollState.maxValue)
+            val follower = rememberEndFollower(scrollState)
+            LaunchedEffect(scrollState) {
+                snapshotFlow { scrollState.maxValue }.collect {
+                    if (follower.following) scrollState.scrollTo(it)
+                }
             }
             AiCard(
                 modifier = Modifier
@@ -901,12 +907,14 @@ internal fun SuccessContent(
     /** Shown under the answer: questions about it ([FollowUpSection]). */
     extra: @Composable () -> Unit = {}
 ) {
+    val scroll = rememberScrollState()
+    val follower = rememberEndFollower(scroll)
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scroll)
                 .padding(horizontal = 24.dp)
                 .padding(top = 72.dp, bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -944,7 +952,7 @@ internal fun SuccessContent(
                     )
                 }
             }
-            extra()
+            CompositionLocalProvider(LocalEndFollower provides follower) { extra() }
         }
     }
 }
@@ -968,11 +976,13 @@ internal fun ErrorContent(
     // result is; it can still be collapsed.
     var showRaw by remember { mutableStateOf(!rawResponse.isNullOrBlank()) }
     val scroll = rememberScrollState()
+    val follower = rememberEndFollower(scroll)
     LaunchedEffect(showRaw) {
         if (!showRaw) return@LaunchedEffect
         // The rendered math lays out after the first frame (and the card expands), so follow the
-        // content height as it grows instead of scrolling once.
-        snapshotFlow { scroll.maxValue }.collect { scroll.scrollTo(it) }
+        // content height as it grows instead of scrolling once; but not while the user is
+        // reading further up (a follow-up reply streaming below would pull them down).
+        snapshotFlow { scroll.maxValue }.collect { if (follower.following) scroll.scrollTo(it) }
     }
 
     AiStateScaffold(onDismiss = onDismiss) {
@@ -1030,7 +1040,7 @@ internal fun ErrorContent(
             OutlinedButton(onClick = onRetry) {
                 Text(stringResource(R.string.retry))
             }
-            extra()
+            CompositionLocalProvider(LocalEndFollower provides follower) { extra() }
         }
     }
 }

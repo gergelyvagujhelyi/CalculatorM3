@@ -68,11 +68,20 @@ internal fun FollowUpSection(
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val bottom = remember { BringIntoViewRequester() }
+    val follower = LocalEndFollower.current
     // Keep the newest part (a new question, the reply as it streams, then the field and counter)
-    // in view. Wait a frame first, so what just changed is laid out before scrolling to it.
+    // in view, unless the user has scrolled up to read: a reply streaming in mustn't pull the
+    // page down under their finger. Asking a question follows again (set on the tap itself, so
+    // it can't be missed between quick state changes). Wait a frame first, so what just changed
+    // is laid out before scrolling to it. The section is at the end of its page, so following
+    // means scrolling the page to its end; without a page follower, bring the end into view.
+    val ask: (String) -> Unit = { follower?.following = true; onAsk(it) }
+    // Not when the page opens: it starts at the answer, not at the questions below it.
+    val opened = remember { state to thread.size }
     LaunchedEffect(state, thread.size) {
+        if ((state to thread.size) == opened) return@LaunchedEffect
         withFrameNanos { }
-        bottom.bringIntoView()
+        if (follower != null) follower.followEnd() else bottom.bringIntoView()
     }
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -115,7 +124,7 @@ internal fun FollowUpSection(
         }
         val busy = state is FollowUpUi.Answering || state is FollowUpUi.LoadingModel
         if (!busy) {
-            if (left > 0) AskField(firstQuestion = thread.isEmpty(), left = left, onAsk = onAsk)
+            if (left > 0) AskField(firstQuestion = thread.isEmpty(), left = left, onAsk = ask)
             else {
                 Text(stringResource(R.string.follow_up_none), style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
