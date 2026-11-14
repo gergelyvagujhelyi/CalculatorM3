@@ -57,6 +57,11 @@
     <string name="btn_log">Zehnerlogarithmus</string>
     <string name="btn_more_functions">Weitere Funktionen</string>
     <string name="btn_fewer_functions">Weniger Funktionen</string>
+    <string name="btn_sin">Sinus</string>
+    <string name="btn_cos">Kosinus</string>
+    <string name="btn_tan">Tangens</string>
+    <string name="angle_degrees">Winkel in Grad. Tippen für Bogenmaß.</string>
+    <string name="angle_radians">Winkel im Bogenmaß. Tippen für Grad.</string>
 
     <!-- Kamera / KI-Scan -->
     <string name="scan_hint">Mache oder wähle ein Foto eines handgeschriebenen mathematischen Ausdrucks</string>

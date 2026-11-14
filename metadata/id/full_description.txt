@@ -25,7 +25,9 @@ Ketik ekspresi matematika lengkap dengan urutan operasi yang benar dan tanda kur
 - Akar kuadrat (√)
 - Konstanta Pi (π)
 - Pangkat (^)
-- Faktorial (!) untuk nilai 0-99
+- Faktorial (!) untuk 0-99, dan untuk pecahan lewat fungsi gamma
+- e dan logaritma (ln, log)
+- sin, cos, dan tan, dalam derajat atau radian
 - Persen (%) ala kalkulator sehari-hari
 - Perkalian implisit (2π, 3√2, dll.)
 

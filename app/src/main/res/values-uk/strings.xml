@@ -57,6 +57,11 @@
     <string name="btn_log">Десятковий логарифм</string>
     <string name="btn_more_functions">Більше функцій</string>
     <string name="btn_fewer_functions">Менше функцій</string>
+    <string name="btn_sin">Синус</string>
+    <string name="btn_cos">Косинус</string>
+    <string name="btn_tan">Тангенс</string>
+    <string name="angle_degrees">Кути в градусах. Торкніться для радіан.</string>
+    <string name="angle_radians">Кути в радіанах. Торкніться для градусів.</string>
 
     <!-- Камера / ШІ-сканування -->
     <string name="scan_hint">Зробіть або виберіть фото рукописного математичного виразу</string>

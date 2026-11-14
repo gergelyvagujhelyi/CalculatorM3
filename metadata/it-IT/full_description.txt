@@ -25,7 +25,9 @@ Digita espressioni matematiche complete con la corretta precedenza degli operato
 - Radice quadrata (√)
 - Costante Pi greco (π)
 - Potenza (^)
-- Fattoriale (!) per valori da 0 a 99
+- Fattoriale (!) da 0 a 99, e delle frazioni con la funzione gamma
+- e e logaritmi (ln, log)
+- sin, cos e tan, in gradi o radianti
 - Percentuale (%) in stile calcolatrici di uso comune
 - Moltiplicazione implicita (2π, 3√2, ecc.)
 

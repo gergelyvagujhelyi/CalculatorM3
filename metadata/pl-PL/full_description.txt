@@ -25,7 +25,9 @@ Wpisuj pełne wyrażenia matematyczne z poprawną kolejnością działań i nawi
 - Pierwiastek kwadratowy (√)
 - Stała Pi (π)
 - Potęga (^)
-- Silnia (!) dla wartości od 0 do 99
+- Silnia (!) od 0 do 99, a dla ułamków przez funkcję gamma
+- e i logarytmy (ln, log)
+- sin, cos i tan, w stopniach lub radianach
 - Procent (%) w stylu zwykłych kalkulatorów
 - Mnożenie niejawne (2π, 3√2 itp.)
 

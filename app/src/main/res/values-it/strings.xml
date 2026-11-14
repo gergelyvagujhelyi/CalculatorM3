@@ -57,6 +57,11 @@
     <string name="btn_log">Logaritmo in base 10</string>
     <string name="btn_more_functions">Altre funzioni</string>
     <string name="btn_fewer_functions">Meno funzioni</string>
+    <string name="btn_sin">Seno</string>
+    <string name="btn_cos">Coseno</string>
+    <string name="btn_tan">Tangente</string>
+    <string name="angle_degrees">Angoli in gradi. Tocca per i radianti.</string>
+    <string name="angle_radians">Angoli in radianti. Tocca per i gradi.</string>
 
     <!-- Fotocamera / Scansione IA -->
     <string name="scan_hint">Scatta o scegli una foto di un\'espressione matematica scritta a mano</string>

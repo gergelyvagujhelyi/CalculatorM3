@@ -57,6 +57,11 @@
     <string name="btn_log">상용로그</string>
     <string name="btn_more_functions">함수 더보기</string>
     <string name="btn_fewer_functions">함수 접기</string>
+    <string name="btn_sin">사인</string>
+    <string name="btn_cos">코사인</string>
+    <string name="btn_tan">탄젠트</string>
+    <string name="angle_degrees">각도 단위: 도. 탭하면 라디안으로 바뀝니다.</string>
+    <string name="angle_radians">각도 단위: 라디안. 탭하면 도로 바뀝니다.</string>
 
     <!-- 카메라 / AI 스캔 -->
     <string name="scan_hint">손으로 쓴 수식의 사진을 찍거나 선택하세요</string>

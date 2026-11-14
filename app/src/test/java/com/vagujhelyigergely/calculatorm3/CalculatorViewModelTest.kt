@@ -933,6 +933,95 @@ class CalculatorViewModelTest {
         assertExpression("10000000000000000000")
     }
 
+    // ── sin, cos, tan (#74, phase 3) ──────────────────────────────────
+    // Expected values from Taylor series in Python's decimal module at 80 digits.
+
+    @Test
+    fun degreesAreTheDefault() {
+        assertTrue(vm.degrees)
+        tap("sin", "3", "0")
+        tapEquals()
+        assertExpression("0.5")
+    }
+
+    @Test
+    fun standardAnglesAreExact() {
+        fun check(expected: String, vararg keys: String) {
+            tap("AC", *keys)
+            tapEquals()
+            assertEquals(keys.joinToString(""), expected, vm.expression)
+        }
+        check("1", "sin", "9", "0")
+        check("0", "sin", "1", "8", "0")
+        check("0", "cos", "9", "0")
+        check("-1", "cos", "1", "8", "0")
+        check("0.5", "cos", "6", "0")
+        check("1", "tan", "4", "5")
+        check("-0.5", "sin", "3", "0", "+/−")
+        check("0", "sin", "3", "6", "0", "0", "0", "0")
+    }
+
+    @Test
+    fun sin45Degrees() {
+        tap("sin", "4", "5")
+        tapEquals()
+        assertExpression("0.707106781186547524400844362105")
+    }
+
+    @Test
+    fun tanOf90DegreesIsAnError() {
+        tap("tan", "9", "0")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun radians() {
+        vm.toggleDegrees()
+        assertTrue(!vm.degrees)
+        tap("sin", "1")
+        tapEquals()
+        assertExpression("0.84147098480789650665250232163")
+        tap("AC", "cos", "1")
+        tapEquals()
+        assertExpression("0.540302305868139717400936607443")
+        tap("AC", "tan", "1")
+        tapEquals()
+        assertExpression("1.55740772465490223050697480746")
+    }
+
+    @Test
+    fun multiplesOfPiAreExactInRadians() {
+        vm.toggleDegrees()
+        tap("sin", "π")
+        tapEquals()
+        assertExpression("0")
+        tap("AC", "cos", "2", "π")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun switchingTheUnitUpdatesThePreview() {
+        tap("cos", "0", "+", "sin", "9", "0")
+        assertResult("2")
+        vm.toggleDegrees()
+        // cos 0 + sin(90 rad) = 1 + 0.8939…
+        assertTrue(vm.result, vm.result.startsWith("1.893996663"))
+    }
+
+    @Test
+    fun trigFunctionsCombine() {
+        // sin²30° + cos²30° = 1; the ( ) key steps out of a function before ^
+        tap("sin", "3", "0", "( )", "^", "2", "+", "cos", "3", "0", "( )", "^", "2")
+        assertExpression("sin(30)^2+cos(30)^2")
+        tapEquals()
+        assertExpression("1")
+        tap("AC", "2", "sin", "3", "0")
+        tapEquals()
+        assertExpression("1")
+    }
+
     // ── √ in writing order: after an operator it starts a root ─────────
 
     @Test

@@ -57,6 +57,11 @@
     <string name="btn_log">Logarithme décimal</string>
     <string name="btn_more_functions">Plus de fonctions</string>
     <string name="btn_fewer_functions">Moins de fonctions</string>
+    <string name="btn_sin">Sinus</string>
+    <string name="btn_cos">Cosinus</string>
+    <string name="btn_tan">Tangente</string>
+    <string name="angle_degrees">Angles en degrés. Touchez pour les radians.</string>
+    <string name="angle_radians">Angles en radians. Touchez pour les degrés.</string>
 
     <!-- Caméra / Scan IA -->
     <string name="scan_hint">Prenez ou choisissez une photo d\'une expression mathématique manuscrite</string>

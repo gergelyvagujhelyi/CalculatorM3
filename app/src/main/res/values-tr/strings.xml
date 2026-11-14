@@ -57,6 +57,11 @@
     <string name="btn_log">10 tabanında logaritma</string>
     <string name="btn_more_functions">Daha fazla işlev</string>
     <string name="btn_fewer_functions">Daha az işlev</string>
+    <string name="btn_sin">Sinüs</string>
+    <string name="btn_cos">Kosinüs</string>
+    <string name="btn_tan">Tanjant</string>
+    <string name="angle_degrees">Açılar derece cinsinden. Radyan için dokunun.</string>
+    <string name="angle_radians">Açılar radyan cinsinden. Derece için dokunun.</string>
 
     <!-- Kamera / Yapay zeka taraması -->
     <string name="scan_hint">Elle yazılmış bir matematik ifadesinin fotoğrafını çekin veya seçin</string>

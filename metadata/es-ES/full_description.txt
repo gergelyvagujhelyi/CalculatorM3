@@ -25,7 +25,9 @@ Escribe expresiones matemáticas completas con la prioridad de operaciones corre
 - Raíz cuadrada (√)
 - Constante Pi (π)
 - Potencia (^)
-- Factorial (!) para valores de 0 a 99
+- Factorial (!) de 0 a 99, y de fracciones mediante la función gamma
+- e y logaritmos (ln, log)
+- sin, cos y tan, en grados o radianes
 - Porcentaje (%) al estilo de las calculadoras de uso diario
 - Multiplicación implícita (2π, 3√2, etc.)
 
