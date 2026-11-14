@@ -594,7 +594,7 @@ private fun ScientificRow(
                 modifier = Modifier.weight(1f).semantics { contentDescription = toggleDesc }
             ) {
                 Icon(
-                    imageVector = if (viewModel.moreFunctions) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    imageVector = if (viewModel.moreFunctions) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
