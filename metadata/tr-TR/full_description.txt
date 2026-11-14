@@ -47,6 +47,7 @@ El yazısı matematiğin fotoğrafını çekin, ekrana yazın ya da bir soru yaz
 - Yapay zeka geçmişi cihazınızda kalır; istediğiniz zaman silin
 - Bir sayı yalnızca modelin çözümüyle uyuşursa hesap makinesine geçer
 - Hız: Hızlı, Dengeli veya Hassas
+- Yanıtlar İngilizce ya da telefonda dilinize çevrilmiş olarak (Mozilla'nın açık çeviri modelleri, tek seferlik 15–38 MB indirme)
 - Açık modeller (Gemma 4, Gemma 3n), tamamen cihazda, GPU hızlandırmalı
 - İnternet yalnızca bir kez, modeli indirmek için — varsayılan olarak Wi-Fi ile
 - İstemiyor musunuz? Yapay zeka ayarlarında "Yapay zeka düğmesini göster"i kapatın

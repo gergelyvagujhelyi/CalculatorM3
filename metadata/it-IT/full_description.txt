@@ -47,6 +47,7 @@ Fotografa matematica scritta a mano, scrivila sullo schermo o digita un problema
 - La cronologia IA resta sul dispositivo; cancellala quando vuoi
 - Un numero va nella calcolatrice solo se torna con i passaggi del modello
 - Velocità: Rapida, Bilanciata o Precisa
+- Risposte in inglese o tradotte nella tua lingua direttamente sul telefono (modelli di traduzione aperti di Mozilla, download una tantum di 15–38 MB)
 - Modelli aperti (Gemma 4, Gemma 3n), sul dispositivo, accelerati via GPU
 - Internet una sola volta, per scaricare il modello (Wi-Fi di default)
 - Non ti serve? Disattiva «Mostra pulsante IA» nelle impostazioni IA

@@ -47,6 +47,7 @@ Zrób zdjęcie odręcznej matematyki, napisz ją na ekranie albo wpisz zadanie �
 - Historia AI zostaje na urządzeniu; możesz ją usunąć w każdej chwili
 - Liczba trafia do kalkulatora tylko, jeśli zgadza się z obliczeniami modelu
 - Szybkość: Szybko, Zrównoważenie lub Dokładnie
+- Odpowiedzi po angielsku lub przetłumaczone na Twój język w telefonie (otwarte modele tłumaczeniowe Mozilli, jednorazowe pobranie 15–38 MB)
 - Otwarte modele (Gemma 4, Gemma 3n), w całości na urządzeniu, z akceleracją GPU
 - Internet tylko raz, do pobrania modelu – domyślnie przez Wi-Fi
 - Nie potrzebujesz? Wyłącz „Pokaż przycisk AI" w ustawieniach AI

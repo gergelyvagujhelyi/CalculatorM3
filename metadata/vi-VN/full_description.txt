@@ -47,6 +47,7 @@ Chụp ảnh bài toán viết tay, viết lên màn hình hoặc nhập một b
 - Lịch sử AI nằm trên thiết bị; xóa bất cứ lúc nào
 - Một số chỉ được đưa vào máy tính nếu khớp với lời giải của mô hình
 - Tốc độ: Nhanh, Cân bằng hoặc Chính xác
+- Câu trả lời bằng tiếng Anh, hoặc được dịch sang ngôn ngữ của bạn ngay trên điện thoại (mô hình dịch mở của Mozilla, tải một lần 15–38 MB)
 - Mô hình mở (Gemma 4, Gemma 3n), chạy hoàn toàn trên thiết bị, tăng tốc GPU
 - Chỉ dùng Internet một lần để tải mô hình — mặc định qua Wi-Fi
 - Không cần? Tắt "Hiện nút AI" trong cài đặt AI

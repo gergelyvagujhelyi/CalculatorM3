@@ -47,6 +47,7 @@ Fotografe matemática escrita à mão, escreva na tela ou digite um problema (in
 - O histórico de IA fica no seu aparelho; apague quando quiser
 - Um número só vai para a calculadora se bater com o raciocínio do modelo
 - Velocidade: Rápido, Equilibrado ou Preciso
+- Respostas em inglês ou traduzidas para o seu idioma no próprio celular (modelos de tradução abertos da Mozilla, download único de 15–38 MB)
 - Modelos abertos (Gemma 4, Gemma 3n), totalmente no aparelho, acelerados por GPU
 - Internet só uma vez, para baixar o modelo — por Wi-Fi por padrão
 - Não quer? Desative "Mostrar botão de IA" nas configurações de IA

@@ -47,6 +47,7 @@ Fotografía mates escritas a mano, escríbelas en la pantalla o teclea un proble
 - El historial de IA queda en tu dispositivo; bórralo cuando quieras
 - Un número solo pasa a la calculadora si coincide con el razonamiento del modelo
 - Velocidad: Rápido, Equilibrado o Preciso
+- Respuestas en inglés o traducidas a tu idioma en el propio teléfono (modelos de traducción abiertos de Mozilla, descarga única de 15–38 MB)
 - Modelos abiertos (Gemma 4, Gemma 3n), todo en el dispositivo, acelerado por GPU
 - Internet solo una vez, para descargar el modelo; por Wi-Fi por defecto
 - ¿No lo quieres? Desactiva «Mostrar botón de IA» en los ajustes de IA
