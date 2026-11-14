@@ -35,9 +35,14 @@
 
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.png" width="180" alt="AI Math Solver scan"><br><sub>AI Math Solver</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.png" width="180" alt="On-device AI models"><br><sub>On-Device Models</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.png" width="180" alt="AI solved on-device"><br><sub>Solved On-Device</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.png" width="180" alt="Solve with AI menu: Camera, Gallery, Write, Type"><br><sub>Solve with AI</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.png" width="180" alt="Handwriting pad with 8×6−9 written on it"><br><sub>Write It by Hand</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.png" width="180" alt="Step-by-step answer 39 to the handwritten problem"><br><sub>Step-by-Step Answers</sub></td>
+    </tr>
+    <tr>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/10.png" width="180" alt="Typed word problem answered, with a follow-up question"><br><sub>Ask Follow-up Questions</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/11.png" width="180" alt="AI history with saved answers"><br><sub>AI History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/12.png" width="180" alt="AI settings with the recommended on-device model"><br><sub>On-Device Models</sub></td>
     </tr>
   </table>
 
