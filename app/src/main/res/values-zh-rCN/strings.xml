@@ -52,6 +52,11 @@
     <string name="btn_power">幂</string>
     <string name="btn_factorial">阶乘</string>
     <string name="btn_parentheses">括号</string>
+    <string name="btn_e">自然常数 e</string>
+    <string name="btn_ln">自然对数</string>
+    <string name="btn_log">常用对数</string>
+    <string name="btn_more_functions">更多函数</string>
+    <string name="btn_fewer_functions">收起函数</string>
 
     <!-- 相机 / AI 扫描 -->
     <string name="scan_hint">拍摄或选择一张手写数学算式的照片</string>

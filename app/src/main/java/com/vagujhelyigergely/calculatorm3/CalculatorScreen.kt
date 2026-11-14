@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.AccessTime
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog
@@ -566,37 +568,66 @@ private fun ScientificRow(
     viewModel: CalculatorViewModel,
     compact: Boolean = false
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = if (compact) 4.dp else 16.dp, vertical = if (compact) 0.dp else 4.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        val sciButtons = listOf(
-            "√" to stringResource(R.string.btn_square_root),
-            "π" to stringResource(R.string.btn_pi),
-            "^" to stringResource(R.string.btn_power),
-            "!" to stringResource(R.string.btn_factorial),
-            "( )" to stringResource(R.string.btn_parentheses),
-        )
-        sciButtons.forEach { (label, desc) ->
-            TextButton(
-                onClick = { viewModel.onButtonPress(label) },
-                modifier = Modifier
-                    .weight(1f)
-                    .semantics { contentDescription = desc },
-                contentPadding = PaddingValues(0.dp)
+    // Both rows use the same six columns, so the second row's keys line up under the first's.
+    val first = listOf(
+        "√" to stringResource(R.string.btn_square_root),
+        "π" to stringResource(R.string.btn_pi),
+        "^" to stringResource(R.string.btn_power),
+        "!" to stringResource(R.string.btn_factorial),
+        "( )" to stringResource(R.string.btn_parentheses),
+    )
+    val second = listOf(
+        "e" to stringResource(R.string.btn_e),
+        "ln" to stringResource(R.string.btn_ln),
+        "log" to stringResource(R.string.btn_log),
+    )
+    val padding = Modifier.padding(horizontal = if (compact) 4.dp else 16.dp, vertical = if (compact) 0.dp else 4.dp)
+    Column(modifier = Modifier.fillMaxWidth().animateContentSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().then(padding),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            first.forEach { (label, desc) -> ScientificKey(label, desc, compact) { viewModel.onButtonPress(label) } }
+            val toggleDesc = stringResource(if (viewModel.moreFunctions) R.string.btn_fewer_functions else R.string.btn_more_functions)
+            IconButton(
+                onClick = { viewModel.toggleMoreFunctions() },
+                modifier = Modifier.weight(1f).semantics { contentDescription = toggleDesc }
             ) {
-                Text(
-                    text = label,
-                    fontSize = if (compact) 16.sp else 20.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = colorScheme.onSurfaceVariant
+                Icon(
+                    imageVector = if (viewModel.moreFunctions) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
+        if (viewModel.moreFunctions) {
+            Row(
+                modifier = Modifier.fillMaxWidth().then(padding),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                second.forEach { (label, desc) -> ScientificKey(label, desc, compact) { viewModel.onButtonPress(label) } }
+                // Room for more functions; keeps the columns aligned with the row above.
+                repeat(6 - second.size) { Spacer(modifier = Modifier.weight(1f)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ScientificKey(label: String, description: String, compact: Boolean, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier
+            .weight(1f)
+            .semantics { contentDescription = description },
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Text(
+            text = label,
+            fontSize = if (compact) 16.sp else 20.sp,
+            fontWeight = FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -1282,8 +1313,9 @@ internal fun formatExpression(expr: String): String {
                         i++
                     }
                 }
-                // E notation suffix (pass through)
-                if (i < expr.length && (expr[i] == 'E' || expr[i] == 'e')) {
+                // E notation suffix (pass through). Only a capital E: a lowercase e is the
+                // constant e (2e = 2·e).
+                if (i < expr.length && expr[i] == 'E') {
                     sb.append(expr[i])
                     i++
                     if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) {
@@ -1350,7 +1382,7 @@ internal fun mapCursorToFormatted(raw: String, rawCursor: Int): Int {
                     fPos++; i++
                     while (i < limit && i < raw.length && raw[i].isDigit()) { fPos++; i++ }
                 }
-                if (i < limit && i < raw.length && (raw[i] == 'E' || raw[i] == 'e')) {
+                if (i < limit && i < raw.length && raw[i] == 'E') {
                     fPos++; i++
                     if (i < limit && i < raw.length && (raw[i] == '+' || raw[i] == '-')) { fPos++; i++ }
                     while (i < limit && i < raw.length && raw[i].isDigit()) { fPos++; i++ }
@@ -1386,7 +1418,7 @@ internal fun mapCursorFromFormatted(raw: String, formattedCursor: Int): Int {
                     fPos++; i++
                     while (i < raw.length && raw[i].isDigit() && fPos < formattedCursor) { fPos++; i++ }
                 }
-                if (i < raw.length && (raw[i] == 'E' || raw[i] == 'e') && fPos < formattedCursor) {
+                if (i < raw.length && raw[i] == 'E' && fPos < formattedCursor) {
                     fPos++; i++
                     if (i < raw.length && (raw[i] == '+' || raw[i] == '-') && fPos < formattedCursor) { fPos++; i++ }
                     while (i < raw.length && raw[i].isDigit() && fPos < formattedCursor) { fPos++; i++ }

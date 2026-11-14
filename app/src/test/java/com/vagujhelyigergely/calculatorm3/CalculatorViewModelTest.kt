@@ -785,6 +785,154 @@ class CalculatorViewModelTest {
         assertExpression("(")
     }
 
+    // ── e, ln, log, x! of fractions (#74, phase 2) ────────────────────
+    // Expected values from Python's decimal module at 60 digits, rounded to the 30 shown.
+
+    @Test
+    fun eIsAConstant() {
+        tap("e")
+        tapEquals()
+        assertExpression("2.71828182845904523536028747135")
+    }
+
+    @Test
+    fun eMultipliesLikePi() {
+        tap("2", "e")
+        tapEquals()
+        assertExpression("5.43656365691809047072057494271")
+        tap("AC", "e", "^", "2")
+        tapEquals()
+        assertExpression("7.38905609893065022723042746058")
+    }
+
+    @Test
+    fun naturalLogarithm() {
+        tap("ln", "2")
+        assertExpression("ln(2)")
+        tapEquals()
+        assertExpression("0.693147180559945309417232121458")
+        tap("AC", "ln", "0", ".", "0", "0", "1")
+        tapEquals()
+        assertExpression("-6.90775527898213705205397436405")
+    }
+
+    @Test
+    fun lnOfEIsOne() {
+        tap("ln", "e")
+        tapEquals()
+        assertExpression("1")
+    }
+
+    @Test
+    fun logBase10() {
+        tap("log", "2")
+        tapEquals()
+        assertExpression("0.301029995663981195213738894724")
+    }
+
+    @Test
+    fun logOfAPowerOfTenIsExact() {
+        tap("log", "1", "0", "0", "0")
+        tapEquals()
+        assertExpression("3")
+        tap("AC", "log", "0", ".", "0", "1")
+        tapEquals()
+        assertExpression("-2")
+    }
+
+    @Test
+    fun logarithmOfZeroOrANegativeIsAnError() {
+        tap("ln", "0")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+        tap("AC", "log", "5", "+/−")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun anOperatorStepsOutOfAFunction() {
+        // ln 2 + 1 = ln(2) + 1, not ln(2 + 1)
+        tap("ln", "2", "+", "1")
+        assertExpression("ln(2)+1")
+        tapEquals()
+        assertExpression("1.69314718055994530941723212146")
+    }
+
+    @Test
+    fun aNumberBeforeAFunctionMultiplies() {
+        tap("2", "ln", "3")
+        assertExpression("2ln(3)")
+        tapEquals()
+        assertExpression("2.19722457733621938279049047385")
+    }
+
+    @Test
+    fun backspaceRemovesAFunctionWithItsBrackets() {
+        tap("5", "+", "log", "⌫")
+        assertExpression("5+")
+        tap("ln", "7", "⌫", "⌫")
+        assertExpression("5+")
+    }
+
+    @Test
+    fun theCursorCantLandInsideAFunctionName() {
+        tap("2", "+", "log", "1", "0")
+        assertExpression("2+log(10)")
+        vm.moveCursorTo(4) // between "l" and "o"
+        assertEquals(2, vm.cursorPosition)
+    }
+
+    @Test
+    fun anEmptyFunctionIsDroppedOnEquals() {
+        tap("9", "+", "ln")
+        tapEquals()
+        assertExpression("9")
+    }
+
+    @Test
+    fun factorialOfAFractionUsesTheGammaFunction() {
+        // 0.5! = Γ(1.5) = √π / 2; 2.5! = Γ(3.5). Shown to 15 digits.
+        tap("0", ".", "5", "!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("0.8862269254527"))
+        tap("AC", "2", ".", "5", "!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("3.3233509704478"))
+    }
+
+    @Test
+    fun aResultWithAFractionalFactorialShowsOnly15Digits() {
+        // 2 ln 10 + e! = 4.605170185988091… + 4.260820476357003… ; e! is good to about 15 digits,
+        // so the sum mustn't show the 30 digits ln 10 alone would have.
+        tap("2", "ln", "1", "0", "+", "e", "!")
+        tapEquals()
+        assertExpression("8.86599066234509")
+    }
+
+    @Test
+    fun factorialOfWholeNumbersStaysExact() {
+        tap("2", "0", "!")
+        tapEquals()
+        assertExpression("2432902008176640000")
+    }
+
+    @Test
+    fun factorialOfANegativeWholeNumberIsAnError() {
+        tap("( )", "3", "+/−", "( )", "!")
+        tapEquals()
+        assertResult("Error: invalidOperation")
+    }
+
+    @Test
+    fun scientificNotationStillWorks() {
+        // A history result in E notation is still read as a number, not as the constant e.
+        vm.loadHistoryEntry(HistoryEntry("10^20", "1E+20"))
+        tap("÷", "1", "0")
+        tapEquals()
+        assertExpression("10000000000000000000")
+    }
+
     // ── √ in writing order: after an operator it starts a root ─────────
 
     @Test
@@ -1214,10 +1362,12 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun piFactorialBlocked() {
-        // ! requires digit or ) before it, π is neither
+    fun piFactorialUsesTheGammaFunction() {
+        // π! = Γ(π + 1) ≈ 7.18808272897603 (it used to be blocked: ! took whole numbers only)
         tap("π", "!")
-        assertExpression("π")
+        assertExpression("π!")
+        tapEquals()
+        assertTrue(vm.expression, vm.expression.startsWith("7.1880827289760"))
     }
 
     // ── Input guard stress tests ───────────────────────────────────────

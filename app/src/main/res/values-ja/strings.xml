@@ -52,6 +52,11 @@
     <string name="btn_power">べき乗</string>
     <string name="btn_factorial">階乗</string>
     <string name="btn_parentheses">括弧</string>
+    <string name="btn_e">ネイピア数 e</string>
+    <string name="btn_ln">自然対数</string>
+    <string name="btn_log">常用対数</string>
+    <string name="btn_more_functions">その他の関数</string>
+    <string name="btn_fewer_functions">その他の関数を隠す</string>
 
     <!-- カメラ / AIスキャン -->
     <string name="scan_hint">手書きの数式の写真を撮影または選択してください</string>

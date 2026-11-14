@@ -52,6 +52,11 @@
     <string name="btn_power">Potencia</string>
     <string name="btn_factorial">Factorial</string>
     <string name="btn_parentheses">Paréntesis</string>
+    <string name="btn_e">Número e</string>
+    <string name="btn_ln">Logaritmo natural</string>
+    <string name="btn_log">Logaritmo en base 10</string>
+    <string name="btn_more_functions">Más funciones</string>
+    <string name="btn_fewer_functions">Menos funciones</string>
 
     <!-- Cámara / Escaneo con IA -->
     <string name="scan_hint">Toma o elige una foto de una expresión matemática manuscrita</string>

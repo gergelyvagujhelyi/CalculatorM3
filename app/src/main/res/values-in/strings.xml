@@ -52,6 +52,11 @@
     <string name="btn_power">Pangkat</string>
     <string name="btn_factorial">Faktorial</string>
     <string name="btn_parentheses">Tanda kurung</string>
+    <string name="btn_e">Bilangan Euler e</string>
+    <string name="btn_ln">Logaritma natural</string>
+    <string name="btn_log">Logaritma basis 10</string>
+    <string name="btn_more_functions">Fungsi lainnya</string>
+    <string name="btn_fewer_functions">Lebih sedikit fungsi</string>
 
     <!-- Kamera / Pemindaian AI -->
     <string name="scan_hint">Ambil atau pilih foto ekspresi matematika tulisan tangan</string>

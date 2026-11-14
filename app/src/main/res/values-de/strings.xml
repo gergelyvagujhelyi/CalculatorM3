@@ -52,6 +52,11 @@
     <string name="btn_power">Potenz</string>
     <string name="btn_factorial">Fakultät</string>
     <string name="btn_parentheses">Klammern</string>
+    <string name="btn_e">Eulersche Zahl e</string>
+    <string name="btn_ln">Natürlicher Logarithmus</string>
+    <string name="btn_log">Zehnerlogarithmus</string>
+    <string name="btn_more_functions">Weitere Funktionen</string>
+    <string name="btn_fewer_functions">Weniger Funktionen</string>
 
     <!-- Kamera / KI-Scan -->
     <string name="scan_hint">Mache oder wähle ein Foto eines handgeschriebenen mathematischen Ausdrucks</string>
