@@ -99,6 +99,9 @@
     <string name="ai_settings">Paramètres de l\'IA</string>
     <string name="ai_settings_model">Modèle</string>
     <string name="ai_settings_speed">Vitesse</string>
+    <string name="ai_settings_button">Bouton IA</string>
+    <string name="ai_settings_show_button">Afficher le bouton IA</string>
+    <string name="ai_settings_show_button_hint">Désactivez-le pour une calculatrice simple. Appuyez 7 fois rapidement sur AC pour le retrouver.</string>
     <string name="scan_quality_unavailable">Disponible avec les modèles Gemma 4.</string>
     <string name="answer_found">Réponse</string>
     <string name="recognized_in">Résolu en %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Se connecter avec Hugging Face</string>
     <string name="sign_in_again">Se reconnecter</string>
     <string name="signing_in">Connexion…</string>
-    <string name="experimental_feature_title">Fonctionnalité expérimentale</string>
-    <string name="experimental_feature_warning">La fonction Caméra IA est expérimentale et peut présenter des bugs ou des comportements inattendus.</string>
-    <string name="accept">Accepter</string>
 
     <!-- Déblocage IA caché -->
     <string name="ai_unlocked">Fonctions IA débloquées !</string>

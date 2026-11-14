@@ -181,12 +181,13 @@ class AiScreensUiTest {
         var retried = 0
         show {
             SuccessContent(
-                answer = "42", rawResponse = "6 × 7 = 42\n42", elapsedMs = 1500, tokenCount = 12,
-                backend = "GPU", ttftMs = 800, decodeTokensPerSec = 20.0,
+                answer = "42", rawResponse = "6 × 7 = 42\n42", elapsedMs = 1500,
                 onUse = { used++ }, onRetry = { retried++ }, onDismiss = {}
             )
         }
         composeTestRule.onNodeWithText(str(R.string.answer_found)).assertIsDisplayed()
+        // No developer speed readout (it used to say "GPU · 20.0 tok/s decode · ttft …").
+        composeTestRule.onNodeWithText("tok/s", substring = true).assertDoesNotExist()
         button(str(R.string.use_answer, "42")).performClick()
         assertEquals(1, used)
         button(str(R.string.retry)).performClick()
@@ -374,21 +375,43 @@ class AiScreensUiTest {
     }
 
     @Test
-    fun sevenRapidAllClearTapsRevealTheAiButton() {
-        assumeTrue("Writes the app's real AI-unlock setting; runs only with allowDataWrites=true (CI emulator)",
+    fun theAiButtonShowsByDefaultAndSevenQuickAcTapsBringItBackWhenHidden() {
+        assumeTrue("Writes the app's real AI-button setting; runs only with allowDataWrites=true (CI emulator)",
             allowDataWrites())
-        val scanViewModel = ScanViewModel(FakeSolver(), ModelManager(context), HuggingFaceAuthManager(context), context)
-        show { CalculatorScreen(viewModel = CalculatorViewModel(), scanViewModel = scanViewModel) }
-        val camera = hasContentDescription(str(R.string.ai_menu_title))
-        assumeTrue("AI features already unlocked on this device",
-            composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isEmpty())
+        val manager = ModelManager(context)
+        assumeTrue("This device can't run any model, so the AI button never shows", manager.canRunAnyModel)
+        val scanViewModel = ScanViewModel(FakeSolver(), manager, HuggingFaceAuthManager(context), context)
+        val aiButton = hasContentDescription(str(R.string.ai_menu_title))
+        try {
+            kotlinx.coroutines.runBlocking { context.setAiButtonHidden(true) }
+            show { CalculatorScreen(viewModel = CalculatorViewModel(), scanViewModel = scanViewModel) }
+            composeTestRule.waitUntil(timeoutMillis = 5_000) {
+                composeTestRule.onAllNodes(aiButton).fetchSemanticsNodes().isEmpty()
+            }
 
-        repeat(7) { button("AC").performClick() }
+            repeat(7) { button("AC").performClick() }
 
-        composeTestRule.waitUntil(timeoutMillis = 5_000) {
-            composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isNotEmpty()
+            composeTestRule.waitUntil(timeoutMillis = 5_000) {
+                composeTestRule.onAllNodes(aiButton).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNode(aiButton).assertIsDisplayed()
+        } finally {
+            // Leave it shown, the default.
+            kotlinx.coroutines.runBlocking { context.setAiButtonHidden(false) }
         }
-        composeTestRule.onNode(camera).assertIsDisplayed()
+    }
+
+    @Test
+    fun theShowAiButtonSwitchReportsTheChoice() {
+        val changes = mutableListOf<Boolean>()
+        show {
+            var shown by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(true) }
+            com.vagujhelyigergely.calculatorm3.camera.AiButtonSetting(shown) { shown = it; changes += it }
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_settings_show_button_hint)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_settings_show_button)).performClick()
+        composeTestRule.onNodeWithText(str(R.string.ai_settings_show_button)).performClick()
+        assertEquals(listOf(false, true), changes)
     }
 
     // ── Type screen and step-by-step answers ────────────────────────────────

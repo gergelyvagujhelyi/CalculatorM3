@@ -24,7 +24,6 @@ import com.vagujhelyigergely.calculatorm3.camera.AiHistoryEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryList
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuButton
 import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -58,13 +57,20 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private val android.content.Context.dataStore by preferencesDataStore(name = "settings")
-private val HAS_SEEN_AI_WARNING = booleanPreferencesKey("has_seen_ai_warning")
-private val AI_UNLOCKED = booleanPreferencesKey("ai_unlocked")
+/** The user turned off "Show AI button" (AI settings); AI is shown by default. */
+private val AI_BUTTON_HIDDEN = booleanPreferencesKey("ai_button_hidden")
+
+/** Show or hide the AI button (AI settings, and 7 quick AC taps). Best effort: a failed write keeps it as it was. */
+internal suspend fun android.content.Context.setAiButtonHidden(hidden: Boolean) {
+    try {
+        dataStore.edit { it[AI_BUTTON_HIDDEN] = hidden }
+    } catch (e: java.io.IOException) {
+    }
+}
 
 data class CalcButton(
     val label: String,
@@ -147,21 +153,21 @@ fun CalculatorScreen(
     val resources = LocalResources.current
     val scope = rememberCoroutineScope()
     // The menu choice waiting behind the one-time "experimental feature" dialog (null = no dialog).
-    var pendingAiEntry by remember { mutableStateOf<AiEntry?>(null) }
 
-    // AI features stay hidden until the user reveals them with the rapid-equals
-    // easter egg below. The unlock is persisted, so it survives restarts.
-    val aiUnlocked by remember(context) {
+    // The AI button shows on devices that can run a model, unless the user turned it off in AI
+    // settings. A device short of RAM never shows it (it couldn't run any model).
+    val canRunAi = remember(scanViewModel) { scanViewModel?.canRunAnyModel == true }
+    val aiButtonHidden by remember(context) {
         context.dataStore.data
             .catch { emit(emptyPreferences()) }
-            .map { it[AI_UNLOCKED] ?: false }
+            .map { it[AI_BUTTON_HIDDEN] ?: false }
     }.collectAsState(initial = false)
+    val aiVisible = scanViewModel != null && canRunAi && !aiButtonHidden
 
-    // Rapid-AC easter egg: hammering "AC" reveals the AI features, mirroring
-    // Android's "tap Build number 7 times" developer-options unlock — countdown
-    // toasts and all. The streak only survives genuinely rapid taps: pause longer
-    // than the window below and it resets, so everyday "AC" presses (always spaced
-    // out by other input between them) can never drift toward an accidental unlock.
+    // Hidden AI button: hammering "AC" brings it back, like Android's "tap Build number
+    // 7 times" — countdown toasts and all. The streak only survives genuinely rapid taps: pause
+    // longer than the window below and it resets, so everyday "AC" presses (always spaced out by
+    // other input between them) can never drift toward bringing it back by accident.
     val tapsToUnlockAi = 7
     val rapidPressWindowMs = 800L
     var allClearPressCount by remember { mutableIntStateOf(0) }
@@ -169,7 +175,7 @@ fun CalculatorScreen(
     val unlockToast = remember { arrayOfNulls<android.widget.Toast>(1) }
 
     val onAllClearPressed: () -> Unit = {
-        if (!aiUnlocked) {
+        if (aiButtonHidden && canRunAi) {
             val now = System.currentTimeMillis()
             if (now - lastAllClearPressTime > rapidPressWindowMs) allClearPressCount = 0
             lastAllClearPressTime = now
@@ -178,14 +184,7 @@ fun CalculatorScreen(
             when {
                 remaining <= 0 -> {
                     allClearPressCount = 0
-                    scope.launch {
-                        // Best-effort persist; a failed write just means the user has
-                        // to do the unlock gesture again rather than crashing.
-                        try {
-                            context.dataStore.edit { it[AI_UNLOCKED] = true }
-                        } catch (e: java.io.IOException) {
-                        }
-                    }
+                    scope.launch { context.setAiButtonHidden(false) }
                     unlockToast[0]?.cancel()
                     unlockToast[0] = android.widget.Toast.makeText(
                         context,
@@ -220,61 +219,10 @@ fun CalculatorScreen(
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 }
-                else -> {
-                    // Read the persisted flag at click time rather than from a collected
-                    // State, so a fast tap right after launch can't see a stale "not seen"
-                    // value before DataStore's first async read. Guard the disk read —
-                    // DataStore throws IOException on failure — and default to showing the
-                    // warning so a failed read can't crash the click handler.
-                    scope.launch {
-                        val hasSeenWarning = try {
-                            context.dataStore.data.first()[HAS_SEEN_AI_WARNING] ?: false
-                        } catch (e: java.io.IOException) {
-                            false
-                        }
-                        if (hasSeenWarning) {
-                            aiEntry = entry
-                        } else {
-                            pendingAiEntry = entry
-                        }
-                    }
-                }
+                // The first open explains the download on its own first-run screen.
+                else -> aiEntry = entry
             }
         }
-    }
-
-    pendingAiEntry?.let { pending ->
-        AlertDialog(
-            onDismissRequest = { pendingAiEntry = null; aiRerunId = null; aiAnswerId = null },
-            icon = { Icon(imageVector = Icons.Default.Psychology, contentDescription = null) },
-            title = { Text(text = stringResource(R.string.experimental_feature_title)) },
-            text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            // Best-effort persist; a failed write just means the warning
-                            // shows again next time rather than crashing the app.
-                            try {
-                                context.dataStore.edit { preferences ->
-                                    preferences[HAS_SEEN_AI_WARNING] = true
-                                }
-                            } catch (e: java.io.IOException) {
-                            }
-                        }
-                        pendingAiEntry = null
-                        aiEntry = pending
-                    }
-                ) {
-                    Text(stringResource(R.string.accept))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pendingAiEntry = null; aiRerunId = null; aiAnswerId = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
     }
 
     if (showHistory) {
@@ -288,7 +236,9 @@ fun CalculatorScreen(
                 showHistory = false
             },
             onClearHistory = { viewModel.clearHistory() },
-            aiHistory = if (scanViewModel != null && aiUnlocked) scanViewModel.aiHistory else null,
+            // Kept reachable with the button hidden, as long as there's something in it.
+            aiHistory = if (scanViewModel != null && (aiVisible || scanViewModel.aiHistory.isNotEmpty()))
+                scanViewModel.aiHistory else null,
             aiImageOf = { scanViewModel?.historyImage(it) },
             onUseAiAnswer = { answer ->
                 viewModel.setExpressionFromScan(answer)
@@ -316,6 +266,8 @@ fun CalculatorScreen(
             entry = openAiEntry,
             rerunId = aiRerunId,
             answerId = aiAnswerId,
+            showAiButton = !aiButtonHidden,
+            onShowAiButtonChange = { show -> scope.launch { context.setAiButtonHidden(!show) } },
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
@@ -344,7 +296,7 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onAiSelect = if (scanViewModel != null && aiUnlocked) handleShowAi else null,
+                onAiSelect = if (aiVisible) handleShowAi else null,
                 onAllClearPressed = onAllClearPressed
             )
         } else {
@@ -352,7 +304,7 @@ fun CalculatorScreen(
                 viewModel = viewModel,
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
-                onAiSelect = if (scanViewModel != null && aiUnlocked) handleShowAi else null,
+                onAiSelect = if (aiVisible) handleShowAi else null,
                 onAllClearPressed = onAllClearPressed
             )
         }

@@ -99,6 +99,9 @@
     <string name="ai_settings">Ustawienia AI</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Szybkość</string>
+    <string name="ai_settings_button">Przycisk AI</string>
+    <string name="ai_settings_show_button">Pokaż przycisk AI</string>
+    <string name="ai_settings_show_button_hint">Wyłącz, aby mieć zwykły kalkulator. Stuknij szybko 7 razy AC, aby go przywrócić.</string>
     <string name="scan_quality_unavailable">Dostępne z modelami Gemma 4.</string>
     <string name="answer_found">Odpowiedź</string>
     <string name="recognized_in">Rozwiązano w %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Zaloguj się przez Hugging Face</string>
     <string name="sign_in_again">Zaloguj się ponownie</string>
     <string name="signing_in">Logowanie…</string>
-    <string name="experimental_feature_title">Funkcja eksperymentalna</string>
-    <string name="experimental_feature_warning">Funkcja kamery AI jest eksperymentalna i może zawierać błędy lub działać w nieoczekiwany sposób.</string>
-    <string name="accept">Akceptuj</string>
 
     <!-- Ukryte odblokowanie AI -->
     <string name="ai_unlocked">Funkcje AI odblokowane!</string>

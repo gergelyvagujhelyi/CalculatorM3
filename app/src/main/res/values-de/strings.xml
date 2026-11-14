@@ -99,6 +99,9 @@
     <string name="ai_settings">KI-Einstellungen</string>
     <string name="ai_settings_model">Modell</string>
     <string name="ai_settings_speed">Geschwindigkeit</string>
+    <string name="ai_settings_button">KI-Taste</string>
+    <string name="ai_settings_show_button">KI-Taste anzeigen</string>
+    <string name="ai_settings_show_button_hint">Ausschalten für einen reinen Rechner. Tippe 7-mal schnell auf AC, um sie zurückzuholen.</string>
     <string name="scan_quality_unavailable">Verfügbar mit den Gemma-4-Modellen.</string>
     <string name="answer_found">Antwort</string>
     <string name="recognized_in">Gelöst in %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Mit Hugging Face anmelden</string>
     <string name="sign_in_again">Erneut anmelden</string>
     <string name="signing_in">Anmeldung…</string>
-    <string name="experimental_feature_title">Experimentelle Funktion</string>
-    <string name="experimental_feature_warning">Die KI-Kamerafunktion ist experimentell und kann Fehler oder unerwartetes Verhalten aufweisen.</string>
-    <string name="accept">Akzeptieren</string>
 
     <!-- Verstecktes KI-Freischalten -->
     <string name="ai_unlocked">KI-Funktionen freigeschaltet!</string>

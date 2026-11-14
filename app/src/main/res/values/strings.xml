@@ -99,6 +99,9 @@
     <string name="ai_settings">AI settings</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Speed</string>
+    <string name="ai_settings_button">AI button</string>
+    <string name="ai_settings_show_button">Show AI button</string>
+    <string name="ai_settings_show_button_hint">Turn it off for a plain calculator. Tap AC 7 times quickly to bring it back.</string>
     <string name="scan_quality_unavailable">Available with the Gemma 4 models.</string>
     <string name="answer_found">Answer</string>
     <string name="recognized_in">Solved in %1$s</string>
@@ -162,9 +165,6 @@
     <string name="sign_in_huggingface">Sign in with Hugging Face</string>
     <string name="sign_in_again">Sign in again</string>
     <string name="signing_in">Signing in…</string>
-    <string name="experimental_feature_title">Experimental Feature</string>
-    <string name="experimental_feature_warning">The AI Camera feature is experimental and might have bugs or unexpected behavior.</string>
-    <string name="accept">Accept</string>
 
     <!-- Hidden AI unlock (rapidly press "AC", Android "tap Build number" style) -->
     <string name="ai_unlocked">AI features unlocked!</string>

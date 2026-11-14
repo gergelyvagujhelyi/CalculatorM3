@@ -12,6 +12,7 @@ import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.LiteRTSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
+import com.vagujhelyigergely.calculatorm3.ai.SolverPrompts
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
@@ -95,11 +96,15 @@ class RealModelExtractionTest {
             for (case in cases) {
                 val path = image(case.shown)
                 val start = System.currentTimeMillis()
-                val result = solver.solveFromImageStreaming(path) { }
+                // steps=true: the step-by-step prompt (as typed and drawn problems use), to compare.
+                val steps = args.getString("steps") == "true"
+                val result = if (steps) solver.solveFromImageStepsStreaming(path) { }
+                    else solver.solveFromImageStreaming(path) { }
                 val ms = System.currentTimeMillis() - start
                 File(path).delete()
                 val raw = result.getOrNull()?.raw ?: (result.exceptionOrNull() as? RecognitionException)?.rawResponse
-                val answer = result.getOrNull()?.answer.orEmpty()
+                val answer = if (steps) raw?.let { SolverPrompts.parseSteps(it, "")?.usableAnswer }.orEmpty()
+                    else result.getOrNull()?.answer.orEmpty()
                 val outcome = when {
                     answer.isEmpty() -> { declined++; "DECLINED (${result.exceptionOrNull()?.message})" }
                     BigDecimal(answer).compareTo(BigDecimal(case.expected)) == 0 -> { correct++; "CORRECT" }

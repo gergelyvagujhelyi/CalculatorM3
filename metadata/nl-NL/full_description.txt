@@ -36,20 +36,20 @@ Typ volledige wiskundige uitdrukkingen met de juiste bewerkingsvolgorde en haakj
 - Tik op items om ze opnieuw te laden
 - Wis de geschiedenis wanneer nodig
 
-📷 AI-WISKUNDEOPLOSSER (OPTIONEEL, EXPERIMENTEEL)
+📷 AI-WISKUNDEOPLOSSER (OPTIONEEL)
 
-Een experimentele extra voor apparaten met meer RAM: fotografeer een handgeschreven wiskundige uitdrukking en laat een AI-model op het apparaat deze lezen en oplossen — volledig op je apparaat, zonder iets naar een server te sturen.
+Fotografeer handgeschreven wiskunde, schrijf het op het scherm of typ een som – ook verhaaltjessommen – en een AI-model op je apparaat lost het stap voor stap op. Er wordt niets naar een server gestuurd.
 
-➡️ ZO SCHAKEL JE HET IN: de AI-functies zijn verborgen totdat je ze ontgrendelt. Tik in de rekenmachine 7 keer snel achter elkaar op de knop "AC" (alles wissen) — een aftelling begeleidt de laatste tikken. Daarna verschijnt er linksboven een camerapictogram en wordt de ontgrendeling onthouden.
-
-- Vereist een apparaat met 6 GB+ en een eenmalige download van het visiemodel (2,6–4,9 GB)
-- Maak een foto met je systeemcamera of kies er een uit je galerij
-- Kies uit meerdere open visiemodellen (Gemma 4, Gemma 3n)
-- Modellen draaien volledig op het apparaat, met GPU-versnelling waar ondersteund
-- Kies Snel, Gebalanceerd of Nauwkeurig: snellere instellingen bekijken de foto met minder detail en kunnen in ongeveer de helft van de tijd antwoorden
-- De oplossing wordt getoond met netjes opgemaakte wiskunde — breuken, wortels en exponenten
-- Internet wordt slechts één keer gebruikt, om het door jou gekozen model te downloaden
-- Geen foto, berekening of gebruiksgegeven verlaat ooit je apparaat
+- AI-knop (linksboven): Camera, Galerij, Schrijven of Typen
+- Vereist een apparaat met 6 GB+ en een eenmalige modeldownload (2,6–4,9 GB)
+- Getypte eenvoudige sommen beantwoordt de rekenmachine meteen zelf
+- Stel tot twee vervolgvragen over een antwoord
+- De AI-geschiedenis blijft op je apparaat; wis die wanneer je wilt
+- Een getal gaat alleen naar de rekenmachine als het klopt met de uitwerking
+- Snelheid: Snel, Gebalanceerd of Nauwkeurig
+- Open modellen (Gemma 4, Gemma 3n), volledig op het apparaat, GPU-versneld
+- Internet maar één keer, voor de modeldownload – standaard via wifi
+- Niet nodig? Zet „AI-knop tonen" uit in de AI-instellingen
 
 🎨 MATERIAL 3-ONTWERP
 

@@ -36,20 +36,20 @@ Gib vollständige mathematische Ausdrücke mit korrekter Operatorrangfolge (Punk
 - Tippe auf Einträge, um sie erneut zu laden
 - Lösche den Verlauf bei Bedarf
 
-📷 KI-MATHELÖSER (OPTIONAL, EXPERIMENTELL)
+📷 KI-MATHELÖSER (OPTIONAL)
 
-Ein experimentelles Extra für Geräte mit mehr RAM: Fotografiere einen handgeschriebenen mathematischen Ausdruck und lass ein KI-Modell auf dem Gerät ihn lesen und lösen — vollständig auf deinem Gerät, ohne dass etwas an einen Server gesendet wird.
+Fotografiere handschriftliche Mathe, schreib sie auf den Bildschirm oder tippe eine Aufgabe – auch Textaufgaben – und ein KI-Modell auf dem Gerät löst sie Schritt für Schritt. Nichts wird an einen Server gesendet.
 
-➡️ SO AKTIVIERST DU IHN: Die KI-Funktionen sind ausgeblendet, bis du sie freischaltest. Tippe im Rechner 7-mal schnell hintereinander auf die Taste „AC" (Alles löschen) — ein Countdown führt dich durch die letzten Tastendrücke. Anschließend erscheint oben links ein Kamerasymbol, und die Freischaltung wird gemerkt.
-
-- Erfordert ein Gerät mit 6 GB+ und einen einmaligen Download des Vision-Modells (2,6–4,9 GB)
-- Mache ein Foto mit deiner System-Kamera oder wähle eines aus deiner Galerie
-- Wähle aus mehreren offenen Vision-Modellen (Gemma 4, Gemma 3n)
-- Modelle laufen vollständig auf dem Gerät, GPU-beschleunigt, wo unterstützt
-- Wähle Schnell, Ausgewogen oder Genau: Schnellere Einstellungen betrachten das Foto weniger detailliert und antworten oft in etwa der halben Zeit
-- Die Lösung wird mit sauber formatierter Mathematik angezeigt — Brüche, Wurzeln und Exponenten
-- Das Internet wird nur einmal genutzt, um das von dir gewählte Modell herunterzuladen
-- Keine Fotos, Berechnungen oder Nutzungsdaten verlassen jemals dein Gerät
+- KI-Taste (oben links): Kamera, Galerie, Schreiben oder Tippen
+- Braucht ein Gerät mit 6 GB+ RAM und einen einmaligen Modell-Download (2,6–4,9 GB)
+- Getippte einfache Rechnungen beantwortet der Rechner sofort selbst
+- Bis zu zwei Folgefragen zu einer Antwort
+- Der KI-Verlauf bleibt auf deinem Gerät und lässt sich jederzeit löschen
+- Eine Zahl kommt nur in den Rechner, wenn sie zum Rechenweg des Modells passt
+- Geschwindigkeit: Schnell, Ausgewogen oder Genau
+- Offene Modelle (Gemma 4, Gemma 3n), komplett auf dem Gerät, GPU-beschleunigt
+- Internet nur einmal, für den Modell-Download – standardmäßig per WLAN
+- Nicht gewünscht? „KI-Taste anzeigen" in den KI-Einstellungen ausschalten
 
 🎨 MATERIAL-3-DESIGN
 

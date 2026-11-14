@@ -99,6 +99,9 @@
     <string name="ai_settings">Pengaturan AI</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Kecepatan</string>
+    <string name="ai_settings_button">Tombol AI</string>
+    <string name="ai_settings_show_button">Tampilkan tombol AI</string>
+    <string name="ai_settings_show_button_hint">Matikan untuk kalkulator biasa. Ketuk AC 7 kali dengan cepat untuk memunculkannya lagi.</string>
     <string name="scan_quality_unavailable">Tersedia dengan model Gemma 4.</string>
     <string name="answer_found">Jawaban</string>
     <string name="recognized_in">Diselesaikan dalam %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Masuk dengan Hugging Face</string>
     <string name="sign_in_again">Masuk lagi</string>
     <string name="signing_in">Masuk…</string>
-    <string name="experimental_feature_title">Fitur eksperimental</string>
-    <string name="experimental_feature_warning">Fitur Kamera AI bersifat eksperimental dan mungkin memiliki bug atau perilaku tak terduga.</string>
-    <string name="accept">Terima</string>
 
     <!-- Buka kunci AI tersembunyi -->
     <string name="ai_unlocked">Fitur AI telah dibuka!</string>

@@ -99,6 +99,9 @@
     <string name="ai_settings">AI सेटिंग्स</string>
     <string name="ai_settings_model">मॉडल</string>
     <string name="ai_settings_speed">गति</string>
+    <string name="ai_settings_button">AI बटन</string>
+    <string name="ai_settings_show_button">AI बटन दिखाएँ</string>
+    <string name="ai_settings_show_button_hint">सादे कैलकुलेटर के लिए इसे बंद करें। वापस लाने के लिए AC को 7 बार तेज़ी से दबाएँ।</string>
     <string name="scan_quality_unavailable">Gemma 4 मॉडल के साथ उपलब्ध।</string>
     <string name="answer_found">उत्तर</string>
     <string name="recognized_in">%1$s में हल किया गया</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Hugging Face से साइन इन करें</string>
     <string name="sign_in_again">फिर से साइन इन करें</string>
     <string name="signing_in">साइन इन हो रहा है…</string>
-    <string name="experimental_feature_title">प्रायोगिक सुविधा</string>
-    <string name="experimental_feature_warning">AI कैमरा सुविधा प्रायोगिक है और इसमें बग या अप्रत्याशित व्यवहार हो सकता है।</string>
-    <string name="accept">स्वीकार करें</string>
 
     <!-- छिपा हुआ AI अनलॉक -->
     <string name="ai_unlocked">AI सुविधाएँ अनलॉक हो गईं!</string>

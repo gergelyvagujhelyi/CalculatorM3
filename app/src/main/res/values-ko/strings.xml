@@ -99,6 +99,9 @@
     <string name="ai_settings">AI 설정</string>
     <string name="ai_settings_model">모델</string>
     <string name="ai_settings_speed">속도</string>
+    <string name="ai_settings_button">AI 버튼</string>
+    <string name="ai_settings_show_button">AI 버튼 표시</string>
+    <string name="ai_settings_show_button_hint">끄면 일반 계산기가 됩니다. AC를 빠르게 7번 누르면 다시 나타납니다.</string>
     <string name="scan_quality_unavailable">Gemma 4 모델에서 사용할 수 있습니다.</string>
     <string name="answer_found">답</string>
     <string name="recognized_in">%1$s 만에 풀이함</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Hugging Face로 로그인</string>
     <string name="sign_in_again">다시 로그인</string>
     <string name="signing_in">로그인 중…</string>
-    <string name="experimental_feature_title">실험적 기능</string>
-    <string name="experimental_feature_warning">AI 카메라 기능은 실험적이며 버그나 예기치 않은 동작이 있을 수 있습니다.</string>
-    <string name="accept">동의</string>
 
     <!-- 숨겨진 AI 잠금 해제 -->
     <string name="ai_unlocked">AI 기능이 잠금 해제되었습니다!</string>

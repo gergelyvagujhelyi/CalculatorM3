@@ -99,6 +99,9 @@
     <string name="ai_settings">AI 设置</string>
     <string name="ai_settings_model">模型</string>
     <string name="ai_settings_speed">速度</string>
+    <string name="ai_settings_button">AI 按钮</string>
+    <string name="ai_settings_show_button">显示 AI 按钮</string>
+    <string name="ai_settings_show_button_hint">关闭后即为普通计算器。快速点按 AC 7 次可恢复。</string>
     <string name="scan_quality_unavailable">仅适用于 Gemma 4 模型。</string>
     <string name="answer_found">答案</string>
     <string name="recognized_in">用时 %1$s 求解</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">使用 Hugging Face 登录</string>
     <string name="sign_in_again">重新登录</string>
     <string name="signing_in">正在登录…</string>
-    <string name="experimental_feature_title">实验性功能</string>
-    <string name="experimental_feature_warning">AI 相机功能为实验性功能，可能存在错误或意外行为。</string>
-    <string name="accept">接受</string>
 
     <!-- 隐藏的 AI 解锁 -->
     <string name="ai_unlocked">AI 功能已解锁！</string>

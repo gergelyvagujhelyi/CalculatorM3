@@ -99,6 +99,9 @@
     <string name="ai_settings">MI-beállítások</string>
     <string name="ai_settings_model">Modell</string>
     <string name="ai_settings_speed">Sebesség</string>
+    <string name="ai_settings_button">MI gomb</string>
+    <string name="ai_settings_show_button">MI gomb megjelenítése</string>
+    <string name="ai_settings_show_button_hint">Kapcsold ki egy egyszerű számológéphez. Az AC 7 gyors megérintésével visszahozhatod.</string>
     <string name="scan_quality_unavailable">A Gemma 4 modellekkel érhető el.</string>
     <string name="answer_found">Válasz</string>
     <string name="recognized_in">Megoldva %1$s alatt</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Bejelentkezés a Hugging Face-szel</string>
     <string name="sign_in_again">Bejelentkezés újra</string>
     <string name="signing_in">Bejelentkezés…</string>
-    <string name="experimental_feature_title">Kísérleti funkció</string>
-    <string name="experimental_feature_warning">Az MI-kamera funkció kísérleti, és hibákat vagy váratlan viselkedést mutathat.</string>
-    <string name="accept">Elfogadás</string>
 
     <!-- Rejtett MI-feloldás -->
     <string name="ai_unlocked">MI-funkciók feloldva!</string>

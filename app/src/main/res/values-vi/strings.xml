@@ -99,6 +99,9 @@
     <string name="ai_settings">Cài đặt AI</string>
     <string name="ai_settings_model">Mô hình</string>
     <string name="ai_settings_speed">Tốc độ</string>
+    <string name="ai_settings_button">Nút AI</string>
+    <string name="ai_settings_show_button">Hiện nút AI</string>
+    <string name="ai_settings_show_button_hint">Tắt để dùng máy tính đơn giản. Nhấn AC nhanh 7 lần để hiện lại.</string>
     <string name="scan_quality_unavailable">Có sẵn với các mô hình Gemma 4.</string>
     <string name="answer_found">Đáp án</string>
     <string name="recognized_in">Đã giải trong %1$s</string>
@@ -149,9 +152,6 @@
     <string name="sign_in_huggingface">Đăng nhập bằng Hugging Face</string>
     <string name="sign_in_again">Đăng nhập lại</string>
     <string name="signing_in">Đang đăng nhập…</string>
-    <string name="experimental_feature_title">Tính năng thử nghiệm</string>
-    <string name="experimental_feature_warning">Tính năng Camera AI là thử nghiệm và có thể có lỗi hoặc hành vi không mong muốn.</string>
-    <string name="accept">Chấp nhận</string>
 
     <!-- Mở khóa AI ẩn -->
     <string name="ai_unlocked">Đã mở khóa tính năng AI!</string>
