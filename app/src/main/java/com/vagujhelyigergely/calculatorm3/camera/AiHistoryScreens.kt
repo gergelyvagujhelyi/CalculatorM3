@@ -278,6 +278,8 @@ internal fun AiHistoryDetail(
     onUse: (String) -> Unit,
     onSolveAgain: () -> Unit,
     onDelete: () -> Unit,
+    /** Open the answer to ask about it; offered while it still takes questions. */
+    onAskAbout: () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     var outputOpen by rememberSaveable(entry.id) { mutableStateOf(true) }
@@ -343,6 +345,26 @@ internal fun AiHistoryDetail(
         entry.steps?.steps?.takeIf { it.isNotBlank() }?.let {
             Label(stringResource(R.string.steps_title))
             MarkdownLatexText(it, color = onSurface, modifier = Modifier.fillMaxWidth())
+        }
+
+        // Questions asked about it, and how many are left.
+        if (entry.followUps.isNotEmpty()) {
+            Label(stringResource(R.string.ai_history_questions))
+            entry.followUps.forEach { (question, reply) ->
+                Text(question, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                MarkdownLatexText(reply, color = onSurface, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        val questionsLeft = MAX_FOLLOW_UPS - entry.followUps.size
+        if (entry.outcome != AiHistoryOutcome.FAILED && questionsLeft > 0) {
+            OutlinedButton(onClick = onAskAbout) {
+                Text(stringResource(R.string.ai_history_ask))
+            }
+            Text(
+                stringResource(R.string.follow_up_left, questionsLeft),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         // The model's complete output, word for word.

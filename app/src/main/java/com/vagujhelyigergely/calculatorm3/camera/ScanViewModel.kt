@@ -176,7 +176,7 @@ class ScanViewModel(
      */
     private suspend fun saveToHistory(
         state: ScanUiState, input: HistoryInput, preparedInput: String?, model: AiModel, elapsedMs: Long
-    ) {
+    ): AiHistoryEntry? {
         val base = AiHistoryEntry(
             id = "", timestamp = System.currentTimeMillis(), mode = entry,
             typedText = (input as? HistoryInput.Typed)?.text,
@@ -190,21 +190,22 @@ class ScanViewModel(
             is ScanUiState.Success -> base.copy(output = state.rawResponse, answer = state.answer, steps = state.steps)
             is ScanUiState.Error -> {
                 val raw = state.rawResponse
-                if (raw.isNullOrBlank()) return
+                if (raw.isNullOrBlank()) return null
                 base.copy(
                     output = raw, message = state.message,
                     outcome = if (state.checkOutput) AiHistoryOutcome.CHECK else AiHistoryOutcome.FAILED
                 )
             }
-            else -> return
+            else -> return null
         }
         val image = if (input is HistoryInput.Photo) preparedInput?.let { java.io.File(it) } else null
-        try {
-            withContext(historyIo) { historyStore.add(entryToSave, image) }
-            refreshHistory()
+        return try {
+            withContext(historyIo) { historyStore.add(entryToSave, image) }.also { refreshHistory() }
         } catch (e: Exception) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             android.util.Log.w("ScanViewModel", "Couldn't save to AI history", e)
+            // Not saved (no id), but questions about it can still be asked while it's on screen.
+            entryToSave
         }
     }
 
@@ -213,6 +214,140 @@ class ScanViewModel(
      * input, with the model and speed set now.
      */
     private var pendingRerun: AiHistoryEntry? = null
+
+    // ── Follow-up questions ─────────────────────────────────────────────────
+
+    /** Where a question about the current answer stands. */
+    sealed interface FollowUpUi {
+        data object Idle : FollowUpUi
+        /** The engine was released (window closed, app in the background) and is reloading. */
+        data object LoadingModel : FollowUpUi
+        data class Answering(val question: String, val partial: String) : FollowUpUi
+        data class Failed(val message: String) : FollowUpUi
+    }
+
+    /** The answer on screen: what questions are about. Null when there's none. */
+    var currentAnswer by mutableStateOf<AiHistoryEntry?>(null)
+        private set
+    var followUp by mutableStateOf<FollowUpUi>(FollowUpUi.Idle)
+        private set
+    private var followUpJob: Job? = null
+
+    /** Answered or "check the answer" results take questions; failures and partials don't. */
+    private fun takesQuestions(entry: AiHistoryEntry) =
+        entry.outcome != AiHistoryOutcome.FAILED && entry.followUps.size < MAX_FOLLOW_UPS
+
+    /** Questions still allowed about the current answer. */
+    val followUpsLeft: Int get() = currentAnswer?.let { MAX_FOLLOW_UPS - it.followUps.size } ?: 0
+
+    /** The screen state that shows a saved [entry] as it was answered. */
+    private fun answerState(entry: AiHistoryEntry): ScanUiState = when (entry.outcome) {
+        AiHistoryOutcome.SOLVED -> ScanUiState.Success(
+            entry.answer, entry.output, entry.elapsedMs, steps = entry.steps
+        )
+        else -> ScanUiState.Error(
+            entry.message.orEmpty(), entry.output, checkOutput = entry.outcome == AiHistoryOutcome.CHECK
+        )
+    }
+
+    /**
+     * Ask [question] about the current answer (at most [MAX_FOLLOW_UPS]). Built fresh from the
+     * saved text each time, so it works whether or not the engine is still loaded: if it isn't,
+     * it's loaded first ([FollowUpUi.LoadingModel]); a model that can't load shows the usual
+     * "download again" screen. The reply is saved with the answer in AI history.
+     */
+    fun askFollowUp(question: String) {
+        val answer = currentAnswer ?: return
+        val q = question.trim()
+        // Busy only while a question is being answered: the previous one may still be saving its
+        // reply to history, which mustn't swallow a question asked right after the reply shows.
+        val busy = followUp is FollowUpUi.Answering || followUp is FollowUpUi.LoadingModel
+        if (q.isEmpty() || !takesQuestions(answer) || busy) return
+        val model = modelManager.selectedModel
+        followUpJob = viewModelScope.launch {
+            val scope = this
+            try {
+                if (!(solver.isModelLoaded && loadedModelId == model.id)) {
+                    followUp = FollowUpUi.LoadingModel
+                    if (!ensureModelLoaded(model, showLoading = false)) {
+                        followUp = FollowUpUi.Idle
+                        return@launch
+                    }
+                }
+                followUp = FollowUpUi.Answering(q, "")
+                val message = SolverPrompts.followUpMessage(
+                    problem = answer.steps?.problem ?: answer.typedText.orEmpty(),
+                    answer = answer.steps?.answer ?: answer.answer,
+                    working = answer.steps?.steps?.takeIf { it.isNotBlank() } ?: answer.output,
+                    earlier = answer.followUps.map { it.question to it.reply },
+                    question = q
+                )
+                var lastUiMs = 0L
+                val result = solver.followUpStreaming(message) { partial ->
+                    val now = System.currentTimeMillis()
+                    if (partial.isNotEmpty() && now - lastUiMs >= UI_UPDATE_THROTTLE_MS) {
+                        lastUiMs = now
+                        scope.launch {
+                            if (followUp is FollowUpUi.Answering) followUp = FollowUpUi.Answering(q, partial)
+                        }
+                    }
+                }
+                val reply = result.getOrNull()?.raw?.trim().orEmpty()
+                if (reply.isEmpty()) {
+                    val res = (result.exceptionOrNull() as? RecognitionException)?.messageRes ?: 0
+                    followUp = FollowUpUi.Failed(
+                        if (res != 0) appContext.getString(res) else appContext.getString(R.string.follow_up_failed)
+                    )
+                    return@launch
+                }
+                val updated = answer.copy(followUps = answer.followUps + FollowUp(q, reply))
+                currentAnswer = updated
+                followUp = FollowUpUi.Idle
+                if (updated.id.isNotEmpty()) {
+                    try {
+                        withContext(historyIo) { historyStore.update(updated) }
+                        refreshHistory()
+                    } catch (e: Exception) {
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        android.util.Log.w("ScanViewModel", "Couldn't save the follow-up", e)
+                    }
+                }
+                // That was the last allowed question: nothing left to keep the engine for.
+                if (!takesQuestions(updated)) releaseAll()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                if (followUp !is FollowUpUi.Failed) followUp = FollowUpUi.Idle
+                throw e
+            }
+        }
+    }
+
+    /** Stop a question being answered; it doesn't count against the limit. */
+    fun stopFollowUp() {
+        if (followUpJob?.isActive == true) solver.cancel()
+        followUpJob?.cancel()
+        followUpJob = null
+        if (followUp !is FollowUpUi.Failed) followUp = FollowUpUi.Idle
+    }
+
+    /** Leave the answer on screen: end any question and free the engine it was keeping. */
+    private fun leaveAnswer() {
+        stopFollowUp()
+        followUp = FollowUpUi.Idle
+        if (currentAnswer != null) {
+            currentAnswer = null
+            releaseAll()
+        }
+    }
+
+    /**
+     * Solve the current answer's input again, as a new answer with its own questions (offered
+     * once its questions are used up). Falls back to [retry] if the input is gone.
+     */
+    fun solveAnswerAgain() {
+        val answer = currentAnswer ?: return retry()
+        leaveAnswer()
+        if (!rerun(answer)) retry()
+    }
 
     /** Start [entry]'s solve again from its saved input. False if its input is gone. */
     private fun rerun(entry: AiHistoryEntry): Boolean {
@@ -265,6 +400,7 @@ class ScanViewModel(
 
     /** Back to the Type screen with the problem as it was (Edit on a typed problem's answer). */
     fun editTypedProblem() {
+        leaveAnswer()
         uiState = ScanUiState.Typing
     }
 
@@ -273,6 +409,7 @@ class ScanViewModel(
      * (Fix as text on a drawing's answer). A typed solve skips the picture, so it's quick.
      */
     fun fixAsText(readAs: String) {
+        leaveAnswer()
         entry = AiEntry.TYPE
         typedProblem = readAs
         uiState = ScanUiState.Typing
@@ -332,6 +469,7 @@ class ScanViewModel(
 
     /** Back to the pad with the drawing as it was (Draw again on a drawing's answer). */
     fun drawAgain() {
+        leaveAnswer()
         uiState = ScanUiState.Drawing
     }
 
@@ -417,8 +555,24 @@ class ScanViewModel(
      * recreated the app (e.g. while the system camera was in front); the camera's pending result
      * may still arrive, so don't open the camera again on top of it.
      */
-    fun initialize(entry: AiEntry = AiEntry.CAMERA, resumed: Boolean = false, rerunId: String? = null) {
+    fun initialize(
+        entry: AiEntry = AiEntry.CAMERA,
+        resumed: Boolean = false,
+        rerunId: String? = null,
+        /** A saved answer to open as it was, to ask about it (Ask about this, in AI history). */
+        answerId: String? = null,
+    ) {
         this.entry = entry
+        leaveAnswer()
+        if (!resumed && answerId != null) {
+            val saved = aiHistory.find { it.id == answerId }
+            if (saved != null) {
+                // No model checks yet: showing the answer needs none; a question loads it.
+                currentAnswer = saved
+                uiState = answerState(saved)
+                return
+            }
+        }
         autoLaunchAllowed = !resumed
         // Solve again (from AI history): found by id, and not repeated for a recreated window.
         pendingRerun = if (resumed || rerunId == null) null else aiHistory.find { it.id == rerunId }
@@ -497,7 +651,7 @@ class ScanViewModel(
      * system camera app launches, which otherwise OOM-killed us with large models.
      * Returns true if the model is ready, false (and sets an Error state) on failure.
      */
-    private suspend fun ensureModelLoaded(model: AiModel): Boolean {
+    private suspend fun ensureModelLoaded(model: AiModel, showLoading: Boolean = true): Boolean {
         // The previous scan's release may still be running. Let it finish first; otherwise it
         // takes the solver lock after this load and closes the engine this scan is about to use.
         releaseJob?.join()
@@ -508,7 +662,7 @@ class ScanViewModel(
             uiState = ScanUiState.ModelUnusable(model, missing = true)
             return false
         }
-        uiState = ScanUiState.ModelLoading()
+        if (showLoading) uiState = ScanUiState.ModelLoading()
         return try {
             solver.setVisualTokenBudget(budget)
             solver.loadModel(modelManager.modelPath(model))
@@ -772,6 +926,7 @@ class ScanViewModel(
         cleanup: (preparedInput: String?) -> Unit,
     ) {
         val model = modelManager.selectedModel
+        leaveAnswer()
         // Cancel any still-running inference before starting a new one, so an overlapping call
         // can't orphan the previous job (the ViewModel is Activity-scoped, so an un-cancelled job
         // keeps generating in the background). Keep the new Job so stopInference() can cancel it.
@@ -783,6 +938,8 @@ class ScanViewModel(
             // the Capturing state stopInference() returns to.
             val inferenceScope = this
             var input: String? = null
+            // Set when the result can take questions: the engine then stays loaded for them.
+            var keepModel = false
             try {
                 // A stopped scan can still be inside its model load, which can't be interrupted.
                 // When that load returns, the stopped scan's finally releases the engine. Wait
@@ -884,7 +1041,8 @@ class ScanViewModel(
                     }
                 )
                 // Into AI history, before the finally below cleans up the input (a photo's picture).
-                saveToHistory(uiState, history, input, model, elapsed)
+                currentAnswer = saveToHistory(uiState, history, input, model, elapsed)
+                keepModel = currentAnswer?.let(::takesQuestions) == true
             } catch (e: Throwable) {
                 // Let cancellation (e.g. user closed the screen) propagate instead
                 // of showing it as an inference error.
@@ -894,8 +1052,10 @@ class ScanViewModel(
                 // Free the engine as soon as inference is done: it must NOT stay resident while
                 // the system camera launches for the next scan (large models OOM-kill the app —
                 // the reason model loading is deferred to here). It reloads lazily on the next
-                // photo.
-                releaseAll()
+                // photo. An answer that can take questions keeps it until the user leaves it
+                // ([leaveAnswer]), the app goes to the background ([stopInference]) or the last
+                // question is answered.
+                if (!keepModel) releaseAll()
                 cleanup(input)
             }
         }
@@ -921,6 +1081,10 @@ class ScanViewModel(
         if (uiState is ScanUiState.Processing || uiState is ScanUiState.ModelLoading) {
             showReady(autoLaunch = false)
         }
+        // Closing the window or leaving the app also ends a question and frees the engine an
+        // answer was keeping; a later question reloads it. (A running solve frees it itself.)
+        stopFollowUp()
+        if (inferenceJob?.isActive != true) releaseAll()
     }
 
     /**
@@ -1005,6 +1169,7 @@ class ScanViewModel(
     }
 
     fun retry() {
+        leaveAnswer()
         // Reopen the same source (camera or picker) if the model is available (loaded lazily on
         // the next photo); otherwise re-run the first-time / download flow.
         // A model that still needs its one-time preparation goes through initialize(), which

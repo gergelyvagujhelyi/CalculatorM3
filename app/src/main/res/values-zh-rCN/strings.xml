@@ -22,6 +22,18 @@
     <string name="ai_history_photo">照片</string>
     <string name="ai_history_drawing">手写</string>
     <string name="ai_history_back">返回</string>
+    <string name="follow_up_title">就这个答案提问</string>
+    <string name="follow_up_hint">输入问题…</string>
+    <string name="follow_up_left">剩余提问次数：%1$d</string>
+    <string name="follow_up_none">这个答案已没有剩余的提问次数。</string>
+    <string name="follow_up_send">发送</string>
+    <string name="follow_up_chip_simpler">解释得更简单些</string>
+    <string name="follow_up_chip_another">还有别的方法吗？</string>
+    <string name="follow_up_chip_why">为什么用这个方法？</string>
+    <string name="follow_up_thinking">正在思考…</string>
+    <string name="follow_up_failed">模型无法回答，请重试。</string>
+    <string name="ai_history_ask">就此提问</string>
+    <string name="ai_history_questions">提问</string>
     <string name="no_history_yet">暂无历史记录</string>
 
     <!-- 按钮无障碍 -->

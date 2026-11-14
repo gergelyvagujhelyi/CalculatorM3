@@ -22,6 +22,18 @@
     <string name="ai_history_photo">Fotoğraf</string>
     <string name="ai_history_drawing">Çizim</string>
     <string name="ai_history_back">Geri</string>
+    <string name="follow_up_title">Bu cevap hakkında sor</string>
+    <string name="follow_up_hint">Bir soru sorun…</string>
+    <string name="follow_up_left">Kalan soru: %1$d</string>
+    <string name="follow_up_none">Bu cevap için soru hakkı kalmadı.</string>
+    <string name="follow_up_send">Gönder</string>
+    <string name="follow_up_chip_simpler">Daha basit açıkla</string>
+    <string name="follow_up_chip_another">Başka bir yolu var mı?</string>
+    <string name="follow_up_chip_why">Neden bu yöntem?</string>
+    <string name="follow_up_thinking">Düşünüyor…</string>
+    <string name="follow_up_failed">Model bunu cevaplayamadı. Lütfen tekrar deneyin.</string>
+    <string name="ai_history_ask">Bunu sor</string>
+    <string name="ai_history_questions">Sorular</string>
     <string name="no_history_yet">Henüz geçmiş yok</string>
 
     <!-- Düğme erişilebilirliği -->

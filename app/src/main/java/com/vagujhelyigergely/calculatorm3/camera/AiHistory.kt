@@ -7,6 +7,12 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.random.Random
 
+/** Follow-up questions allowed per answer: keeps each follow-up's context small and fixed. */
+const val MAX_FOLLOW_UPS = 2
+
+/** A question asked about an answer, and the model's reply. */
+data class FollowUp(val question: String, val reply: String)
+
 /** How a saved AI solve ended. */
 enum class AiHistoryOutcome {
     /** An answer: a number for Use, or (typed and drawn problems) e.g. `x = 5`. */
@@ -38,6 +44,8 @@ data class AiHistoryEntry(
     val model: String,
     val speed: ScanQuality? = null,
     val elapsedMs: Long,
+    /** Questions asked about this answer, oldest first; at most [MAX_FOLLOW_UPS]. */
+    val followUps: List<FollowUp> = emptyList(),
 )
 
 /**
@@ -76,6 +84,14 @@ class AiHistoryStore(private val dir: File, private val maxEntries: Int = MAX_EN
         tmp.renameTo(jsonFile(id))
         trim()
         return saved
+    }
+
+    /** Rewrite a saved [entry] (e.g. with a new follow-up); its picture is left as it is. */
+    fun update(entry: AiHistoryEntry) {
+        if (!jsonFile(entry.id).exists()) return
+        val tmp = File(dir, "${entry.id}.json.tmp")
+        tmp.writeText(toJson(entry).toString())
+        tmp.renameTo(jsonFile(entry.id))
     }
 
     fun delete(id: String) {
@@ -129,6 +145,11 @@ class AiHistoryStore(private val dir: File, private val maxEntries: Int = MAX_EN
             put("model", e.model)
             e.speed?.let { put("speed", it.name) }
             put("elapsedMs", e.elapsedMs)
+            if (e.followUps.isNotEmpty()) {
+                put("followUps", JSONArray().apply {
+                    e.followUps.forEach { put(JSONObject().put("q", it.question).put("a", it.reply)) }
+                })
+            }
         }
 
         internal fun fromJson(o: JSONObject): AiHistoryEntry = AiHistoryEntry(
@@ -156,6 +177,11 @@ class AiHistoryStore(private val dir: File, private val maxEntries: Int = MAX_EN
             speed = o.optString("speed").takeIf { o.has("speed") }
                 ?.let { name -> ScanQuality.entries.find { it.name == name } },
             elapsedMs = o.getLong("elapsedMs"),
+            followUps = o.optJSONArray("followUps")?.let { arr ->
+                (0 until arr.length()).map { i ->
+                    arr.getJSONObject(i).let { FollowUp(it.getString("q"), it.getString("a")) }
+                }
+            } ?: emptyList(),
         )
     }
 }

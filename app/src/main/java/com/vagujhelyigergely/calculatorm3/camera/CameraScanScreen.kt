@@ -103,6 +103,8 @@ fun CameraScanScreen(
     entry: AiEntry,
     /** An AI history entry to solve again once the window is ready (Solve again), by id. */
     rerunId: String? = null,
+    /** A saved answer to open, to ask about it (Ask about this, in AI history), by id. */
+    answerId: String? = null,
     onExpressionRecognized: (String) -> Unit,
     /** The calculator's own answer to typed text, if it's plain arithmetic (the Type screen). */
     instantAnswer: (String) -> InstantAnswer? = { null },
@@ -153,7 +155,7 @@ fun CameraScanScreen(
         if (!didInitialize) {
             didInitialize = true
             viewModel.updateTypedProblem("") // a fresh open starts with an empty Type screen
-            viewModel.initialize(entry, rerunId = rerunId)
+            viewModel.initialize(entry, rerunId = rerunId, answerId = answerId)
         } else if (viewModel.uiState is ScanUiState.Idle) {
             viewModel.initialize(entry, resumed = true)
         }
@@ -196,7 +198,24 @@ fun CameraScanScreen(
     // so they survive the screen turning off and don't need this.
     val keepScreenOn = viewModel.uiState is ScanUiState.ModelLoading ||
         viewModel.uiState is ScanUiState.PreparingModel ||
-        viewModel.uiState is ScanUiState.Processing
+        viewModel.uiState is ScanUiState.Processing ||
+        viewModel.followUp is ScanViewModel.FollowUpUi.Answering ||
+        viewModel.followUp is ScanViewModel.FollowUpUi.LoadingModel
+
+    // Questions about the answer on screen, under any answer that takes them.
+    val questions: @Composable () -> Unit = {
+        val answer = viewModel.currentAnswer
+        if (answer != null && answer.outcome != AiHistoryOutcome.FAILED) {
+            FollowUpSection(
+                thread = answer.followUps,
+                state = viewModel.followUp,
+                left = viewModel.followUpsLeft,
+                onAsk = { viewModel.askFollowUp(it) },
+                onStop = { viewModel.stopFollowUp() },
+                onSolveAgain = { viewModel.solveAnswerAgain() }
+            )
+        }
+    }
     val activity = context as? android.app.Activity
     DisposableEffect(keepScreenOn) {
         if (keepScreenOn) {
@@ -339,8 +358,10 @@ fun CameraScanScreen(
                                 },
                                 onDismiss = onDismiss,
                                 drawn = viewModel.entry == AiEntry.WRITE,
-                                onFixAsText = { viewModel.fixAsText(state.steps.problem) }
+                                onFixAsText = { viewModel.fixAsText(state.steps.problem) },
+                                extra = questions
                             ) else SuccessContent(
+                                extra = questions,
                                 answer = state.answer,
                                 rawResponse = state.rawResponse,
                                 elapsedMs = state.elapsedMs,
@@ -360,7 +381,8 @@ fun CameraScanScreen(
                                 rawResponse = state.rawResponse,
                                 checkOutput = state.checkOutput,
                                 onRetry = { viewModel.retry() },
-                                onDismiss = onDismiss
+                                onDismiss = onDismiss,
+                                extra = if (state.checkOutput) questions else ({})
                             )
                             is ScanUiState.ModelUnusable -> ModelUnusableContent(
                                 model = state.model,
@@ -891,7 +913,9 @@ internal fun SuccessContent(
     decodeTokensPerSec: Double,
     onUse: () -> Unit,
     onRetry: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Shown under the answer: questions about it ([FollowUpSection]). */
+    extra: @Composable () -> Unit = {}
 ) {
     AiStateScaffold(onDismiss = onDismiss) {
         Column(
@@ -947,6 +971,7 @@ internal fun SuccessContent(
                     )
                 }
             }
+            extra()
         }
     }
 }
@@ -963,6 +988,8 @@ internal fun ErrorContent(
      * "Recognition failed".
      */
     checkOutput: Boolean = false,
+    /** Shown at the end: questions about the output ([FollowUpSection]). */
+    extra: @Composable () -> Unit = {},
 ) {
     // The model's output starts open, and the screen starts scrolled to its end, where the
     // result is; it can still be collapsed.
@@ -1030,6 +1057,7 @@ internal fun ErrorContent(
             OutlinedButton(onClick = onRetry) {
                 Text(stringResource(R.string.retry))
             }
+            extra()
         }
     }
 }
