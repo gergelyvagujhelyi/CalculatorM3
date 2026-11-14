@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -52,7 +53,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import com.vagujhelyigergely.calculatorm3.R
 
 /** What the AI window is opened for, picked in the AI menu. */
-enum class AiEntry { CAMERA, GALLERY, TYPE, SETTINGS }
+enum class AiEntry { CAMERA, GALLERY, WRITE, TYPE, SETTINGS }
 
 /**
  * The AI button on the calculator. Tapping it opens a small menu, anchored to the button,
@@ -103,7 +104,7 @@ internal fun AiMenuContent(onSelect: (AiEntry) -> Unit) {
                 )
             }
         }
-        // Pictures on the first row, entering it yourself on the second (Write joins Type later).
+        // Pictures on the first row, entering it yourself on the second.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             AiMenuTile(
                 label = stringResource(R.string.ai_menu_camera),
@@ -122,6 +123,12 @@ internal fun AiMenuContent(onSelect: (AiEntry) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.padding(top = 8.dp)
         ) {
+            AiMenuTile(
+                label = stringResource(R.string.ai_menu_write),
+                icon = Icons.Filled.Draw,
+                shape = MaterialShapes.Pill,
+                onClick = { onSelect(AiEntry.WRITE) }
+            )
             AiMenuTile(
                 label = stringResource(R.string.ai_menu_type),
                 icon = Icons.Filled.Keyboard,

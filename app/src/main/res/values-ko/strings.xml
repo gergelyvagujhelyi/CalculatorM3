@@ -52,6 +52,16 @@
     <string name="ai_menu_title">AI로 풀기</string>
     <string name="ai_menu_camera">카메라</string>
     <string name="ai_menu_gallery">갤러리</string>
+    <string name="ai_menu_write">손글씨</string>
+    <string name="write_title">수학 문제 쓰기</string>
+    <string name="write_hint">손가락이나 스타일러스로 쓰세요</string>
+    <string name="write_undo">실행 취소</string>
+    <string name="write_redo">다시 실행</string>
+    <string name="write_eraser">지우개</string>
+    <string name="write_clear">모두 지우기</string>
+    <string name="write_again">다시 그리기</string>
+    <string name="steps_read_as">인식 결과</string>
+    <string name="steps_fix_as_text">텍스트로 수정</string>
     <string name="ai_menu_type">입력</string>
     <string name="type_title">수학 문제 입력</string>
     <string name="type_placeholder">예: 3x + 5 = 20 또는 문장제</string>

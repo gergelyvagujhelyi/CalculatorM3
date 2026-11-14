@@ -52,6 +52,16 @@
     <string name="ai_menu_title">用 AI 求解</string>
     <string name="ai_menu_camera">相机</string>
     <string name="ai_menu_gallery">相册</string>
+    <string name="ai_menu_write">手写</string>
+    <string name="write_title">写一道数学题</string>
+    <string name="write_hint">用手指或手写笔书写</string>
+    <string name="write_undo">撤消</string>
+    <string name="write_redo">重做</string>
+    <string name="write_eraser">橡皮擦</string>
+    <string name="write_clear">清除</string>
+    <string name="write_again">重新书写</string>
+    <string name="steps_read_as">识别为</string>
+    <string name="steps_fix_as_text">以文本更正</string>
     <string name="ai_menu_type">输入</string>
     <string name="type_title">输入一道数学题</string>
     <string name="type_placeholder">例如 3x + 5 = 20，或一道应用题</string>

@@ -52,6 +52,16 @@
     <string name="ai_menu_title">AI से हल करें</string>
     <string name="ai_menu_camera">कैमरा</string>
     <string name="ai_menu_gallery">गैलरी</string>
+    <string name="ai_menu_write">लिखें</string>
+    <string name="write_title">गणित का प्रश्न लिखें</string>
+    <string name="write_hint">उंगली या स्टाइलस से लिखें</string>
+    <string name="write_undo">पूर्ववत करें</string>
+    <string name="write_redo">फिर से करें</string>
+    <string name="write_eraser">इरेज़र</string>
+    <string name="write_clear">सब मिटाएँ</string>
+    <string name="write_again">फिर से बनाएँ</string>
+    <string name="steps_read_as">ऐसे पढ़ा गया</string>
+    <string name="steps_fix_as_text">टेक्स्ट के रूप में ठीक करें</string>
     <string name="ai_menu_type">टाइप करें</string>
     <string name="type_title">गणित का प्रश्न टाइप करें</string>
     <string name="type_placeholder">जैसे 3x + 5 = 20, या कोई शब्द प्रश्न</string>

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -49,6 +50,8 @@ sealed interface ScanUiState {
     data class Capturing(val autoLaunch: Boolean = true) : ScanUiState
     /** The Type screen: a typed problem ([ScanViewModel.typedProblem]) waiting for Solve. */
     data object Typing : ScanUiState
+    /** The handwriting pad: [ScanViewModel.strokes] waiting for Solve. */
+    data object Drawing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
         /** Start of the current inference attempt (a GPU→CPU retry starts a new one). */
@@ -147,6 +150,94 @@ class ScanViewModel(
         uiState = ScanUiState.Typing
     }
 
+    /**
+     * Correct how a drawing was read: continue as a typed problem, starting from [readAs]
+     * (Fix as text on a drawing's answer). A typed solve skips the picture, so it's quick.
+     */
+    fun fixAsText(readAs: String) {
+        entry = AiEntry.TYPE
+        typedProblem = readAs
+        uiState = ScanUiState.Typing
+    }
+
+    // ── Handwriting pad ─────────────────────────────────────────────────────
+
+    /** The pad's strokes, oldest first. Kept across solves, so Draw again returns to them. */
+    val strokes = mutableStateListOf<InkStroke>()
+    /** Strokes taken back by [undo], newest last; any new stroke or erase clears them. */
+    private val undone = mutableListOf<InkStroke>()
+    var canRedo by mutableStateOf(false)
+        private set
+    /** Once a stylus has touched the pad, fingers no longer draw (a resting palm leaves no marks). */
+    var stylusOnly by mutableStateOf(false)
+        private set
+
+    fun addStroke(stroke: InkStroke) {
+        if (stroke.points.isEmpty()) return
+        strokes += stroke
+        clearRedo()
+    }
+
+    /** Erase the stroke under [point] ([InkGeometry.strokeAt]); true if one was removed. */
+    fun eraseAt(point: InkPoint, radius: Float): Boolean {
+        val index = InkGeometry.strokeAt(strokes, point, radius) ?: return false
+        strokes.removeAt(index)
+        clearRedo()
+        return true
+    }
+
+    fun undo() {
+        val last = strokes.removeLastOrNull() ?: return
+        undone += last
+        canRedo = true
+    }
+
+    fun redo() {
+        val stroke = undone.removeLastOrNull() ?: return
+        strokes += stroke
+        canRedo = undone.isNotEmpty()
+    }
+
+    fun clearInk() {
+        strokes.clear()
+        clearRedo()
+    }
+
+    fun onStylusSeen() {
+        stylusOnly = true
+    }
+
+    private fun clearRedo() {
+        undone.clear()
+        canRedo = false
+    }
+
+    /** Back to the pad with the drawing as it was (Draw again on a drawing's answer). */
+    fun drawAgain() {
+        uiState = ScanUiState.Drawing
+    }
+
+    /**
+     * Solve the drawing: render it black on white ([InkRasterizer]) and solve that picture step
+     * by step. The picture is a temporary file, deleted afterwards.
+     */
+    fun onDrawingSubmitted() {
+        val ink = strokes.toList()
+        if (ink.isEmpty()) return
+        startSolve(
+            prepareInput = {
+                withContext(Dispatchers.IO) {
+                    InkRasterizer.writeJpeg(ink, appContext.cacheDir, MAX_IMAGE_EDGE)?.path
+                }.also {
+                    if (it == null) uiState = ScanUiState.Error(appContext.getString(R.string.error_image_process))
+                }
+            },
+            solve = { path, onToken -> solver.solveFromImageStepsStreaming(path, onToken) },
+            parseSteps = { raw -> SolverPrompts.parseSteps(raw, "") },
+            cleanup = { path -> path?.let { try { java.io.File(it).delete() } catch (_: Exception) {} } }
+        )
+    }
+
     /** The speed/quality setting on the AI settings page (Gemma 4 models only). */
     var scanQuality by mutableStateOf(modelManager.scanQuality)
         private set
@@ -176,6 +267,7 @@ class ScanViewModel(
         uiState = when (entry) {
             AiEntry.SETTINGS -> settingsState()
             AiEntry.TYPE -> ScanUiState.Typing
+            AiEntry.WRITE -> ScanUiState.Drawing
             AiEntry.CAMERA, AiEntry.GALLERY -> ScanUiState.Capturing(autoLaunch)
         }
     }

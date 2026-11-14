@@ -250,6 +250,16 @@ class LiteRTSolver : MathSolver {
         )
     }
 
+    override suspend fun solveFromImageStepsStreaming(
+        imagePath: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = solveStreaming(onToken) {
+        runInference(
+            Contents.of(Content.ImageFile(imagePath), Content.Text(SolverPrompts.STEPS_IMAGE_USER_PROMPT)),
+            SolverPrompts.STEPS_SYSTEM_PROMPT, requireNumber = false, onToken = onToken
+        )
+    }
+
     /**
      * Run [attempt] under the solver lock; if it fails on the GPU, reload on CPU and run it once
      * more (some devices initialize the GPU backend fine but fault during inference).

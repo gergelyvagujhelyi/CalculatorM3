@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Solve with AI</string>
     <string name="ai_menu_camera">Camera</string>
     <string name="ai_menu_gallery">Gallery</string>
+    <string name="ai_menu_write">Write</string>
+    <string name="write_title">Write a math problem</string>
+    <string name="write_hint">Write with your finger or a stylus</string>
+    <string name="write_undo">Undo</string>
+    <string name="write_redo">Redo</string>
+    <string name="write_eraser">Eraser</string>
+    <string name="write_clear">Clear</string>
+    <string name="write_again">Draw again</string>
+    <string name="steps_read_as">Read as</string>
+    <string name="steps_fix_as_text">Fix as text</string>
     <string name="ai_menu_type">Type</string>
     <string name="type_title">Type a math problem</string>
     <string name="type_placeholder">e.g. 3x + 5 = 20, or a word problem</string>

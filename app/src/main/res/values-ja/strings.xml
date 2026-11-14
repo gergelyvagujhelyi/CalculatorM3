@@ -52,6 +52,16 @@
     <string name="ai_menu_title">AIで解く</string>
     <string name="ai_menu_camera">カメラ</string>
     <string name="ai_menu_gallery">ギャラリー</string>
+    <string name="ai_menu_write">手書き</string>
+    <string name="write_title">数学の問題を書く</string>
+    <string name="write_hint">指またはスタイラスで書いてください</string>
+    <string name="write_undo">元に戻す</string>
+    <string name="write_redo">やり直し</string>
+    <string name="write_eraser">消しゴム</string>
+    <string name="write_clear">すべて消去</string>
+    <string name="write_again">書き直す</string>
+    <string name="steps_read_as">読み取り結果</string>
+    <string name="steps_fix_as_text">テキストで修正</string>
     <string name="ai_menu_type">入力</string>
     <string name="type_title">数学の問題を入力</string>
     <string name="type_placeholder">例: 3x + 5 = 20、または文章題</string>

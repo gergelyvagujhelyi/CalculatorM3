@@ -85,4 +85,11 @@ class ParseStepsTest {
         assertEquals("4", solved.answer)
         assertEquals("Answer: 3\n1. actually 2 + 2 = 4", solved.steps)
     }
+
+    @Test
+    fun `a restated picture prompt is dropped from the problem`() {
+        assertEquals("5*4+3", parse("Problem: Solve the handwritten math problem 5*4+3\nAnswer: 23")!!.problem)
+        assertEquals("\$7+5\$", parse("Problem: Solve the math problem \$7+5\$\nAnswer: 12")!!.problem)
+        assertEquals("Solve for x: 3x = 15", parse("Problem: Solve for x: 3x = 15\nAnswer: x = 5")!!.problem)
+    }
 }

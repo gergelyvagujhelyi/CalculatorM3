@@ -13,6 +13,10 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuContent
+import com.vagujhelyigergely.calculatorm3.camera.InkPoint
+import com.vagujhelyigergely.calculatorm3.camera.InkStroke
+import com.vagujhelyigergely.calculatorm3.camera.WRITE_PAD_TAG
+import com.vagujhelyigergely.calculatorm3.camera.WriteContent
 import com.vagujhelyigergely.calculatorm3.camera.StepsSuccessContent
 import com.vagujhelyigergely.calculatorm3.camera.TypeContent
 import com.vagujhelyigergely.calculatorm3.ai.SolvedSteps
@@ -28,6 +32,7 @@ import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import com.vagujhelyigergely.calculatorm3.camera.SuccessContent
 import com.vagujhelyigergely.calculatorm3.ui.theme.CalculatorM3Theme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
@@ -287,9 +292,10 @@ class AiScreensUiTest {
         composeTestRule.onNodeWithText(str(R.string.ai_menu_title)).assertIsDisplayed()
         button(str(R.string.ai_menu_camera)).performClick()
         button(str(R.string.ai_menu_gallery)).performClick()
+        button(str(R.string.ai_menu_write)).performClick()
         button(str(R.string.ai_menu_type)).performClick()
         composeTestRule.onNodeWithContentDescription(str(R.string.ai_settings)).performClick()
-        assertEquals(listOf(AiEntry.CAMERA, AiEntry.GALLERY, AiEntry.TYPE, AiEntry.SETTINGS), picked)
+        assertEquals(listOf(AiEntry.CAMERA, AiEntry.GALLERY, AiEntry.WRITE, AiEntry.TYPE, AiEntry.SETTINGS), picked)
     }
 
     // ── Model missing or unloadable ─────────────────────────────────────────
@@ -439,5 +445,85 @@ class AiScreensUiTest {
             .assertCountEquals(0)
         button(str(R.string.steps_edit)).performClick()
         assertEquals(1, edits)
+    }
+
+    // ── Write ───────────────────────────────────────────────────────────────
+
+    private class PadLog {
+        val strokes = mutableListOf<InkStroke>()
+        var erases = 0
+        var solves = 0
+    }
+
+    private fun showPad(initial: List<InkStroke> = emptyList()): PadLog {
+        val log = PadLog()
+        show {
+            val strokes = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateListOf(*initial.toTypedArray()) }
+            WriteContent(
+                strokes = strokes, canRedo = false, stylusOnly = false,
+                onStroke = { strokes += it; log.strokes += it },
+                onErase = { _, _ -> log.erases++ },
+                onStylusSeen = {}, onUndo = {}, onRedo = {},
+                onClear = { strokes.clear() }, onSolve = { log.solves++ }, onDismiss = {}
+            )
+        }
+        return log
+    }
+
+    @Test
+    fun anEmptyPadInvitesWritingAndCantBeSolved() {
+        showPad()
+        composeTestRule.onNodeWithText(str(R.string.write_hint)).assertIsDisplayed()
+        button(str(R.string.ai_menu_title)).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(str(R.string.write_undo)).assertIsNotEnabled()
+        composeTestRule.onNodeWithContentDescription(str(R.string.write_clear)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun aSwipeOnThePadIsOneStrokeAndEnablesSolve() {
+        val log = showPad()
+        composeTestRule.onNodeWithTag(WRITE_PAD_TAG).performTouchInput {
+            swipe(start = center - androidx.compose.ui.geometry.Offset(100f, 0f),
+                end = center + androidx.compose.ui.geometry.Offset(100f, 0f), durationMillis = 300)
+        }
+        composeTestRule.waitForIdle()
+        assertEquals(1, log.strokes.size)
+        val stroke = log.strokes.single().points
+        assertTrue("several points recorded: ${stroke.size}", stroke.size >= 2)
+        // Points are in pad units: fractions of the pad width.
+        assertTrue(stroke.all { it.x in 0f..1f })
+        composeTestRule.onNodeWithText(str(R.string.write_hint)).assertDoesNotExist()
+        button(str(R.string.ai_menu_title)).assertIsEnabled().performClick()
+        assertEquals(1, log.solves)
+    }
+
+    @Test
+    fun withTheEraserOnASwipeErasesInsteadOfDrawing() {
+        val log = showPad(listOf(InkStroke(listOf(InkPoint(0.2f, 0.2f), InkPoint(0.8f, 0.2f)))))
+        composeTestRule.onNodeWithContentDescription(str(R.string.write_eraser)).performClick()
+        composeTestRule.onNodeWithTag(WRITE_PAD_TAG).performTouchInput {
+            swipe(start = centerLeft, end = centerRight, durationMillis = 200)
+        }
+        composeTestRule.waitForIdle()
+        assertTrue("erased along the swipe", log.erases > 0)
+        assertTrue("nothing drawn", log.strokes.isEmpty())
+    }
+
+    @Test
+    fun aDrawnAnswerShowsWhatWasReadWithFixAsTextAndDrawAgain() {
+        var fixes = 0
+        var redraws = 0
+        show {
+            StepsSuccessContent(
+                steps = SolvedSteps("7 + 5", "1. 7 + 5 = 12", "12", "12"),
+                elapsedText = "Solved in 9s", onUse = {}, onEdit = { redraws++ }, onDismiss = {},
+                drawn = true, onFixAsText = { fixes++ }
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.steps_read_as)).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(str(R.string.steps_fix_as_text)).performClick()
+        button(str(R.string.write_again)).performClick()
+        assertEquals(1, fixes)
+        assertEquals(1, redraws)
     }
 }

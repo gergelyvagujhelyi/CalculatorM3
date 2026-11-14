@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Oplossen met AI</string>
     <string name="ai_menu_camera">Camera</string>
     <string name="ai_menu_gallery">Galerij</string>
+    <string name="ai_menu_write">Schrijven</string>
+    <string name="write_title">Schrijf een wiskundesom</string>
+    <string name="write_hint">Schrijf met je vinger of een stylus</string>
+    <string name="write_undo">Ongedaan maken</string>
+    <string name="write_redo">Opnieuw</string>
+    <string name="write_eraser">Gum</string>
+    <string name="write_clear">Wissen</string>
+    <string name="write_again">Opnieuw tekenen</string>
+    <string name="steps_read_as">Gelezen als</string>
+    <string name="steps_fix_as_text">Als tekst verbeteren</string>
     <string name="ai_menu_type">Typen</string>
     <string name="type_title">Typ een wiskundesom</string>
     <string name="type_placeholder">bijv. 3x + 5 = 20, of een verhaaltjessom</string>

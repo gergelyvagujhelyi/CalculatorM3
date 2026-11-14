@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Rozwiąż z AI</string>
     <string name="ai_menu_camera">Aparat</string>
     <string name="ai_menu_gallery">Galeria</string>
+    <string name="ai_menu_write">Pisz</string>
+    <string name="write_title">Napisz zadanie z matematyki</string>
+    <string name="write_hint">Pisz palcem lub rysikiem</string>
+    <string name="write_undo">Cofnij</string>
+    <string name="write_redo">Ponów</string>
+    <string name="write_eraser">Gumka</string>
+    <string name="write_clear">Wyczyść</string>
+    <string name="write_again">Narysuj ponownie</string>
+    <string name="steps_read_as">Odczytano jako</string>
+    <string name="steps_fix_as_text">Popraw jako tekst</string>
     <string name="ai_menu_type">Wpisz</string>
     <string name="type_title">Wpisz zadanie z matematyki</string>
     <string name="type_placeholder">np. 3x + 5 = 20 lub zadanie tekstowe</string>
