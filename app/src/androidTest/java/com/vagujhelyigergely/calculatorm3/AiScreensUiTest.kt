@@ -547,7 +547,7 @@ class AiScreensUiTest {
             StepsSuccessContent(
                 steps = SolvedSteps("7 + 5", "1. 7 + 5 = 12", "12", "12"),
                 elapsedText = "Solved in 9s", onUse = {}, onEdit = { redraws++ }, onDismiss = {},
-                drawn = true, onFixAsText = { fixes++ }
+                source = AiEntry.WRITE, onFixAsText = { fixes++ }
             )
         }
         composeTestRule.onNodeWithText(str(R.string.steps_read_as)).assertIsDisplayed()

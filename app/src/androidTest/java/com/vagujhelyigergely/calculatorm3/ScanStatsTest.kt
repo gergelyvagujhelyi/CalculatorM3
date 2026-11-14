@@ -35,14 +35,14 @@ class ScanStatsTest {
         override val isModelLoaded = true
         override val activeBackend = "fake"
         override suspend fun loadModel(modelPath: String) {}
-        override suspend fun solveFromImageStreaming(
+        override suspend fun solveFromImageStepsStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> {
             onToken("1"); onToken("12"); onToken("123")
             delay(retryDelayMs)
             onToken("")
             onToken("4"); onToken("42")
-            return Result.success(RecognitionResult(raw = "42", answer = "42"))
+            return Result.success(RecognitionResult(raw = "Problem: 6 × 7\nAnswer: 42", answer = ""))
         }
         override suspend fun release() {}
     }

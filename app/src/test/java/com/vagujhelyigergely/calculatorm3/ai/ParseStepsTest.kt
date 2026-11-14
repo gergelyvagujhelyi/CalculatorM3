@@ -92,4 +92,27 @@ class ParseStepsTest {
         assertEquals("\$7+5\$", parse("Problem: Solve the math problem \$7+5\$\nAnswer: 12")!!.problem)
         assertEquals("Solve for x: 3x = 15", parse("Problem: Solve for x: 3x = 15\nAnswer: x = 5")!!.problem)
     }
+
+    @Test
+    fun `the same value written two ways offers its plain number`() {
+        // Seen on a photo of 1 ÷ 4 with the step prompt.
+        assertEquals("0.25", parse("Problem: 1 ÷ 4\n1. 1 ÷ 4 = 0.25\nAnswer: \$\\frac{1}{4}\$ or 0.25")!!.usableAnswer)
+        assertEquals("1.25", parse("Problem: 5/4\n1. 5 ÷ 4 = 1.25\nAnswer: 5/4 or 1.25")!!.usableAnswer)
+    }
+
+    @Test
+    fun `alternatives that aren't one plain number offer nothing`() {
+        assertEquals("", parse("Problem: p\nAnswer: 4 or 5")!!.usableAnswer)
+        assertEquals("", parse("Problem: x^2 = 4\nAnswer: x = 2 or x = -2")!!.usableAnswer)
+        assertEquals("", parse("Problem: p\nAnswer: 5/4 or 1 1/4")!!.usableAnswer)
+        // The plain one must still agree with the working.
+        assertEquals("", parse("Problem: 1 ÷ 4\n1. 1 ÷ 4 = 0.25\nAnswer: \\frac{1}{4} or 25")!!.usableAnswer)
+    }
+
+    @Test
+    fun `a mixed number is never read as its whole part`() {
+        // "1 1/4" isn't 1, even when there's no working to check it against.
+        assertEquals("", parse("Problem: 5/4 as a mixed number\nAnswer: 1 1/4")!!.usableAnswer)
+        assertEquals("12", parse("Problem: 7 + 5\nAnswer: 12.")!!.usableAnswer)
+    }
 }

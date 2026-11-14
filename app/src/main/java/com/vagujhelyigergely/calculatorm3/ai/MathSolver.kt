@@ -29,10 +29,15 @@ interface MathSolver {
      * Solve the photo at [imagePath], calling [onToken] with the full output so far as it
      * streams. An empty string means the output restarts from scratch (e.g. a GPU→CPU retry).
      */
+    /**
+     * The original photo solve: one number on the last line ([SolverPrompts.SYSTEM_PROMPT]).
+     * The app now solves photos step by step ([solveFromImageStepsStreaming]); this stays for
+     * comparing the two prompts ([RealModelExtractionTest] with steps=false).
+     */
     suspend fun solveFromImageStreaming(
         imagePath: String,
         onToken: suspend (partialRaw: String) -> Unit
-    ): Result<RecognitionResult>
+    ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No single-number solve"))
 
     /**
      * Solve a typed [problem] step by step ([SolverPrompts.STEPS_SYSTEM_PROMPT]). Succeeds with
@@ -185,14 +190,31 @@ object SolverPrompts {
     private val answerWrappers = Regex("\\\\boxed\\{([^{}]*)\\}")
     private val answerDelimiters = Regex("\\\\[()\\[\\]]|\\$")
 
+    private val alternatives = Regex("\\s+or\\s+", RegexOption.IGNORE_CASE)
+    private val exponentE = Regex("(?<=\\d)[eE](?=[+-]?\\d)")
+
     private fun usableAnswer(working: List<String>, answer: String): String {
         val bare = answer.replace(answerWrappers, "$1").replace(answerDelimiters, "").trim()
-        // "x = 5", "5/4", "60 km/h", "\frac{1}{2}": shown, but not a number to put in the calculator.
-        // (An 'e'/'E' is allowed only as exponent notation, which extractAnswer reads.)
-        val letters = bare.replace(Regex("(?<=\\d)[eE](?=[+-]?\\d)"), "")
-        if ('=' in bare || letters.any { it.isLetter() }) return ""
-        return extractAnswer((working + bare).joinToString("\n"))
+        // The same value written two ways ("\frac{1}{4} or 0.25", "5/4 or 1.25"): the one option
+        // that is a number on its own is the answer. Two such ("4 or 5") are a doubt, not an answer.
+        val options = bare.split(alternatives).map { it.trim().removeSuffix(".").trim() }
+        val candidate = options.filter(::isWholeNumber).singleOrNull() ?: return ""
+        return extractAnswer((working + candidate).joinToString("\n"))
     }
+
+    /**
+     * The whole text is one number ("0.25", "-7", "1.5E+3"), not a number inside something else:
+     * "1 1/4" would otherwise read as 1, "60 km/h" as 60.
+     */
+    private fun isWholeNumber(text: String): Boolean =
+        isPlainNumber(text) && extractAnswer(text) == text
+
+    /**
+     * No variable, '=' or unit: "x = 5", "5/4" passes here but extractAnswer then rejects the
+     * fraction; "60 km/h" and "\frac{1}{2}" don't. An 'e'/'E' is allowed only as exponent notation.
+     */
+    private fun isPlainNumber(text: String): Boolean =
+        '=' !in text && text.replace(exponentE, "").none { it.isLetter() }
 
     // Sampler params for the LiteRT-LM conversation (match AI Edge Gallery defaults).
     const val TOP_K = 64

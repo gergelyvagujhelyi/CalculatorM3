@@ -435,7 +435,9 @@ class AiEntryRoutingTest {
         waitFor("the photo saved") { photoVm.aiHistory.size == 2 }
         val saved = photoVm.aiHistory.first()
         assertEquals(AiEntry.GALLERY, saved.mode)
-        assertEquals("42", saved.answer)
+        // Photos are solved step by step too: what it read, the answer, the working.
+        assertEquals("12", saved.answer)
+        assertEquals("7 + 5", saved.steps?.problem)
         val picture = photoVm.historyImage(saved)
         assertTrue("the picture is kept in history", picture != null && picture.length() > 0)
         waitFor("the scan's own photo deleted") { !picked.exists() }
