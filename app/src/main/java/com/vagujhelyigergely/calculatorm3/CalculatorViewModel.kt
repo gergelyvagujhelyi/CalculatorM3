@@ -52,6 +52,15 @@ class CalculatorViewModel(
         private set
     var maxDisplayLength = 24
 
+    /** The scientific row's second row (e, ln, log) is open. */
+    var moreFunctions by mutableStateOf(savedState.get<Boolean>(KEY_MORE_FUNCTIONS) ?: false)
+        private set
+
+    fun toggleMoreFunctions() {
+        moreFunctions = !moreFunctions
+        savedState[KEY_MORE_FUNCTIONS] = moreFunctions
+    }
+
     /**
      * True while [expression] holds the answer of a just-completed "=". The next number-like
      * key (digit, ".", π, "(") then starts a new entry instead of appending to the answer;
@@ -197,11 +206,68 @@ class CalculatorViewModel(
         private const val MAX_EXPRESSION_LENGTH = 200
         private const val MAX_PAREN_DEPTH = 20
         /** Characters that end a number: a decimal point can't follow them. */
-        private val NUMBER_ENDING_CHARS = setOf('π', '%', '!', ')')
+        private val NUMBER_ENDING_CHARS = setOf('π', 'e', '%', '!', ')')
+
+        /** Largest |x| for x!: whole numbers exactly, fractions via the Gamma function. */
+        private const val MAX_FACTORIAL = 99
+
+        /** Digits shown for a result that used a factorial of a fraction. */
+        private val APPROXIMATE_PRECISION = MathContext(15, RoundingMode.HALF_UP)
+
+        private const val LANCZOS_G = 7.0
+        private val LANCZOS = doubleArrayOf(
+            0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+            -176.61502916214059, 12.507343278686905, -0.13857109526572012,
+            9.9843695780195716e-6, 1.5056327351493116e-7,
+        )
+
+        /** Working precision for ln and log: well beyond the 30 digits a result shows. */
+        private val LN_MC = MathContext(50, RoundingMode.HALF_EVEN)
+
+        /** e to 50 digits. */
+        private val E = BigDecimal("2.7182818284590452353602874713526624977572470936999595749669676")
+
+        /** exp(x) to [LN_MC], for the |x| ≤ about 3 that [lnNear] needs: Taylor series after halving x. */
+        private fun expNear(x: BigDecimal): BigDecimal {
+            var halvings = 0
+            var r = x
+            while (r.abs() > BigDecimal("0.01")) { r = r.divide(BigDecimal(2), LN_MC); halvings++ }
+            var term = BigDecimal.ONE
+            var sum = BigDecimal.ONE
+            var n = 1
+            val epsilon = BigDecimal.ONE.movePointLeft(LN_MC.precision + 2)
+            while (term.abs() > epsilon) {
+                term = term.multiply(r, LN_MC).divide(BigDecimal(n), LN_MC)
+                sum = sum.add(term, LN_MC)
+                n++
+            }
+            repeat(halvings) { sum = sum.multiply(sum, LN_MC) }
+            return sum
+        }
+
+        /**
+         * ln m for a moderate m (about 0.1 to 10): Halley's iteration y ← y + 2(m − eʸ)/(m + eʸ)
+         * from the Double estimate, which triples the correct digits each step (16 → 50 in two).
+         */
+        private fun lnNear(m: BigDecimal): BigDecimal {
+            if (m.compareTo(BigDecimal.ONE) == 0) return BigDecimal.ZERO
+            var y = BigDecimal(Math.log(m.toDouble()))
+            repeat(3) {
+                val ey = expNear(y)
+                y = y.add(BigDecimal(2).multiply(m.subtract(ey), LN_MC).divide(m.add(ey), LN_MC), LN_MC)
+            }
+            return y
+        }
+
+        private val LN10: BigDecimal = lnNear(BigDecimal.TEN)
+
+        /** Functions written before a bracket; longest first, so "log" isn't read as "lo" + … */
+        private val FUNCTION_NAMES = listOf("log", "ln", "√")
 
         /** Before the cursor, these leave nothing to take the root of: √ starts a new root. */
         private val ROOT_STARTERS = setOf('+', '−', '×', '÷', '^', '(', '-')
         private const val KEY_JUST_EVALUATED = "justEvaluated"
+        private const val KEY_MORE_FUNCTIONS = "moreFunctions"
         private const val KEY_ANSWER_ALLOWANCE = "answerAllowance"
 
         /**
@@ -220,7 +286,7 @@ class CalculatorViewModel(
         private const val MAX_EXACT_POW_EXPONENT = 999_999_999
 
         /** Keys that begin a new entry when pressed right after "=" (see [justEvaluated]). */
-        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "( )")
+        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "e", "( )", "ln", "log")
 
         /**
          * Upper bound on the coefficient digits an exact addition/subtraction may need after
@@ -242,13 +308,30 @@ class CalculatorViewModel(
     }
 
     fun moveCursorTo(position: Int) {
-        cursorPosition = position.coerceIn(0, expression.length)
+        cursorPosition = outsideFunctionNames(expression, position.coerceIn(0, expression.length))
         // Tapping the display is an explicit choice to edit the answer in place.
         justEvaluated = false
         typingInRoot = false
         // Save immediately so a process restore doesn't put the cursor back where it was.
         saveState()
     }
+
+    /** [position], moved to the start of a function name ("ln", "log") it would split. */
+    private fun outsideFunctionNames(expr: String, position: Int): Int {
+        for (name in FUNCTION_NAMES) {
+            if (name.length < 2) continue
+            var start = expr.indexOf(name)
+            while (start >= 0) {
+                if (position > start && position < start + name.length) return start
+                start = expr.indexOf(name, start + 1)
+            }
+        }
+        return position
+    }
+
+    /** The function name ("√", "ln", "log") right before index [open] of a "(", or null. */
+    private fun functionBefore(expr: String, open: Int): String? =
+        FUNCTION_NAMES.firstOrNull { expr.startsWith(it, open - it.length) && open >= it.length }
 
     /** True if an expression of [newLength] characters stays within the typing budget. */
     private fun fitsLengthLimit(newLength: Int) = newLength <= MAX_EXPRESSION_LENGTH + answerAllowance
@@ -338,23 +421,26 @@ class CalculatorViewModel(
             "⌫" -> {
                 if (expression.isNotEmpty() && cursorPosition > 0) {
                     val charBefore = expression[cursorPosition - 1]
-                    if (charBefore == '(' && cursorPosition >= 2 && expression[cursorPosition - 2] == '√') {
-                        // Delete √( together, and matching )
+                    val function = if (charBefore == '(') functionBefore(expression, cursorPosition - 1) else null
+                    if (function != null) {
+                        // Delete √( (or ln(, log() together, and the matching )
+                        val nameStart = cursorPosition - 1 - function.length
                         val closingIndex = findMatchingClose(expression, cursorPosition - 1)
                         expression = if (closingIndex != null) {
                             expression.removeRange(closingIndex, closingIndex + 1)
-                                .removeRange(cursorPosition - 2, cursorPosition)
+                                .removeRange(nameStart, cursorPosition)
                         } else {
-                            expression.removeRange(cursorPosition - 2, cursorPosition)
+                            expression.removeRange(nameStart, cursorPosition)
                         }
-                        cursorPosition -= 2
+                        cursorPosition = nameStart
                     } else if (charBefore == ')') {
                         val openIndex = findMatchingOpen(expression, cursorPosition - 1)
-                        if (openIndex != null && openIndex > 0 && expression[openIndex - 1] == '√') {
-                            // Delete √( and ), keep cursor at end of inner content
+                        val wrapper = openIndex?.let { functionBefore(expression, it) }
+                        if (openIndex != null && wrapper != null) {
+                            // Delete √( and ) (or ln( … )), keep cursor at end of inner content
                             expression = expression.removeRange(cursorPosition - 1, cursorPosition)
-                                .removeRange(openIndex - 1, openIndex + 1)
-                            cursorPosition = cursorPosition - 3
+                                .removeRange(openIndex - wrapper.length, openIndex + 1)
+                            cursorPosition = cursorPosition - 2 - wrapper.length
                         } else {
                             deleteAtCursor()
                         }
@@ -470,15 +556,28 @@ class CalculatorViewModel(
             "π" -> {
                 insertAtCursor("π")
             }
+            "e" -> {
+                insertAtCursor("e")
+            }
+            "ln", "log" -> {
+                // Like √ after an operator: the function and its brackets, typed into. After a
+                // number it multiplies (2 ln(3) = 2 × ln(3)).
+                val opened = expression.substring(0, cursorPosition) + "$label()" + expression.substring(cursorPosition)
+                if (fitsLengthLimit(opened.length) && maxParenDepth(opened) <= MAX_PAREN_DEPTH) {
+                    expression = opened
+                    cursorPosition += label.length + 1
+                    typingInRoot = true
+                }
+            }
             "^" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π' || charBefore == '!')) {
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π' || charBefore == 'e' || charBefore == '!')) {
                     insertAtCursor("^")
                 }
             }
             "!" -> {
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
-                if (charBefore != null && (charBefore.isDigit() || charBefore == ')')) {
+                if (charBefore != null && (charBefore.isDigit() || charBefore == ')' || charBefore == 'π' || charBefore == 'e')) {
                     insertAtCursor("!")
                 }
             }
@@ -490,7 +589,7 @@ class CalculatorViewModel(
                     expression.getOrNull(cursorPosition - 1).let { it != null && (it.isDigit() || it in NUMBER_ENDING_CHARS) }
                 ) {
                     val open = findMatchingOpen(expression, cursorPosition)
-                    if (open != null && open > 0 && expression[open - 1] == '√') {
+                    if (open != null && functionBefore(expression, open) != null) {
                         cursorPosition++
                         typingInRoot = false
                     }
@@ -604,8 +703,8 @@ class CalculatorViewModel(
         // So do brackets and roots opened but not typed into yet ("9 + (", "9 + √()"), with
         // the operator before them.
         while (true) {
-            val shorter = stripped.trimEnd('+', '−', '×', '÷', '^', '(')
-                .removeSuffix("√()").removeSuffix("()").removeSuffix("√")
+            var shorter = stripped.trimEnd('+', '−', '×', '÷', '^', '(').removeSuffix("()")
+            for (name in FUNCTION_NAMES) shorter = shorter.removeSuffix("$name()").removeSuffix(name)
             if (shorter == stripped) return stripped
             stripped = shorter
         }
@@ -672,13 +771,18 @@ class CalculatorViewModel(
     // for [evaluate]. Compiled once (per ViewModel) instead of on every keystroke — evaluate()
     // runs from updatePreview() on each input.
     private val piPlain = PI.toPlainString()
+    private val ePlain = E.toPlainString()
     private val rePctDigit = Regex("%(\\d)")
-    private val rePctPi = Regex("%π")
-    private val reDigitPi = Regex("(\\d)π")
-    private val rePiDigit = Regex("π(\\d)")
-    private val rePiBeforePi = Regex("π(?=π)")
-    private val reRParenPi = Regex("\\)π")
-    private val rePiLParen = Regex("π\\(")
+    // The constants π and e multiply like numbers: 2π, πe, e(…), 3e, e√2.
+    private val rePctPi = Regex("%([πe])")
+    private val reDigitPi = Regex("(\\d)([πe])")
+    private val rePiDigit = Regex("([πe])(\\d)")
+    private val rePiBeforePi = Regex("([πe])(?=[πe])")
+    private val reRParenPi = Regex("\\)([πe])")
+    private val rePiLParen = Regex("([πe])\\(")
+    private val rePiSqrt = Regex("([πe])√")
+    // Before a function (internal codes: L = ln, G = log): 2ln(3), π log(10), (2)ln(e).
+    private val reBeforeFunction = Regex("([\\d)πe!%])([LG])")
     private val reRParenDigit = Regex("\\)(\\d)")
     private val reDigitLParen = Regex("(\\d)\\(")
     private val reDigitSqrt = Regex("(\\d)√")
@@ -691,19 +795,25 @@ class CalculatorViewModel(
     private fun evaluate(expr: String): String {
         return try {
             val sanitized = expr
+                // Function names become one-letter codes for the tokenizer.
+                .replace("log", "G")
+                .replace("ln", "L")
                 .replace("×", "*")
                 .replace("÷", "/")
                 .replace("−", "-")
                 // Implicit multiply after %: 50%3 → 50%*3, 50%π → 50%*π
                 .replace(rePctDigit, "%*$1")
-                .replace(rePctPi, "%*π")
-                // Implicit multiplication around π
-                .replace(reDigitPi, "$1*π")
-                .replace(rePiDigit, "π*$1")
-                .replace(rePiBeforePi, "π*")
-                .replace(reRParenPi, ")*π")
-                .replace(rePiLParen, "π*(")
+                .replace(rePctPi, "%*$1")
+                // Implicit multiplication around π and e, and before a function
+                .replace(reDigitPi, "$1*$2")
+                .replace(rePiDigit, "$1*$2")
+                .replace(rePiBeforePi, "$1*")
+                .replace(reRParenPi, ")*$1")
+                .replace(rePiLParen, "$1*(")
+                .replace(rePiSqrt, "$1*√")
+                .replace(reBeforeFunction, "$1*$2")
                 .replace("π", piPlain)
+                .replace("e", ePlain)
                 // Implicit multiplication between ) and digit, digit and (, digit and √, ! and digit
                 .replace(reRParenDigit, ")*$1")
                 .replace(reDigitLParen, "$1*(")
@@ -716,12 +826,15 @@ class CalculatorViewModel(
                 // Implicit multiplication before ( from ), !, %: (1+2)(3+4), 3!(2), 50%(4)
                 .replace(reBeforeLParen, "$1*(")
 
+            approximate = false
             val result = evaluateExpression(sanitized)
 
             val stripped = result.stripTrailingZeros()
-            // Integers keep all digits; fractions round to RESULT_PRECISION significant digits.
-            val printable = if (stripped.scale() <= 0) stripped
-                else result.round(RESULT_PRECISION).stripTrailingZeros()
+            // Integers keep all digits; fractions round to RESULT_PRECISION significant digits,
+            // or to 15 when a factorial of a fraction (good to about 15) went into the result.
+            val precision = if (approximate) APPROXIMATE_PRECISION else RESULT_PRECISION
+            val printable = if (stripped.scale() <= 0 && !approximate) stripped
+                else result.round(precision).stripTrailingZeros()
             // Measure before expanding: a compact value like 1E+998001 would otherwise become a
             // megabyte-long string (and hang the UI) on its way to the display.
             if (plainLength(printable) > MAX_RESULT_PLAIN_LENGTH) {
@@ -773,7 +886,7 @@ class CalculatorViewModel(
     /** True when the next token must be an operand, so a '+'/'-' here is a prefix sign. */
     private fun expectsOperand(last: Token?): Boolean = when (last) {
         null, is Token.LParen, is Token.Op, is Token.Sign -> true
-        is Token.UnaryOp -> last.op == '√' // prefix √; postfix ! and % end an operand
+        is Token.UnaryOp -> last.op != '!' && last.op != '%' // prefix √, ln, log; postfix ! and % end an operand
         else -> false
     }
 
@@ -787,7 +900,8 @@ class CalculatorViewModel(
                     val start = i
                     while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
                     // Consume E notation suffix (e.g., E+18, E-3, E6)
-                    if (i < expr.length && (expr[i] == 'E' || expr[i] == 'e')) {
+                    // (Only a capital E: a lowercase e is the constant, already replaced by its value.)
+                    if (i < expr.length && expr[i] == 'E') {
                         i++
                         if (i < expr.length && (expr[i] == '+' || expr[i] == '-')) i++
                         while (i < expr.length && expr[i].isDigit()) i++
@@ -809,7 +923,7 @@ class CalculatorViewModel(
                 c == '*' -> tokens.add(Token.Op('*', 2))
                 c == '/' -> tokens.add(Token.Op('/', 2))
                 c == '^' -> tokens.add(Token.Op('^', 4, leftAssoc = false))
-                c == '√' -> tokens.add(Token.UnaryOp('√'))
+                c == '√' || c == 'L' || c == 'G' -> tokens.add(Token.UnaryOp(c))
                 c == '!' -> tokens.add(Token.UnaryOp('!'))
                 c == '%' -> tokens.add(Token.UnaryOp('%'))
             }
@@ -926,10 +1040,17 @@ class CalculatorViewModel(
                             if (a.v < BigDecimal.ZERO) throw ArithmeticException("Negative sqrt")
                             stack.addLast(SVal(bigSqrt(a.v)))
                         }
+                        'L' -> stack.addLast(SVal(bigLn(a.v)))
+                        'G' -> stack.addLast(SVal(bigLog10(a.v)))
                         '!' -> {
-                            val intVal = try { a.v.intValueExact() } catch (_: ArithmeticException) { -1 }
-                            if (intVal < 0 || intVal > 99) throw ArithmeticException("Invalid factorial")
-                            stack.addLast(SVal(factorial(intVal.toLong())))
+                            val intVal = try { a.v.intValueExact() } catch (_: ArithmeticException) { null }
+                            stack.addLast(SVal(when {
+                                // Whole numbers: exact, as before.
+                                intVal != null && intVal in 0..MAX_FACTORIAL -> factorial(intVal.toLong())
+                                // Fractions: x! = Γ(x + 1), e.g. 0.5! = √π / 2.
+                                intVal == null && a.v.abs() <= BigDecimal(MAX_FACTORIAL) -> gammaFactorial(a.v)
+                                else -> throw ArithmeticException("Invalid factorial")
+                            }))
                         }
                         '%' -> {
                             // Divide by 100, flag as percent for consumer-style + and -
@@ -1050,6 +1171,46 @@ class CalculatorViewModel(
         // Only an integer exponent reaches here with a negative base; an odd one keeps the sign.
         val oddExponent = integerExponent && exponent.toBigInteger().testBit(0)
         return if (base.signum() < 0 && oddExponent) result.negate() else result
+    }
+
+    /**
+     * x! = Γ(x + 1) for a non-integer x, by the Lanczos approximation (g = 7, 9 terms) and, below
+     * 1/2, the reflection formula Γ(z)Γ(1 − z) = π / sin(πz). That's good to about 15 digits, so
+     * the result is rounded to 15 rather than showing digits it doesn't know.
+     */
+    private fun gammaFactorial(x: BigDecimal): BigDecimal {
+        approximate = true
+        val g = gamma(x.toDouble() + 1.0)
+        if (!g.isFinite()) throw ArithmeticException("Invalid factorial")
+        return BigDecimal(g).round(MathContext(15, RoundingMode.HALF_EVEN))
+    }
+
+    /** Set while evaluating when a factorial of a fraction was used: the result is good to 15 digits. */
+    private var approximate = false
+
+    private fun gamma(z: Double): Double {
+        if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * gamma(1.0 - z))
+        val zz = z - 1.0
+        var sum = LANCZOS[0]
+        for (k in 1 until LANCZOS.size) sum += LANCZOS[k] / (zz + k)
+        val t = zz + LANCZOS_G + 0.5
+        return Math.sqrt(2 * Math.PI) * Math.pow(t, zz + 0.5) * Math.exp(-t) * sum
+    }
+
+    /** ln x to [LN_MC], for x > 0: x = m·10^k with 1 ≤ m < 10, so ln x = ln m + k·ln 10. */
+    private fun bigLn(x: BigDecimal): BigDecimal {
+        if (x.signum() <= 0) throw ArithmeticException("Invalid logarithm")
+        val k = x.precision() - x.scale() - 1
+        val m = x.scaleByPowerOfTen(-k)
+        return lnNear(m).add(LN10.multiply(BigDecimal(k), LN_MC), LN_MC)
+    }
+
+    /** log₁₀ x; exact for powers of ten (log 1000 = 3), otherwise ln x / ln 10. */
+    private fun bigLog10(x: BigDecimal): BigDecimal {
+        if (x.signum() <= 0) throw ArithmeticException("Invalid logarithm")
+        val stripped = x.stripTrailingZeros()
+        if (stripped.unscaledValue() == java.math.BigInteger.ONE) return BigDecimal(-stripped.scale())
+        return bigLn(x).divide(LN10, LN_MC)
     }
 
     private fun factorial(n: Long): BigDecimal {

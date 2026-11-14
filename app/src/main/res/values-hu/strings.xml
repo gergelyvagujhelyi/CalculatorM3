@@ -52,6 +52,11 @@
     <string name="btn_power">Hatvány</string>
     <string name="btn_factorial">Faktoriális</string>
     <string name="btn_parentheses">Zárójelek</string>
+    <string name="btn_e">Euler-féle szám (e)</string>
+    <string name="btn_ln">Természetes alapú logaritmus</string>
+    <string name="btn_log">Tízes alapú logaritmus</string>
+    <string name="btn_more_functions">További függvények</string>
+    <string name="btn_fewer_functions">Kevesebb függvény</string>
 
     <!-- Kamera / MI-beolvasás -->
     <string name="scan_hint">Készíts vagy válassz fényképet egy kézzel írt matematikai kifejezésről</string>

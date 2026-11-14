@@ -52,6 +52,11 @@
     <string name="btn_power">Степінь</string>
     <string name="btn_factorial">Факторіал</string>
     <string name="btn_parentheses">Дужки</string>
+    <string name="btn_e">Число e</string>
+    <string name="btn_ln">Натуральний логарифм</string>
+    <string name="btn_log">Десятковий логарифм</string>
+    <string name="btn_more_functions">Більше функцій</string>
+    <string name="btn_fewer_functions">Менше функцій</string>
 
     <!-- Камера / ШІ-сканування -->
     <string name="scan_hint">Зробіть або виберіть фото рукописного математичного виразу</string>

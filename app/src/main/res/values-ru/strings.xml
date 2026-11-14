@@ -52,6 +52,11 @@
     <string name="btn_power">Степень</string>
     <string name="btn_factorial">Факториал</string>
     <string name="btn_parentheses">Скобки</string>
+    <string name="btn_e">Число e</string>
+    <string name="btn_ln">Натуральный логарифм</string>
+    <string name="btn_log">Десятичный логарифм</string>
+    <string name="btn_more_functions">Больше функций</string>
+    <string name="btn_fewer_functions">Меньше функций</string>
 
     <!-- Камера / ИИ-сканирование -->
     <string name="scan_hint">Сделайте или выберите фото рукописного математического выражения</string>

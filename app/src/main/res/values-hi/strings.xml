@@ -52,6 +52,11 @@
     <string name="btn_power">घात</string>
     <string name="btn_factorial">क्रमगुणन</string>
     <string name="btn_parentheses">कोष्ठक</string>
+    <string name="btn_e">ऑयलर संख्या e</string>
+    <string name="btn_ln">प्राकृतिक लघुगणक</string>
+    <string name="btn_log">आधार 10 का लघुगणक</string>
+    <string name="btn_more_functions">अधिक फ़ंक्शन</string>
+    <string name="btn_fewer_functions">कम फ़ंक्शन</string>
 
     <!-- कैमरा / AI स्कैन -->
     <string name="scan_hint">हाथ से लिखे गणितीय व्यंजक की फ़ोटो लें या चुनें</string>

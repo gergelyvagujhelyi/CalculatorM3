@@ -52,6 +52,11 @@
     <string name="btn_power">Üs</string>
     <string name="btn_factorial">Faktöriyel</string>
     <string name="btn_parentheses">Parantezler</string>
+    <string name="btn_e">Euler sayısı e</string>
+    <string name="btn_ln">Doğal logaritma</string>
+    <string name="btn_log">10 tabanında logaritma</string>
+    <string name="btn_more_functions">Daha fazla işlev</string>
+    <string name="btn_fewer_functions">Daha az işlev</string>
 
     <!-- Kamera / Yapay zeka taraması -->
     <string name="scan_hint">Elle yazılmış bir matematik ifadesinin fotoğrafını çekin veya seçin</string>

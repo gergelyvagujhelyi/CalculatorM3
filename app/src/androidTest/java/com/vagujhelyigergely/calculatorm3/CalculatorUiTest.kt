@@ -145,6 +145,16 @@ class CalculatorUiTest {
     }
 
     @Test
+    fun moreFunctionsPanel() {
+        launch()
+        val more = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.btn_more_functions)
+        composeTestRule.onNodeWithContentDescription(more).performClick()
+        // log 1000 = 3, then × e^0 = 1 keeps it 3
+        tap("log", "1", "0", "0", "0", "×", "e", "^", "0", "=")
+        displayShows("3")
+    }
+
+    @Test
     fun sqrtAfterAnOperator() {
         launch()
         // 9 + √4 + 1, typed in writing order

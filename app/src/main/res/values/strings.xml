@@ -52,6 +52,11 @@
     <string name="btn_power">Power</string>
     <string name="btn_factorial">Factorial</string>
     <string name="btn_parentheses">Parentheses</string>
+    <string name="btn_e">Euler\'s number e</string>
+    <string name="btn_ln">Natural logarithm</string>
+    <string name="btn_log">Logarithm base 10</string>
+    <string name="btn_more_functions">More functions</string>
+    <string name="btn_fewer_functions">Fewer functions</string>
 
     <!-- Camera / AI scan -->
     <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>
