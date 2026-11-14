@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Selesaikan dengan AI</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_menu_write">Tulis</string>
+    <string name="write_title">Tulis soal matematika</string>
+    <string name="write_hint">Tulis dengan jari atau stylus</string>
+    <string name="write_undo">Urungkan</string>
+    <string name="write_redo">Ulangi</string>
+    <string name="write_eraser">Penghapus</string>
+    <string name="write_clear">Hapus semua</string>
+    <string name="write_again">Gambar ulang</string>
+    <string name="steps_read_as">Dibaca sebagai</string>
+    <string name="steps_fix_as_text">Perbaiki sebagai teks</string>
     <string name="ai_menu_type">Ketik</string>
     <string name="type_title">Ketik soal matematika</string>
     <string name="type_placeholder">mis. 3x + 5 = 20, atau soal cerita</string>

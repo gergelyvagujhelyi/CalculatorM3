@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Mit KI lösen</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galerie</string>
+    <string name="ai_menu_write">Schreiben</string>
+    <string name="write_title">Matheaufgabe schreiben</string>
+    <string name="write_hint">Mit dem Finger oder einem Stift schreiben</string>
+    <string name="write_undo">Rückgängig</string>
+    <string name="write_redo">Wiederholen</string>
+    <string name="write_eraser">Radierer</string>
+    <string name="write_clear">Löschen</string>
+    <string name="write_again">Neu zeichnen</string>
+    <string name="steps_read_as">Gelesen als</string>
+    <string name="steps_fix_as_text">Als Text korrigieren</string>
     <string name="ai_menu_type">Tippen</string>
     <string name="type_title">Matheaufgabe eingeben</string>
     <string name="type_placeholder">z. B. 3x + 5 = 20 oder eine Textaufgabe</string>

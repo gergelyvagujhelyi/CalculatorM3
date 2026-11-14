@@ -45,6 +45,16 @@ interface MathSolver {
     ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No text solving"))
 
     /**
+     * Solve the problem in a picture step by step, like [solveFromTextStreaming] (same prompt and
+     * result shape). Used for the handwriting pad, whose clean black-on-white ink is the problem
+     * itself; photo scans keep [solveFromImageStreaming].
+     */
+    suspend fun solveFromImageStepsStreaming(
+        imagePath: String,
+        onToken: suspend (partialRaw: String) -> Unit
+    ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException("No image steps"))
+
+    /**
      * Interrupt an in-flight [solveFromImageStreaming] so native generation stops promptly.
      * Must be safe to call WITHOUT holding the backend's internal lock — the running inference
      * already holds it, and this is only a signal to the native side, not a state change.
@@ -96,11 +106,18 @@ object SolverPrompts {
         "(at most 4 steps, one short line each)\n" +
         "Answer: <only the final answer, e.g. 42 or x = 5; a number without units where possible>"
 
+    /** The user turn that goes with a handwritten picture under [STEPS_SYSTEM_PROMPT]. */
+    const val STEPS_IMAGE_USER_PROMPT = "Solve the handwritten math problem in this image."
+
     // A label with optional Markdown emphasis or heading marks around it ("**Answer:**",
     // "## Problem:"). Only the label's own decoration is removed: a '*' in the maths after it
     // ("5*4+3") must stay.
     private val problemLabel = Regex("^[#*_\\s]*problem[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
     private val answerLabel = Regex("^[#*_\\s]*(final\\s+)?answer[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
+    // The model sometimes restates the picture prompt itself: "Solve the handwritten math problem 7+5".
+    private val promptEcho = Regex(
+        "^solve the (handwritten )?math problem( in this image)?\\s*[:.]?\\s*", RegexOption.IGNORE_CASE
+    )
 
     /**
      * Read a [STEPS_SYSTEM_PROMPT] response, or null if it has no `Answer:` line (the caller then
@@ -117,7 +134,7 @@ object SolverPrompts {
         if (answer.isEmpty()) return null
         val problemIndex = lines.indexOfFirst { problemLabel.containsMatchIn(it) }
             .takeIf { it in 0 until answerIndex }
-        val problem = problemIndex?.let { lines[it].replace(problemLabel, "").trim() }
+        val problem = problemIndex?.let { lines[it].replace(problemLabel, "").replace(promptEcho, "").trim() }
             ?.takeIf { it.isNotEmpty() } ?: typed.trim()
         val stepLines = lines.subList((problemIndex ?: -1) + 1, answerIndex)
         val steps = stepLines.joinToString("\n").trim()

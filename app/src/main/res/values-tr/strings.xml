@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Yapay zekayla çöz</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galeri</string>
+    <string name="ai_menu_write">Yazı</string>
+    <string name="write_title">Bir matematik sorusu yazın</string>
+    <string name="write_hint">Parmağınızla veya kalemle yazın</string>
+    <string name="write_undo">Geri al</string>
+    <string name="write_redo">Yinele</string>
+    <string name="write_eraser">Silgi</string>
+    <string name="write_clear">Temizle</string>
+    <string name="write_again">Yeniden çiz</string>
+    <string name="steps_read_as">Okunan</string>
+    <string name="steps_fix_as_text">Metin olarak düzelt</string>
     <string name="ai_menu_type">Yaz</string>
     <string name="type_title">Bir matematik sorusu yazın</string>
     <string name="type_placeholder">ör. 3x + 5 = 20 veya bir problem</string>

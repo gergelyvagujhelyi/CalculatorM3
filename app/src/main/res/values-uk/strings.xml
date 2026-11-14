@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Розв’язати з ШІ</string>
     <string name="ai_menu_camera">Камера</string>
     <string name="ai_menu_gallery">Галерея</string>
+    <string name="ai_menu_write">Написати</string>
+    <string name="write_title">Напишіть задачу з математики</string>
+    <string name="write_hint">Пишіть пальцем або стилусом</string>
+    <string name="write_undo">Скасувати</string>
+    <string name="write_redo">Повторити</string>
+    <string name="write_eraser">Гумка</string>
+    <string name="write_clear">Очистити</string>
+    <string name="write_again">Намалювати знову</string>
+    <string name="steps_read_as">Розпізнано як</string>
+    <string name="steps_fix_as_text">Виправити текстом</string>
     <string name="ai_menu_type">Ввести</string>
     <string name="type_title">Введіть задачу з математики</string>
     <string name="type_placeholder">напр. 3x + 5 = 20 або текстова задача</string>

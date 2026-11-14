@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Risolvi con l\'IA</string>
     <string name="ai_menu_camera">Fotocamera</string>
     <string name="ai_menu_gallery">Galleria</string>
+    <string name="ai_menu_write">Scrivi a mano</string>
+    <string name="write_title">Scrivi un problema di matematica</string>
+    <string name="write_hint">Scrivi con il dito o con un pennino</string>
+    <string name="write_undo">Annulla</string>
+    <string name="write_redo">Ripeti</string>
+    <string name="write_eraser">Gomma</string>
+    <string name="write_clear">Cancella tutto</string>
+    <string name="write_again">Disegna di nuovo</string>
+    <string name="steps_read_as">Letto come</string>
+    <string name="steps_fix_as_text">Correggi come testo</string>
     <string name="ai_menu_type">Scrivi</string>
     <string name="type_title">Scrivi un problema di matematica</string>
     <string name="type_placeholder">es. 3x + 5 = 20, o un problema a parole</string>

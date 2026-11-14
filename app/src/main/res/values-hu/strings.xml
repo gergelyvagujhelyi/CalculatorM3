@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Megoldás MI-vel</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galéria</string>
+    <string name="ai_menu_write">Kézírás</string>
+    <string name="write_title">Írj le egy matekfeladatot</string>
+    <string name="write_hint">Írj az ujjaddal vagy egy tollal</string>
+    <string name="write_undo">Visszavonás</string>
+    <string name="write_redo">Újra</string>
+    <string name="write_eraser">Radír</string>
+    <string name="write_clear">Törlés</string>
+    <string name="write_again">Újrarajzolás</string>
+    <string name="steps_read_as">Így olvasta</string>
+    <string name="steps_fix_as_text">Javítás szövegként</string>
     <string name="ai_menu_type">Begépelés</string>
     <string name="type_title">Írj be egy matekfeladatot</string>
     <string name="type_placeholder">pl. 3x + 5 = 20, vagy egy szöveges feladat</string>

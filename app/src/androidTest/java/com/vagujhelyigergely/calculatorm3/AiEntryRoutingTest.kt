@@ -8,6 +8,8 @@ import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.InkPoint
+import com.vagujhelyigergely.calculatorm3.camera.InkStroke
 import com.vagujhelyigergely.calculatorm3.camera.ScanUiState
 import com.vagujhelyigergely.calculatorm3.camera.ScanViewModel
 import kotlinx.coroutines.CompletableDeferred
@@ -42,6 +44,8 @@ class AiEntryRoutingTest {
     ) : MathSolver {
         val loadGate = CompletableDeferred<Unit>()
         val solvedTexts = mutableListOf<String>()
+        /** The drawings sent to the model: (path, whether that file existed at the time). */
+        val solvedImages = mutableListOf<Pair<String, Boolean>>()
         @Volatile private var loaded = false
         override val isModelLoaded get() = loaded
         override val activeBackend = "fake"
@@ -53,6 +57,14 @@ class AiEntryRoutingTest {
             problem: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> {
             solvedTexts += problem
+            onToken("Problem:")
+            textGate?.await()
+            return Result.success(RecognitionResult(textReply, ""))
+        }
+        override suspend fun solveFromImageStepsStreaming(
+            imagePath: String, onToken: suspend (partialRaw: String) -> Unit
+        ): Result<RecognitionResult> {
+            solvedImages += imagePath to File(imagePath).exists()
             onToken("Problem:")
             textGate?.await()
             return Result.success(RecognitionResult(textReply, ""))
@@ -251,5 +263,108 @@ class AiEntryRoutingTest {
         Thread.sleep(200)
         assertEquals(ScanUiState.Typing, vm.uiState)
         assertTrue(solver.solvedTexts.isEmpty())
+    }
+
+    // ── Write ───────────────────────────────────────────────────────────────
+
+    private fun line(x0: Float, y0: Float, x1: Float, y1: Float) =
+        InkStroke(listOf(InkPoint(x0, y0), InkPoint((x0 + x1) / 2, (y0 + y1) / 2), InkPoint(x1, y1)))
+
+    private fun ScanViewModel.draw(vararg strokes: InkStroke) =
+        instrumentation.runOnMainSync { strokes.forEach { addStroke(it) } }
+
+    @Test
+    fun aDrawingIsSentAsAPictureAndAnsweredStepByStep() {
+        val solver = FakeSolver(textReply = "Problem: 7 + 5\n1. 7 + 5 = 12\nAnswer: 12")
+            .apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.WRITE, solver)
+        waitFor("the pad") { vm.uiState is ScanUiState.Drawing }
+        vm.draw(line(0.1f, 0.3f, 0.2f, 0.3f), line(0.15f, 0.25f, 0.15f, 0.35f))
+        instrumentation.runOnMainSync { vm.onDrawingSubmitted() }
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals("7 + 5", state.steps?.problem)
+        assertEquals("12", state.answer)
+        val (path, existed) = solver.solvedImages.single()
+        assertTrue("the picture existed when solved", existed)
+        waitFor("the picture deleted") { !File(path).exists() }
+        assertEquals("the drawing is kept for Draw again", 2, vm.strokes.size)
+    }
+
+    @Test
+    fun anEmptyPadIsNotSolved() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.WRITE, solver)
+        waitFor("the pad") { vm.uiState is ScanUiState.Drawing }
+        instrumentation.runOnMainSync { vm.clearInk(); vm.onDrawingSubmitted() }
+        Thread.sleep(200)
+        assertEquals(ScanUiState.Drawing, vm.uiState)
+        assertTrue(solver.solvedImages.isEmpty())
+    }
+
+    @Test
+    fun undoRedoEraseAndClearEditTheDrawing() {
+        val vm = open(AiEntry.WRITE)
+        instrumentation.runOnMainSync { vm.clearInk() }
+        val a = line(0.1f, 0.1f, 0.3f, 0.1f)
+        val b = line(0.1f, 0.5f, 0.3f, 0.5f)
+        vm.draw(a, b)
+        instrumentation.runOnMainSync { vm.undo() }
+        assertEquals(listOf(a), vm.strokes.toList())
+        assertTrue(vm.canRedo)
+        instrumentation.runOnMainSync { vm.redo() }
+        assertEquals(listOf(a, b), vm.strokes.toList())
+        assertEquals(false, vm.canRedo)
+        // The eraser takes the stroke it touches, and a new edit drops what could be redone.
+        instrumentation.runOnMainSync { vm.undo() }
+        instrumentation.runOnMainSync { assertTrue(vm.eraseAt(InkPoint(0.2f, 0.1f), 0.02f)) }
+        assertTrue(vm.strokes.isEmpty())
+        assertEquals(false, vm.canRedo)
+        vm.draw(a, b)
+        instrumentation.runOnMainSync { vm.clearInk() }
+        assertTrue(vm.strokes.isEmpty())
+    }
+
+    @Test
+    fun drawAgainStopAndRetryGoBackToTheDrawing() {
+        val gate = CompletableDeferred<Unit>()
+        val solver = FakeSolver(textGate = gate).apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.WRITE, solver)
+        waitFor("the pad") { vm.uiState is ScanUiState.Drawing }
+        vm.draw(line(0.1f, 0.3f, 0.2f, 0.3f))
+        instrumentation.runOnMainSync { vm.onDrawingSubmitted() }
+        waitFor("the solve") { vm.uiState is ScanUiState.Processing }
+        instrumentation.runOnMainSync { vm.stopInference() }
+        assertEquals(ScanUiState.Drawing, vm.uiState)
+        instrumentation.runOnMainSync { vm.retry() }
+        assertEquals(ScanUiState.Drawing, vm.uiState)
+        instrumentation.runOnMainSync { vm.drawAgain() }
+        assertEquals(ScanUiState.Drawing, vm.uiState)
+        assertEquals(1, vm.strokes.size)
+        gate.complete(Unit)
+    }
+
+    @Test
+    fun fixAsTextContinuesAsATypedProblem() {
+        val solver = FakeSolver(textReply = "Problem: 7 + 3\n1. 7 + 3 = 10\nAnswer: 10")
+            .apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.WRITE, solver)
+        waitFor("the pad") { vm.uiState is ScanUiState.Drawing }
+        vm.draw(line(0.1f, 0.3f, 0.2f, 0.3f))
+        instrumentation.runOnMainSync { vm.onDrawingSubmitted() }
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        // It read 7 + 3; the user meant 7 + 5 and corrects it as text.
+        instrumentation.runOnMainSync { vm.fixAsText("7 + 3") }
+        assertEquals(ScanUiState.Typing, vm.uiState)
+        assertEquals(AiEntry.TYPE, vm.entry)
+        assertEquals("7 + 3", vm.typedProblem)
+    }
+
+    @Test
+    fun aStylusMakesFingersStopDrawing() {
+        val vm = open(AiEntry.WRITE)
+        assertEquals(false, vm.stylusOnly)
+        instrumentation.runOnMainSync { vm.onStylusSeen() }
+        assertTrue(vm.stylusOnly)
     }
 }

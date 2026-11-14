@@ -52,6 +52,16 @@
     <string name="ai_menu_title">Giải bằng AI</string>
     <string name="ai_menu_camera">Máy ảnh</string>
     <string name="ai_menu_gallery">Thư viện</string>
+    <string name="ai_menu_write">Viết tay</string>
+    <string name="write_title">Viết một bài toán</string>
+    <string name="write_hint">Viết bằng ngón tay hoặc bút cảm ứng</string>
+    <string name="write_undo">Hoàn tác</string>
+    <string name="write_redo">Làm lại</string>
+    <string name="write_eraser">Tẩy</string>
+    <string name="write_clear">Xóa hết</string>
+    <string name="write_again">Vẽ lại</string>
+    <string name="steps_read_as">Đọc là</string>
+    <string name="steps_fix_as_text">Sửa bằng văn bản</string>
     <string name="ai_menu_type">Nhập</string>
     <string name="type_title">Nhập một bài toán</string>
     <string name="type_placeholder">vd. 3x + 5 = 20, hoặc một bài toán có lời văn</string>

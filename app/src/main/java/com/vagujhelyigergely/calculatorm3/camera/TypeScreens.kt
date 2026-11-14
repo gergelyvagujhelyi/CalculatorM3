@@ -16,7 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -164,9 +166,11 @@ internal fun TypeContent(
 }
 
 /**
- * A typed problem's answer: the problem as the model read it (with Edit), the answer, and the
- * numbered steps. Use appears only for an answer that's a single number agreeing with the
+ * A step-by-step answer (typed or drawn problem): the problem as the model read it, the answer,
+ * and the numbered steps. Use appears only for an answer that's a single number agreeing with the
  * working ([SolvedSteps.usableAnswer]); otherwise a note says why it can't go into the calculator.
+ * [onEdit] is the secondary button: Edit for a typed problem, Draw again for a drawing
+ * ([drawn]). A drawing also gets ✎ next to "Read as" ([onFixAsText]) to correct a misread as text.
  */
 @Composable
 internal fun StepsSuccessContent(
@@ -175,6 +179,8 @@ internal fun StepsSuccessContent(
     onUse: () -> Unit,
     onEdit: () -> Unit,
     onDismiss: () -> Unit,
+    drawn: Boolean = false,
+    onFixAsText: () -> Unit = {},
 ) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     AiStateScaffold(onDismiss = onDismiss) {
@@ -186,8 +192,15 @@ internal fun StepsSuccessContent(
                 .padding(top = 72.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SectionLabel(stringResource(R.string.steps_problem))
-            MarkdownLatexText(text = steps.problem, color = onSurface, modifier = Modifier.fillMaxWidth())
+            SectionLabel(stringResource(if (drawn) R.string.steps_read_as else R.string.steps_problem))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MarkdownLatexText(text = steps.problem, color = onSurface, modifier = Modifier.weight(1f))
+                if (drawn) {
+                    IconButton(onClick = onFixAsText) {
+                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.steps_fix_as_text))
+                    }
+                }
+            }
 
             AiCard(modifier = Modifier.fillMaxWidth().aiSharedBounds("answer-card")) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -232,9 +245,13 @@ internal fun StepsSuccessContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End)
             ) {
                 OutlinedButton(onClick = onEdit) {
-                    Icon(Icons.Filled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        if (drawn) Icons.Filled.Draw else Icons.Filled.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.steps_edit))
+                    Text(stringResource(if (drawn) R.string.write_again else R.string.steps_edit))
                 }
                 if (steps.usableAnswer.isNotBlank()) {
                     Button(onClick = onUse) {

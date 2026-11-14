@@ -300,8 +300,22 @@ fun CameraScanScreen(
                                     onDismiss = onDismiss
                                 )
                             }
+                            is ScanUiState.Drawing -> WriteContent(
+                                strokes = viewModel.strokes,
+                                canRedo = viewModel.canRedo,
+                                stylusOnly = viewModel.stylusOnly,
+                                onStroke = { viewModel.addStroke(it) },
+                                onErase = { point, radius -> viewModel.eraseAt(point, radius) },
+                                onStylusSeen = { viewModel.onStylusSeen() },
+                                onUndo = { viewModel.undo() },
+                                onRedo = { viewModel.redo() },
+                                onClear = { viewModel.clearInk() },
+                                onSolve = { viewModel.onDrawingSubmitted() },
+                                onDismiss = onDismiss
+                            )
                             is ScanUiState.Processing -> ProcessingContent(
-                                fromText = viewModel.entry == AiEntry.TYPE,
+                                // Typed and drawn problems: no photo, and the answer starts in seconds.
+                                fromText = viewModel.entry == AiEntry.TYPE || viewModel.entry == AiEntry.WRITE,
                                 partialRaw = state.partialRaw,
                                 startTimeMs = state.startTimeMs,
                                 tokenCount = state.tokenCount,
@@ -317,8 +331,13 @@ fun CameraScanScreen(
                                     onExpressionRecognized(state.steps.usableAnswer)
                                     onDismiss()
                                 },
-                                onEdit = { viewModel.editTypedProblem() },
-                                onDismiss = onDismiss
+                                onEdit = {
+                                    if (viewModel.entry == AiEntry.WRITE) viewModel.drawAgain()
+                                    else viewModel.editTypedProblem()
+                                },
+                                onDismiss = onDismiss,
+                                drawn = viewModel.entry == AiEntry.WRITE,
+                                onFixAsText = { viewModel.fixAsText(state.steps.problem) }
                             ) else SuccessContent(
                                 answer = state.answer,
                                 rawResponse = state.rawResponse,
@@ -424,6 +443,7 @@ private fun ScanUiState.screenKey(): Any = when (this) {
     is ScanUiState.PreparingModel -> "preparingModel"
     is ScanUiState.Capturing -> "capturing"
     is ScanUiState.Typing -> "typing"
+    is ScanUiState.Drawing -> "drawing"
     is ScanUiState.Processing -> "processing"
     is ScanUiState.Success -> "success"
     is ScanUiState.Error -> "error"
