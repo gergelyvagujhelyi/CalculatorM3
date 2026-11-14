@@ -17,6 +17,9 @@ import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionException
 import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
+import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
+import com.vagujhelyigergely.calculatorm3.ai.SolvedSteps
+import com.vagujhelyigergely.calculatorm3.ai.SolverPrompts
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,6 +47,8 @@ sealed interface ScanUiState {
      * the one-time preparation, a stopped scan): the screen then offers a button instead.
      */
     data class Capturing(val autoLaunch: Boolean = true) : ScanUiState
+    /** The Type screen: a typed problem ([ScanViewModel.typedProblem]) waiting for Solve. */
+    data object Typing : ScanUiState
     data class Processing(
         val partialRaw: String = "",
         /** Start of the current inference attempt (a GPU→CPU retry starts a new one). */
@@ -62,7 +67,9 @@ sealed interface ScanUiState {
         /** Time-to-first-token (image prefill), kept separate from the decode rate. */
         val ttftMs: Long = 0L,
         /** Steady-state decode speed, excluding prefill. */
-        val decodeTokensPerSec: Double = 0.0
+        val decodeTokensPerSec: Double = 0.0,
+        /** A typed problem's step-by-step answer; null for a photo scan. */
+        val steps: SolvedSteps? = null
     ) : ScanUiState
     /**
      * [checkOutput]: the model finished but its answer isn't a single number to use (e.g. it
@@ -124,6 +131,22 @@ class ScanViewModel(
     var entry by mutableStateOf(AiEntry.CAMERA)
         private set
 
+    /**
+     * The Type screen's text. Kept across solves, so Retry and Edit return to it; the screen
+     * clears it when the window is opened afresh from the menu.
+     */
+    var typedProblem by mutableStateOf("")
+        private set
+
+    fun updateTypedProblem(text: String) {
+        typedProblem = text
+    }
+
+    /** Back to the Type screen with the problem as it was (Edit on a typed problem's answer). */
+    fun editTypedProblem() {
+        uiState = ScanUiState.Typing
+    }
+
     /** The speed/quality setting on the AI settings page (Gemma 4 models only). */
     var scanQuality by mutableStateOf(modelManager.scanQuality)
         private set
@@ -150,7 +173,11 @@ class ScanViewModel(
      * [AiEntry.GALLERY] (opened right away if [autoLaunch]), or the settings page.
      */
     private fun showReady(autoLaunch: Boolean) {
-        uiState = if (entry == AiEntry.SETTINGS) settingsState() else ScanUiState.Capturing(autoLaunch)
+        uiState = when (entry) {
+            AiEntry.SETTINGS -> settingsState()
+            AiEntry.TYPE -> ScanUiState.Typing
+            AiEntry.CAMERA, AiEntry.GALLERY -> ScanUiState.Capturing(autoLaunch)
+        }
     }
 
     /** False for an [initialize] that resumes a recreated window (see there). */
@@ -473,6 +500,57 @@ class ScanViewModel(
     }
 
     fun onPhotoCaptured(imagePath: String) {
+        startSolve(
+            // Apply EXIF rotation + downscale: a full-res photo can blow up the vision pipeline's
+            // memory, and the camera stores it sideways with an EXIF orientation tag the model
+            // would otherwise ignore. If that fails, do NOT fall back to the original
+            // full-resolution photo, which can OOM the vision pipeline: show an error instead.
+            prepareInput = {
+                withContext(Dispatchers.IO) { prepareImage(imagePath, MAX_IMAGE_EDGE) }.also {
+                    if (it == null) uiState = ScanUiState.Error(appContext.getString(R.string.error_image_process))
+                }
+            },
+            solve = { path, onToken -> solver.solveFromImageStreaming(path, onToken) },
+            parseSteps = null,
+            cleanup = { processPath ->
+                // Clean up captured photos
+                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
+                if (processPath != null && processPath != imagePath) {
+                    try { java.io.File(processPath).delete() } catch (_: Exception) {}
+                }
+            }
+        )
+    }
+
+    /**
+     * Solve the typed [problem] step by step (the Type screen's Solve). Kept as [typedProblem],
+     * so Retry and Edit come back to it.
+     */
+    fun onTextSubmitted(problem: String) {
+        val text = problem.trim()
+        if (text.isEmpty()) return
+        typedProblem = problem
+        startSolve(
+            prepareInput = { text },
+            solve = { input, onToken -> solver.solveFromTextStreaming(input, onToken) },
+            parseSteps = { raw -> SolverPrompts.parseSteps(raw, text) },
+            cleanup = {}
+        )
+    }
+
+    /**
+     * The shared scan: wait for a stopped one to finish, load the model, show Processing, get the
+     * input from [prepareInput] (null = it set an error), stream [solve] with live stats, then
+     * show the result. [parseSteps] (typed problems) turns the raw reply into steps; null means a
+     * photo scan's single-number result. The engine is released afterwards, then [cleanup] runs
+     * with the prepared input.
+     */
+    private fun startSolve(
+        prepareInput: suspend () -> String?,
+        solve: suspend (input: String, onToken: suspend (String) -> Unit) -> Result<RecognitionResult>,
+        parseSteps: ((raw: String) -> SolvedSteps?)?,
+        cleanup: (preparedInput: String?) -> Unit,
+    ) {
         val model = modelManager.selectedModel
         // Cancel any still-running inference before starting a new one, so an overlapping call
         // can't orphan the previous job (the ViewModel is Activity-scoped, so an un-cancelled job
@@ -484,7 +562,7 @@ class ScanViewModel(
             // inference also drops any in-flight token update, instead of it racing to overwrite
             // the Capturing state stopInference() returns to.
             val inferenceScope = this
-            var processPath: String? = null
+            var input: String? = null
             try {
                 // A stopped scan can still be inside its model load, which can't be interrupted.
                 // When that load returns, the stopped scan's finally releases the engine. Wait
@@ -503,16 +581,7 @@ class ScanViewModel(
                 if (!ensureModelLoaded(model)) return@launch
                 val startTime = System.currentTimeMillis()
                 uiState = ScanUiState.Processing(startTimeMs = startTime, backend = solver.activeBackend)
-                // Apply EXIF rotation + downscale: a full-res photo can blow up the vision
-                // pipeline's memory, and the camera stores it sideways with an EXIF orientation
-                // tag the model would otherwise ignore.
-                processPath = withContext(Dispatchers.IO) { prepareImage(imagePath, MAX_IMAGE_EDGE) }
-                if (processPath == null) {
-                    // Preprocessing failed — do NOT fall back to the original full-resolution
-                    // photo, which can OOM the vision pipeline. Surface an error instead.
-                    uiState = ScanUiState.Error(appContext.getString(R.string.error_image_process))
-                    return@launch
-                }
+                input = prepareInput() ?: return@launch
                 var tokenCount = 0
                 var firstTokenMs = 0L
                 var lastTokenMs = 0L
@@ -520,7 +589,10 @@ class ScanViewModel(
                 var lastRawLen = 0
                 // When the attempt that produced the answer started: TTFT is measured from here.
                 var attemptStartMs = startTime
-                val result = solver.solveFromImageStreaming(processPath) { partialRaw ->
+                // Set once the result is shown; a throttled streaming update still queued on the
+                // main thread must not then overwrite it with Processing. (Both run on Main.)
+                var finished = false
+                val result = solve(input) { partialRaw ->
                     // Time decode at the source (inference dispatcher), independent of the UI:
                     // the first token marks end-of-prefill (TTFT); the rest is the decode window.
                     val now = System.currentTimeMillis()
@@ -534,7 +606,7 @@ class ScanViewModel(
                         firstTokenMs = 0L
                         attemptStartMs = now
                         lastRawLen = 0
-                        if (partialRaw.isEmpty()) return@solveFromImageStreaming
+                        if (partialRaw.isEmpty()) return@solve
                     }
                     lastRawLen = partialRaw.length
                     if (tokenCount == 0) firstTokenMs = now
@@ -549,6 +621,7 @@ class ScanViewModel(
                         val uiFirstTokenMs = firstTokenMs.takeIf { it > 0L }
                         val uiAttemptStartMs = attemptStartMs
                         inferenceScope.launch {
+                            if (finished) return@launch
                             uiState = ScanUiState.Processing(
                                 partialRaw = partialRaw,
                                 // The live prefill/TTFT readout times the current attempt.
@@ -565,10 +638,22 @@ class ScanViewModel(
                 val decodeMs = (lastTokenMs - firstTokenMs).coerceAtLeast(0L)
                 val decodeTps = if (tokenCount > 1 && decodeMs > 0L)
                     (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
+                finished = true
                 uiState = result.fold(
                     onSuccess = {
-                        // Re-read the backend after inference — it may have fallen back GPU→CPU.
-                        ScanUiState.Success(it.answer, it.raw, elapsed, tokenCount, solver.activeBackend, ttftMs, decodeTps)
+                        val steps = parseSteps?.invoke(it.raw)
+                        when {
+                            // A typed problem's reply without an Answer line: show it to check.
+                            parseSteps != null && steps == null -> ScanUiState.Error(
+                                appContext.getString(R.string.error_no_numerical_answer),
+                                it.raw, checkOutput = true
+                            )
+                            // Re-read the backend after inference — it may have fallen back GPU→CPU.
+                            else -> ScanUiState.Success(
+                                steps?.usableAnswer ?: it.answer, it.raw, elapsed, tokenCount,
+                                solver.activeBackend, ttftMs, decodeTps, steps
+                            )
+                        }
                     },
                     onFailure = {
                         val raw = (it as? RecognitionException)?.rawResponse
@@ -589,11 +674,7 @@ class ScanViewModel(
                 // the reason model loading is deferred to here). It reloads lazily on the next
                 // photo.
                 releaseAll()
-                // Clean up captured photos
-                try { java.io.File(imagePath).delete() } catch (_: Exception) {}
-                if (processPath != null && processPath != imagePath) {
-                    try { java.io.File(processPath).delete() } catch (_: Exception) {}
-                }
+                cleanup(input)
             }
         }
     }
@@ -613,9 +694,10 @@ class ScanViewModel(
         inferenceJob?.cancel()
         // Only snap back to capture if we were actually mid-scan; calling this from a dialog
         // dismiss in another state (Success, Downloading, …) must not disturb that state.
-        // Not straight back into the camera: the user just said stop.
+        // Not straight back into the camera: the user just said stop. A typed problem goes back
+        // to its text.
         if (uiState is ScanUiState.Processing || uiState is ScanUiState.ModelLoading) {
-            uiState = ScanUiState.Capturing(autoLaunch = false)
+            showReady(autoLaunch = false)
         }
     }
 

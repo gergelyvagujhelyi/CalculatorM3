@@ -102,6 +102,8 @@ fun CameraScanScreen(
     /** What the AI menu opened this window for: a picture source, or the settings page. */
     entry: AiEntry,
     onExpressionRecognized: (String) -> Unit,
+    /** The calculator's own answer to typed text, if it's plain arithmetic (the Type screen). */
+    instantAnswer: (String) -> InstantAnswer? = { null },
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -148,6 +150,7 @@ fun CameraScanScreen(
     LaunchedEffect(Unit) {
         if (!didInitialize) {
             didInitialize = true
+            viewModel.updateTypedProblem("") // a fresh open starts with an empty Type screen
             viewModel.initialize(entry)
         } else if (viewModel.uiState is ScanUiState.Idle) {
             viewModel.initialize(entry, resumed = true)
@@ -282,7 +285,23 @@ fun CameraScanScreen(
                                 onPickedImageUnreadable = { viewModel.onPickedImageUnreadable() },
                                 onDismiss = onDismiss
                             )
+                            is ScanUiState.Typing -> {
+                                val text = viewModel.typedProblem
+                                val instant = remember(text) { instantAnswer(text) }
+                                TypeContent(
+                                    text = text,
+                                    onTextChange = { viewModel.updateTypedProblem(it) },
+                                    instantAnswer = instant?.display,
+                                    onUseInstant = {
+                                        instant?.let { onExpressionRecognized(it.value) }
+                                        onDismiss()
+                                    },
+                                    onSolve = { viewModel.onTextSubmitted(text) },
+                                    onDismiss = onDismiss
+                                )
+                            }
                             is ScanUiState.Processing -> ProcessingContent(
+                                fromText = viewModel.entry == AiEntry.TYPE,
                                 partialRaw = state.partialRaw,
                                 startTimeMs = state.startTimeMs,
                                 tokenCount = state.tokenCount,
@@ -291,7 +310,16 @@ fun CameraScanScreen(
                                 onStop = { viewModel.stopInference() },
                                 onDismiss = onDismiss
                             )
-                            is ScanUiState.Success -> SuccessContent(
+                            is ScanUiState.Success -> if (state.steps != null) StepsSuccessContent(
+                                steps = state.steps,
+                                elapsedText = stringResource(R.string.recognized_in, formatElapsed(state.elapsedMs)),
+                                onUse = {
+                                    onExpressionRecognized(state.steps.usableAnswer)
+                                    onDismiss()
+                                },
+                                onEdit = { viewModel.editTypedProblem() },
+                                onDismiss = onDismiss
+                            ) else SuccessContent(
                                 answer = state.answer,
                                 rawResponse = state.rawResponse,
                                 elapsedMs = state.elapsedMs,
@@ -395,6 +423,7 @@ private fun ScanUiState.screenKey(): Any = when (this) {
     is ScanUiState.ModelLoading -> "modelLoading"
     is ScanUiState.PreparingModel -> "preparingModel"
     is ScanUiState.Capturing -> "capturing"
+    is ScanUiState.Typing -> "typing"
     is ScanUiState.Processing -> "processing"
     is ScanUiState.Success -> "success"
     is ScanUiState.Error -> "error"
@@ -499,9 +528,13 @@ private fun ProcessingContent(
     backend: String,
     firstTokenMs: Long?,
     onStop: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** A typed problem: there's no photo to process, and the answer starts within seconds. */
+    fromText: Boolean = false
 ) {
     val isGenerating = partialRaw.isNotEmpty()
+    // The hero says "Solving…" once text streams, and from the start for a typed problem.
+    val solving = isGenerating || fromText
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     // Landscape has a short viewport, and the streaming card grows as tokens arrive. Cap it to a
@@ -520,11 +553,11 @@ private fun ProcessingContent(
         ) {
             if (!isLandscape) {
                 AiHero(
-                    title = if (isGenerating)
+                    title = if (solving)
                         stringResource(R.string.camera_generating)
                     else
                         stringResource(R.string.camera_processing_image),
-                    subtitle = if (isGenerating) null else stringResource(R.string.processing_image_hint),
+                    subtitle = if (solving) null else stringResource(R.string.processing_image_hint),
                     icon = Icons.Default.Psychology,
                     pulsing = true
                 )
@@ -783,10 +816,15 @@ private suspend fun copyUriToCache(context: android.content.Context, uri: Uri): 
 
 /** Renders [text] as markdown with LaTeX math (`$…$` inline and `$$…$$` block) via Markwon + jlatexmath. */
 @Composable
-private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = Modifier) {
+internal fun MarkdownLatexText(
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+    textSizeSp: Float = 16f
+) {
     val context = LocalContext.current
     val argb = color.toArgb()
-    val textSizePx = with(LocalDensity.current) { 16.sp.toPx() }
+    val textSizePx = with(LocalDensity.current) { textSizeSp.sp.toPx() }
     val markwon = remember(textSizePx) {
         Markwon.builder(context)
             .usePlugin(MarkwonInlineParserPlugin.create())
@@ -795,7 +833,7 @@ private fun MarkdownLatexText(text: String, color: Color, modifier: Modifier = M
     }
     AndroidView(
         modifier = modifier,
-        factory = { ctx -> TextView(ctx).apply { textSize = 16f } },
+        factory = { ctx -> TextView(ctx).apply { textSize = textSizeSp } },
         update = { tv ->
             tv.setTextColor(argb)
             markwon.setMarkdown(tv, normalizeLatex(text))

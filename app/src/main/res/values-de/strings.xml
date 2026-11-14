@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Mit KI lösen</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galerie</string>
+    <string name="ai_menu_type">Tippen</string>
+    <string name="type_title">Matheaufgabe eingeben</string>
+    <string name="type_placeholder">z. B. 3x + 5 = 20 oder eine Textaufgabe</string>
+    <string name="type_instant_label">Rechner</string>
+    <string name="type_show_steps">Lösungsweg mit KI</string>
+    <string name="steps_problem">Aufgabe</string>
+    <string name="steps_title">Lösungsweg</string>
+    <string name="steps_not_usable">Diese Antwort ist keine einzelne Zahl und kann nicht in den Rechner übernommen werden.</string>
+    <string name="steps_edit">Bearbeiten</string>
     <string name="ai_settings">KI-Einstellungen</string>
     <string name="ai_settings_model">Modell</string>
     <string name="ai_settings_speed">Geschwindigkeit</string>

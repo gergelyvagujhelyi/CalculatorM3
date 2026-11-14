@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Oplossen met AI</string>
     <string name="ai_menu_camera">Camera</string>
     <string name="ai_menu_gallery">Galerij</string>
+    <string name="ai_menu_type">Typen</string>
+    <string name="type_title">Typ een wiskundesom</string>
+    <string name="type_placeholder">bijv. 3x + 5 = 20, of een verhaaltjessom</string>
+    <string name="type_instant_label">Rekenmachine</string>
+    <string name="type_show_steps">Stappen tonen met AI</string>
+    <string name="steps_problem">Som</string>
+    <string name="steps_title">Stappen</string>
+    <string name="steps_not_usable">Dit antwoord is geen enkel getal en kan dus niet in de rekenmachine.</string>
+    <string name="steps_edit">Bewerken</string>
     <string name="ai_settings">AI-instellingen</string>
     <string name="ai_settings_model">Model</string>
     <string name="ai_settings_speed">Snelheid</string>

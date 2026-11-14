@@ -1,0 +1,80 @@
+package com.vagujhelyigergely.calculatorm3.ai
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Test
+
+/** Reading a typed problem's step-by-step reply ([SolverPrompts.parseSteps]). */
+class ParseStepsTest {
+
+    private fun parse(raw: String, typed: String = "typed") = SolverPrompts.parseSteps(raw, typed)
+
+    @Test
+    fun `a reply in the requested shape is split into problem, steps and answer`() {
+        val solved = parse(
+            """
+            Problem: What is 15% of 80?
+            1. 15% = 0.15
+            2. 0.15 × 80 = 12
+            Answer: 12
+            """.trimIndent()
+        )!!
+        assertEquals("What is 15% of 80?", solved.problem)
+        assertEquals("1. 15% = 0.15\n2. 0.15 × 80 = 12", solved.steps)
+        assertEquals("12", solved.answer)
+        assertEquals("12", solved.usableAnswer)
+    }
+
+    @Test
+    fun `an equation's solution is shown but not offered for Use`() {
+        val solved = parse("Problem: 3x + 5 = 20\n1. 3x = 15\n2. x = 5\nAnswer: x = 5")!!
+        assertEquals("x = 5", solved.answer)
+        assertEquals("", solved.usableAnswer)
+    }
+
+    @Test
+    fun `fractions and units are not numbers to Use`() {
+        assertEquals("", parse("Problem: 1/2 + 3/4\n1. 2/4 + 3/4 = 5/4\nAnswer: 5/4")!!.usableAnswer)
+        assertEquals("", parse("Problem: speed\n1. 120 / 2 = 60\nAnswer: 60 km/h")!!.usableAnswer)
+        assertEquals("", parse("Problem: half\nAnswer: \\frac{1}{2}")!!.usableAnswer)
+    }
+
+    @Test
+    fun `an answer that contradicts the working is not offered for Use`() {
+        // The #116 slip: the working says 0.25, the final line 25.
+        assertEquals("", parse("Problem: 1 ÷ 4\n1. 1 ÷ 4 = 0.25\nAnswer: 25")!!.usableAnswer)
+    }
+
+    @Test
+    fun `markdown and LaTeX around the labels and the answer are tolerated`() {
+        val solved = parse("**Problem:** 7 × 6\n1. 7 × 6 = 42\n**Answer:** \$\\boxed{42}\$")!!
+        assertEquals("7 × 6", solved.problem)
+        assertEquals("42", solved.usableAnswer)
+        assertEquals("42", parse("Problem: 6 × 7\nFinal answer: 42")!!.usableAnswer)
+    }
+
+    @Test
+    fun `exponent notation is a number, not a letter`() {
+        assertEquals("1.5E+3", parse("Problem: big\n1. 1500 = 1.5E+3\nAnswer: 1.5E+3")!!.usableAnswer)
+    }
+
+    @Test
+    fun `without a Problem line the typed text is the problem`() {
+        val solved = parse("1. 2 + 2 = 4\nAnswer: 4", typed = "  2 + 2  ")!!
+        assertEquals("2 + 2", solved.problem)
+        assertEquals("1. 2 + 2 = 4", solved.steps)
+    }
+
+    @Test
+    fun `without an Answer line there is nothing to show as the answer`() {
+        assertNull(parse("Problem: 2 + 2\n1. 2 + 2 = 4"))
+        assertNull(parse("Problem: 2 + 2\nAnswer:"))
+    }
+
+    @Test
+    fun `the last Answer line wins`() {
+        val solved = parse("Problem: p\nAnswer: 3\n1. actually 2 + 2 = 4\nAnswer: 4")!!
+        assertEquals("4", solved.answer)
+        assertEquals("Answer: 3\n1. actually 2 + 2 = 4", solved.steps)
+    }
+}

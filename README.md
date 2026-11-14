@@ -51,7 +51,7 @@
 - Scientific functions — square root, pi, power, factorial
 - Calculation history — persists across restarts
 - Expression cursor — tap to edit mid-expression
-- **AI Math Solver** — photograph handwritten math and solve it on-device (experimental; hidden until you unlock it — see below)
+- **AI Math Solver** — photograph handwritten math, or type a problem, and solve it on-device with step-by-step working (experimental; hidden until you unlock it — see below)
 - Dynamic color theming that matches your wallpaper (Android 12+)
 - Automatic light and dark mode
 - Adaptive layout — portrait, landscape, and foldable support
@@ -62,21 +62,23 @@
 
 ## AI Math Solver
 
-Point your camera at a handwritten math expression and let an on-device AI model solve it for you. Everything runs locally — no data leaves your device.
+Point your camera at a handwritten math expression, or type a problem (word problems too), and let an on-device AI model solve it for you. Everything runs locally — no data leaves your device.
 
 > **The AI Math Solver is hidden by default.** To reveal it, rapidly tap **AC** seven times — the same idea as Android's "tap Build number 7 times" to unlock developer options. A countdown toast guides the final taps, and once unlocked an AI icon appears in the top-left corner. The unlock is remembered across restarts.
 
 **How it works:**
-1. Unlock the feature (see above), then tap the AI icon (top-left). A small **Solve with AI** menu opens: **Camera**, **Gallery**, and a ⚙ for **AI settings**
+1. Unlock the feature (see above), then tap the AI icon (top-left). A small **Solve with AI** menu opens: **Camera**, **Gallery**, **Type**, and a ⚙ for **AI settings**
 2. The first time, choose and download an AI model (one-time, ~2.6–4.9 GB; the download runs in a background service and survives the screen turning off). Gated models (Gemma 3n) first prompt a one-tap **Sign in with Hugging Face**
-3. **Camera** opens your camera app straight away; **Gallery** opens the photo picker
+3. **Camera** opens your camera app straight away; **Gallery** opens the photo picker; **Type** opens a text box with a row of math symbols
 4. The model solves it entirely on-device — GPU-accelerated where supported — and streams its working, rendered with proper math formatting
 5. Tap "Use" to insert the answer into the calculator, or **Retry** to take or pick another photo
+
+**Typed problems** are answered step by step: the problem as the model read it, the answer, and numbered steps, with **Edit** to change the problem and solve again. Plain arithmetic such as `12+5*3` is answered by the calculator itself as you type, with **Use**; **Show steps with AI** still asks the model for the working. A typed problem starts answering within a couple of seconds, since there's no photo to process.
 
 **AI settings** (the ⚙ in the menu) holds the model choice and the **speed**: with the Gemma 4 models, **Fast / Balanced / Accurate** sets how much detail the model takes from the photo. Fast can answer in about half the time; Accurate (the default) reads the most detail. The choice is remembered and applies from the next scan.
 
 **Good to know:**
-- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. Otherwise (for example when the result is a fraction like 5/4) the screen says **"Check the model's answer below"** and opens the model's full working, scrolled to its result
+- The answer is offered for "Use" only when it's a single complete number that agrees with the model's own working, so a wrong number never slips into the calculator. Otherwise (for example when the result is a fraction like 5/4) a photo scan says **"Check the model's answer below"** and opens the model's full working, scrolled to its result; a typed problem shows its answer (such as `x = 5`) and steps, and says why it can't go into the calculator
 - After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
 - If the model is deleted outside the app or can't be loaded, the app says so and offers **Download again**
 

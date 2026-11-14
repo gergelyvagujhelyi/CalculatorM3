@@ -52,6 +52,15 @@
     <string name="ai_menu_title">AI से हल करें</string>
     <string name="ai_menu_camera">कैमरा</string>
     <string name="ai_menu_gallery">गैलरी</string>
+    <string name="ai_menu_type">टाइप करें</string>
+    <string name="type_title">गणित का प्रश्न टाइप करें</string>
+    <string name="type_placeholder">जैसे 3x + 5 = 20, या कोई शब्द प्रश्न</string>
+    <string name="type_instant_label">कैलकुलेटर</string>
+    <string name="type_show_steps">AI से चरण देखें</string>
+    <string name="steps_problem">प्रश्न</string>
+    <string name="steps_title">चरण</string>
+    <string name="steps_not_usable">यह उत्तर एक अकेली संख्या नहीं है, इसलिए यह कैलकुलेटर में नहीं जा सकता।</string>
+    <string name="steps_edit">संपादित करें</string>
     <string name="ai_settings">AI सेटिंग्स</string>
     <string name="ai_settings_model">मॉडल</string>
     <string name="ai_settings_speed">गति</string>

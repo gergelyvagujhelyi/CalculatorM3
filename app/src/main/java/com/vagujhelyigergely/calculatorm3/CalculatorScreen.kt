@@ -292,6 +292,11 @@ fun CalculatorScreen(
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
+            instantAnswer = { text ->
+                viewModel.evaluateStandalone(text)?.let {
+                    com.vagujhelyigergely.calculatorm3.camera.InstantAnswer(it, viewModel.formatForDisplay(it))
+                }
+            },
             // Stop any in-flight inference before closing — the ViewModel is Activity-scoped, so
             // without this the scan coroutine would keep generating in the background after dismiss.
             onDismiss = {

@@ -52,6 +52,15 @@
     <string name="ai_menu_title">用 AI 求解</string>
     <string name="ai_menu_camera">相机</string>
     <string name="ai_menu_gallery">相册</string>
+    <string name="ai_menu_type">输入</string>
+    <string name="type_title">输入一道数学题</string>
+    <string name="type_placeholder">例如 3x + 5 = 20，或一道应用题</string>
+    <string name="type_instant_label">计算器</string>
+    <string name="type_show_steps">用 AI 查看步骤</string>
+    <string name="steps_problem">题目</string>
+    <string name="steps_title">步骤</string>
+    <string name="steps_not_usable">这个答案不是单个数字，因此无法放入计算器。</string>
+    <string name="steps_edit">编辑</string>
     <string name="ai_settings">AI 设置</string>
     <string name="ai_settings_model">模型</string>
     <string name="ai_settings_speed">速度</string>

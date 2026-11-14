@@ -52,6 +52,15 @@
     <string name="ai_menu_title">AIで解く</string>
     <string name="ai_menu_camera">カメラ</string>
     <string name="ai_menu_gallery">ギャラリー</string>
+    <string name="ai_menu_type">入力</string>
+    <string name="type_title">数学の問題を入力</string>
+    <string name="type_placeholder">例: 3x + 5 = 20、または文章題</string>
+    <string name="type_instant_label">電卓</string>
+    <string name="type_show_steps">AIで途中式を表示</string>
+    <string name="steps_problem">問題</string>
+    <string name="steps_title">途中式</string>
+    <string name="steps_not_usable">この答えは1つの数ではないため、電卓に入力できません。</string>
+    <string name="steps_edit">編集</string>
     <string name="ai_settings">AI設定</string>
     <string name="ai_settings_model">モデル</string>
     <string name="ai_settings_speed">速度</string>

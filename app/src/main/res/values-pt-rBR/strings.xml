@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Resolver com IA</string>
     <string name="ai_menu_camera">Câmera</string>
     <string name="ai_menu_gallery">Galeria</string>
+    <string name="ai_menu_type">Digitar</string>
+    <string name="type_title">Digite um problema de matemática</string>
+    <string name="type_placeholder">ex.: 3x + 5 = 20, ou um problema escrito</string>
+    <string name="type_instant_label">Calculadora</string>
+    <string name="type_show_steps">Ver passos com IA</string>
+    <string name="steps_problem">Problema</string>
+    <string name="steps_title">Passos</string>
+    <string name="steps_not_usable">Esta resposta não é um único número, então não pode ir para a calculadora.</string>
+    <string name="steps_edit">Editar</string>
     <string name="ai_settings">Configurações de IA</string>
     <string name="ai_settings_model">Modelo</string>
     <string name="ai_settings_speed">Velocidade</string>

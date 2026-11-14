@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Megoldás MI-vel</string>
     <string name="ai_menu_camera">Kamera</string>
     <string name="ai_menu_gallery">Galéria</string>
+    <string name="ai_menu_type">Begépelés</string>
+    <string name="type_title">Írj be egy matekfeladatot</string>
+    <string name="type_placeholder">pl. 3x + 5 = 20, vagy egy szöveges feladat</string>
+    <string name="type_instant_label">Számológép</string>
+    <string name="type_show_steps">Lépések MI-vel</string>
+    <string name="steps_problem">Feladat</string>
+    <string name="steps_title">Lépések</string>
+    <string name="steps_not_usable">Ez a válasz nem egyetlen szám, ezért nem kerülhet a számológépbe.</string>
+    <string name="steps_edit">Szerkesztés</string>
     <string name="ai_settings">MI-beállítások</string>
     <string name="ai_settings_model">Modell</string>
     <string name="ai_settings_speed">Sebesség</string>

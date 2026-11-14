@@ -1,6 +1,8 @@
 package com.vagujhelyigergely.calculatorm3
 
 import androidx.annotation.StringRes
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
@@ -11,6 +13,9 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuContent
+import com.vagujhelyigergely.calculatorm3.camera.StepsSuccessContent
+import com.vagujhelyigergely.calculatorm3.camera.TypeContent
+import com.vagujhelyigergely.calculatorm3.ai.SolvedSteps
 import com.vagujhelyigergely.calculatorm3.camera.DownloadingContent
 import com.vagujhelyigergely.calculatorm3.camera.ErrorContent
 import com.vagujhelyigergely.calculatorm3.camera.MobileDataWarningContent
@@ -282,8 +287,9 @@ class AiScreensUiTest {
         composeTestRule.onNodeWithText(str(R.string.ai_menu_title)).assertIsDisplayed()
         button(str(R.string.ai_menu_camera)).performClick()
         button(str(R.string.ai_menu_gallery)).performClick()
+        button(str(R.string.ai_menu_type)).performClick()
         composeTestRule.onNodeWithContentDescription(str(R.string.ai_settings)).performClick()
-        assertEquals(listOf(AiEntry.CAMERA, AiEntry.GALLERY, AiEntry.SETTINGS), picked)
+        assertEquals(listOf(AiEntry.CAMERA, AiEntry.GALLERY, AiEntry.TYPE, AiEntry.SETTINGS), picked)
     }
 
     // ── Model missing or unloadable ─────────────────────────────────────────
@@ -370,5 +376,68 @@ class AiScreensUiTest {
             composeTestRule.onAllNodes(camera).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNode(camera).assertIsDisplayed()
+    }
+
+    // ── Type screen and step-by-step answers ────────────────────────────────
+
+    @Test
+    fun typeScreenOffersTheCalculatorsOwnAnswerForArithmetic() {
+        var used = 0
+        var solved = 0
+        show {
+            TypeContent(text = "12 + 5", onTextChange = {}, instantAnswer = "17",
+                onUseInstant = { used++ }, onSolve = { solved++ }, onDismiss = {})
+        }
+        composeTestRule.onNodeWithText("= 17").assertIsDisplayed()
+        button(str(R.string.use_expression)).performClick()
+        button(str(R.string.type_show_steps)).performClick()
+        assertEquals(1, used)
+        assertEquals(1, solved)
+    }
+
+    @Test
+    fun typeScreenCantSolveNothingAndInsertsSymbols() {
+        val changes = mutableListOf<String>()
+        show {
+            var text by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+            TypeContent(text = text, onTextChange = { text = it; changes += it }, instantAnswer = null,
+                onUseInstant = {}, onSolve = {}, onDismiss = {})
+        }
+        button(str(R.string.ai_menu_title)).assertIsNotEnabled()
+        // The symbol row scrolls sideways; bring each key into view first.
+        composeTestRule.onNodeWithText("√").performScrollTo().performClick()
+        composeTestRule.onNodeWithText("π").performScrollTo().performClick()
+        assertEquals(listOf("√", "√π"), changes)
+        button(str(R.string.ai_menu_title)).assertIsEnabled()
+    }
+
+    @Test
+    fun aNumericStepAnswerCanBeUsed() {
+        var used = 0
+        show {
+            StepsSuccessContent(
+                steps = SolvedSteps("What is 15% of 80?", "1. 0.15 × 80 = 12", "12", "12"),
+                elapsedText = "Solved in 9s", onUse = { used++ }, onEdit = {}, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.steps_not_usable)).assertDoesNotExist()
+        button(str(R.string.use_answer, "12")).performClick()
+        assertEquals(1, used)
+    }
+
+    @Test
+    fun anEquationsAnswerExplainsWhyItCantBeUsedAndOffersEdit() {
+        var edits = 0
+        show {
+            StepsSuccessContent(
+                steps = SolvedSteps("3x + 5 = 20", "1. 3x = 15", "x = 5", ""),
+                elapsedText = "Solved in 9s", onUse = {}, onEdit = { edits++ }, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.steps_not_usable)).assertIsDisplayed()
+        composeTestRule.onAllNodes(hasText(str(R.string.use_answer, ""), substring = true) and hasClickAction())
+            .assertCountEquals(0)
+        button(str(R.string.steps_edit)).performClick()
+        assertEquals(1, edits)
     }
 }

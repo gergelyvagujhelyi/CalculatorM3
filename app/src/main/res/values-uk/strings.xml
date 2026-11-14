@@ -52,6 +52,15 @@
     <string name="ai_menu_title">Розв’язати з ШІ</string>
     <string name="ai_menu_camera">Камера</string>
     <string name="ai_menu_gallery">Галерея</string>
+    <string name="ai_menu_type">Ввести</string>
+    <string name="type_title">Введіть задачу з математики</string>
+    <string name="type_placeholder">напр. 3x + 5 = 20 або текстова задача</string>
+    <string name="type_instant_label">Калькулятор</string>
+    <string name="type_show_steps">Показати кроки з ШІ</string>
+    <string name="steps_problem">Задача</string>
+    <string name="steps_title">Розв’язання</string>
+    <string name="steps_not_usable">Ця відповідь — не одне число, тому її не можна перенести в калькулятор.</string>
+    <string name="steps_edit">Змінити</string>
     <string name="ai_settings">Налаштування ШІ</string>
     <string name="ai_settings_model">Модель</string>
     <string name="ai_settings_speed">Швидкість</string>
