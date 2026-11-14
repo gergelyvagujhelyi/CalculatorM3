@@ -18,7 +18,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.AccessTime
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog
@@ -594,7 +594,7 @@ private fun ScientificRow(
                 modifier = Modifier.weight(1f).semantics { contentDescription = toggleDesc }
             ) {
                 Icon(
-                    imageVector = if (viewModel.moreFunctions) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
+                    imageVector = if (viewModel.moreFunctions) Icons.Default.ExpandMore else Icons.Default.MoreHoriz,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
