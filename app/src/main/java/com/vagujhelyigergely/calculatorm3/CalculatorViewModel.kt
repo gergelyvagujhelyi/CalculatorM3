@@ -61,6 +61,12 @@ class CalculatorViewModel(
     private var justEvaluated = savedState.get<Boolean>(KEY_JUST_EVALUATED) ?: false
 
     /**
+     * Typing into a root that √ just started ("9 + √(…)"): an operator at its end steps out of it.
+     * Off once the cursor is moved by hand, so editing inside an existing root stays inside.
+     */
+    private var typingInRoot = false
+
+    /**
      * Length of an answer placed into [expression] by "=" or history recall. Typing gets its
      * normal [MAX_EXPRESSION_LENGTH] budget on top of it, so a long answer (10^200 is 201
      * digits) can still be continued with an operator. Reset when a new entry starts.
@@ -192,6 +198,9 @@ class CalculatorViewModel(
         private const val MAX_PAREN_DEPTH = 20
         /** Characters that end a number: a decimal point can't follow them. */
         private val NUMBER_ENDING_CHARS = setOf('π', '%', '!', ')')
+
+        /** Before the cursor, these leave nothing to take the root of: √ starts a new root. */
+        private val ROOT_STARTERS = setOf('+', '−', '×', '÷', '^', '(', '-')
         private const val KEY_JUST_EVALUATED = "justEvaluated"
         private const val KEY_ANSWER_ALLOWANCE = "answerAllowance"
 
@@ -236,6 +245,7 @@ class CalculatorViewModel(
         cursorPosition = position.coerceIn(0, expression.length)
         // Tapping the display is an explicit choice to edit the answer in place.
         justEvaluated = false
+        typingInRoot = false
         // Save immediately so a process restore doesn't put the cursor back where it was.
         saveState()
     }
@@ -316,6 +326,7 @@ class CalculatorViewModel(
                 answerAllowance = 0
             }
         }
+        if (label == "AC" || label == "=") typingInRoot = false
         when (label) {
             "AC" -> {
                 expression = ""
@@ -416,14 +427,23 @@ class CalculatorViewModel(
                 }
             }
             "√" -> {
-                // Wrapping adds "√(" and ")": respect the same length budget as typing, and stop
-                // at the nesting depth evaluation accepts instead of building an unusable expression.
-                if (expression.isNotEmpty() &&
-                    fitsLengthLimit(expression.length + 3) &&
-                    maxParenDepth(expression) < MAX_PAREN_DEPTH
-                ) {
-                    expression = "√($expression)"
-                    cursorPosition = expression.length
+                // Adding "√(" and ")": respect the same length budget as typing, and stop at the
+                // nesting depth evaluation accepts instead of building an unusable expression.
+                if (fitsLengthLimit(expression.length + 3) && maxParenDepth(expression) < MAX_PAREN_DEPTH) {
+                    val charBefore = expression.getOrNull(cursorPosition - 1)
+                    if (charBefore == null || charBefore in ROOT_STARTERS) {
+                        // Nothing to take the root of yet (an empty display, or right after an
+                        // operator): start a root at the cursor, to be typed into, so "9 + √ 4"
+                        // reads as written: 9 + √(4).
+                        expression = expression.substring(0, cursorPosition) + "√()" + expression.substring(cursorPosition)
+                        cursorPosition += 2
+                        typingInRoot = true
+                    } else {
+                        // After a number: the root of everything typed so far ("4 + 5 √" = √(9)).
+                        expression = "√($expression)"
+                        cursorPosition = expression.length
+                        typingInRoot = false
+                    }
                 }
             }
             "π" -> {
@@ -442,6 +462,18 @@ class CalculatorViewModel(
                 }
             }
             "+", "−", "×", "÷" -> {
+                // At the end of a root started with √ (cursor right before its ")", with a number
+                // typed in it), the operator continues after the root: "9 + √ 4 + 1" is
+                // 9 + √(4) + 1. There's no ")" key to step out of it otherwise.
+                if (typingInRoot && expression.getOrNull(cursorPosition) == ')' &&
+                    expression.getOrNull(cursorPosition - 1).let { it != null && (it.isDigit() || it in NUMBER_ENDING_CHARS) }
+                ) {
+                    val open = findMatchingOpen(expression, cursorPosition)
+                    if (open != null && open > 0 && expression[open - 1] == '√') {
+                        cursorPosition++
+                        typingInRoot = false
+                    }
+                }
                 val operators = listOf('+', '−', '×', '÷', '^')
                 val charBefore = if (cursorPosition > 0) expression[cursorPosition - 1] else null
                 val charAfter = if (cursorPosition < expression.length) expression[cursorPosition] else null
@@ -546,8 +578,15 @@ class CalculatorViewModel(
     private val bareSqrt = Regex("√(?!\\()")
 
     /** Drop operators that lack an operand at either end, exactly as "=" does before evaluating. */
-    private fun stripDanglingOperators(expr: String): String =
-        expr.trimStart('+', '×', '÷', '^').trimEnd('+', '−', '×', '÷', '^')
+    private fun stripDanglingOperators(expr: String): String {
+        var stripped = expr.trimStart('+', '×', '÷', '^')
+        // A root started but not typed into yet ("9 + √()") goes too, with its operator.
+        while (true) {
+            val shorter = stripped.trimEnd('+', '−', '×', '÷', '^').removeSuffix("√()")
+            if (shorter == stripped) return stripped
+            stripped = shorter
+        }
+    }
 
     private val MC = MathContext.DECIMAL128
     private val PI = BigDecimal("3.14159265358979323846264338327950288")

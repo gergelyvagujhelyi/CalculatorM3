@@ -684,9 +684,88 @@ class CalculatorViewModelTest {
     }
 
     @Test
-    fun sqrtOnEmptyExpressionIgnored() {
+    fun sqrtOnEmptyStartsARoot() {
         tap("√")
-        assertExpression("")
+        assertExpression("√()")
+        tap("9")
+        assertExpression("√(9)")
+        tapEquals()
+        assertExpression("3")
+    }
+
+    // ── √ in writing order: after an operator it starts a root ─────────
+
+    @Test
+    fun sqrtAfterAnOperatorStartsARoot() {
+        // 9 + √4 = 11; it used to wrap what was typed: √(9 + )4
+        tap("9", "+", "√", "4")
+        assertExpression("9+√(4)")
+        assertResult("11")
+        tapEquals()
+        assertExpression("11")
+    }
+
+    @Test
+    fun anOperatorAtTheEndOfAStartedRootStepsOutOfIt() {
+        // 9 + √4 + 1 = 12, not 9 + √(4 + 1)
+        tap("9", "+", "√", "4", "+", "1")
+        assertExpression("9+√(4)+1")
+        tapEquals()
+        assertExpression("12")
+    }
+
+    @Test
+    fun sqrtAfterTimesAndPower() {
+        tap("2", "×", "√", "1", "6")
+        tapEquals()
+        assertExpression("8")
+        tap("AC", "2", "^", "√", "9")
+        tapEquals()
+        assertExpression("8")
+    }
+
+    @Test
+    fun anEmptyStartedRootIsDroppedOnEquals() {
+        tap("9", "+", "√")
+        assertExpression("9+√()")
+        assertResult("9")
+        tapEquals()
+        assertExpression("9")
+    }
+
+    @Test
+    fun startedRootsNest() {
+        // √ √ 16 = √(√(16)) = 2
+        tap("√", "√", "1", "6")
+        assertExpression("√(√(16))")
+        tapEquals()
+        assertExpression("2")
+    }
+
+    @Test
+    fun backspaceRemovesAnEmptyStartedRoot() {
+        tap("9", "+", "√", "⌫")
+        assertExpression("9+")
+    }
+
+    @Test
+    fun sqrtAfterANumberStillWrapsEverything() {
+        // 4 + 5 √ = √(9) = 3
+        tap("4", "+", "5", "√")
+        assertExpression("√(4+5)")
+        tapEquals()
+        assertExpression("3")
+    }
+
+    @Test
+    fun editingInsideAnExistingRootStaysInside() {
+        // Cursor placed by hand before the ")" of √(9): + 16 goes inside, √(9+16) = 5
+        tap("9", "√")
+        vm.moveCursorTo(3)
+        tap("+", "1", "6")
+        assertExpression("√(9+16)")
+        tapEquals()
+        assertExpression("5")
     }
 
     // ── Power edge cases ───────────────────────────────────────────────
