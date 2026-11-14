@@ -1,0 +1,5 @@
+- AI Math Solver is no longer experimental: tap the AI button for Camera, Gallery, Write (by hand) or Type (word problems too)
+- Step-by-step answers, and up to two follow-up questions about each one
+- AI history keeps every answer on your device
+- Answers in your language, translated on the phone by Mozilla's open translation models (one-time 15–38 MB download)
+- Fixes for scans, history storage and calculator input

@@ -47,6 +47,7 @@ Fényképezz le kézzel írt matekot, írd fel a képernyőre, vagy gépelj be e
 - Az MI-előzmények az eszközödön maradnak; bármikor törölheted
 - Szám csak akkor kerül a számológépbe, ha egyezik a modell levezetésével
 - Sebesség: Gyors, Közepes vagy Pontos
+- Válaszok angolul, vagy a telefonon a te nyelvedre fordítva (a Mozilla nyílt fordítómodelljeivel, egyszeri 15–38 MB-os letöltés)
 - Nyílt modellek (Gemma 4, Gemma 3n), teljesen az eszközön, GPU-gyorsítással
 - Internet csak egyszer, a modell letöltéséhez – alapból Wi-Fin
 - Nem kell? Kapcsold ki az „MI gomb megjelenítése" opciót az MI-beállításokban

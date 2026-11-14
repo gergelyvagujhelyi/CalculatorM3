@@ -62,9 +62,18 @@ Builds:
     gradle:
       - yes
 
+  - versionName: 1.8.0
+    versionCode: 18
+    commit: v1.8.0
+    subdir: app
+    submodules: true
+    gradle:
+      - yes
+    ndk: 28.0.13004108
+
 AllowedAPKSigningKeys: 49646ed216aa6e8f23326999052f6704b6e9228be310b56b6e8b3ab8113bae04
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.7.0
-CurrentVersionCode: 17
+CurrentVersion: 1.8.0
+CurrentVersionCode: 18

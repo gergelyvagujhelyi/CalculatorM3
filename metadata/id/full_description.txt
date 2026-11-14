@@ -47,6 +47,7 @@ Foto matematika tulisan tangan, tulis di layar, atau ketik soal — termasuk soa
 - Riwayat AI tetap di perangkat Anda; hapus kapan saja
 - Angka masuk ke kalkulator hanya jika sesuai dengan langkah model
 - Kecepatan: Cepat, Seimbang, atau Akurat
+- Jawaban dalam bahasa Inggris, atau diterjemahkan ke bahasamu langsung di ponsel (model terjemahan terbuka dari Mozilla, unduhan sekali 15–38 MB)
 - Model terbuka (Gemma 4, Gemma 3n), sepenuhnya di perangkat, dipercepat GPU
 - Internet hanya sekali, untuk mengunduh model — lewat Wi-Fi secara default
 - Tidak perlu? Matikan "Tampilkan tombol AI" di pengaturan AI

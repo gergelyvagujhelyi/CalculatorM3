@@ -47,6 +47,7 @@ Fotografiere handschriftliche Mathe, schreib sie auf den Bildschirm oder tippe e
 - Der KI-Verlauf bleibt auf deinem Gerät und lässt sich jederzeit löschen
 - Eine Zahl kommt nur in den Rechner, wenn sie zum Rechenweg des Modells passt
 - Geschwindigkeit: Schnell, Ausgewogen oder Genau
+- Antworten auf Englisch oder direkt auf dem Gerät in deine Sprache übersetzt (offene Übersetzungsmodelle von Mozilla, einmaliger Download von 15–38 MB)
 - Offene Modelle (Gemma 4, Gemma 3n), komplett auf dem Gerät, GPU-beschleunigt
 - Internet nur einmal, für den Modell-Download – standardmäßig per WLAN
 - Nicht gewünscht? „KI-Taste anzeigen" in den KI-Einstellungen ausschalten

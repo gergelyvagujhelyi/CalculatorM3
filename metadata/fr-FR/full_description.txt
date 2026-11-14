@@ -47,6 +47,7 @@ Photographiez des maths manuscrites, écrivez-les à l'écran ou tapez un probl�
 - L'historique IA reste sur votre appareil ; effaçable à tout moment
 - Un nombre ne va dans la calculatrice que s'il concorde avec le raisonnement
 - Vitesse : Rapide, Équilibré ou Précis
+- Réponses en anglais, ou traduites dans ta langue sur le téléphone (modèles de traduction ouverts de Mozilla, téléchargement unique de 15 à 38 Mo)
 - Modèles ouverts (Gemma 4, Gemma 3n), sur l'appareil, accélérés par GPU
 - Internet une seule fois, pour télécharger le modèle (Wi-Fi par défaut)
 - Pas intéressé ? Désactivez « Afficher le bouton IA » dans les paramètres IA

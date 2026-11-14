@@ -47,6 +47,7 @@ Fotografeer handgeschreven wiskunde, schrijf het op het scherm of typ een som �
 - De AI-geschiedenis blijft op je apparaat; wis die wanneer je wilt
 - Een getal gaat alleen naar de rekenmachine als het klopt met de uitwerking
 - Snelheid: Snel, Gebalanceerd of Nauwkeurig
+- Antwoorden in het Engels, of op de telefoon vertaald naar jouw taal (open vertaalmodellen van Mozilla, eenmalige download van 15–38 MB)
 - Open modellen (Gemma 4, Gemma 3n), volledig op het apparaat, GPU-versneld
 - Internet maar één keer, voor de modeldownload – standaard via wifi
 - Niet nodig? Zet „AI-knop tonen" uit in de AI-instellingen
