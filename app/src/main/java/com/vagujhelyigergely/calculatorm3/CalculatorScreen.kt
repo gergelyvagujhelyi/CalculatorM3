@@ -19,6 +19,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryDetail
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryList
@@ -57,12 +58,23 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private val android.content.Context.dataStore by preferencesDataStore(name = "settings")
 /** The user turned off "Show AI button" (AI settings); AI is shown by default. */
 private val AI_BUTTON_HIDDEN = booleanPreferencesKey("ai_button_hidden")
+/** The first-tap intro to the AI ([AiIntroDialog]) was answered (Continue or Hide). */
+private val AI_INTRO_SEEN = booleanPreferencesKey("ai_intro_seen")
+
+/** Mark the AI intro as answered or not (tests reset it). Best effort, like [setAiButtonHidden]. */
+internal suspend fun android.content.Context.setAiIntroSeen(seen: Boolean) {
+    try {
+        dataStore.edit { it[AI_INTRO_SEEN] = seen }
+    } catch (e: java.io.IOException) {
+    }
+}
 
 /** Show or hide the AI button (AI settings, and 7 quick AC taps). Best effort: a failed write keeps it as it was. */
 internal suspend fun android.content.Context.setAiButtonHidden(hidden: Boolean) {
@@ -163,6 +175,64 @@ fun CalculatorScreen(
             .map { it[AI_BUTTON_HIDDEN] ?: false }
     }.collectAsState(initial = false)
     val aiVisible = scanViewModel != null && canRunAi && !aiButtonHidden
+    // The AI menu's open state lives here, so the intro can open it after Continue. Saveable, like
+    // the intro itself, so both survive rotation.
+    var aiMenuOpen by rememberSaveable { mutableStateOf(false) }
+    var showAiIntro by rememberSaveable { mutableStateOf(false) }
+    var showAnswerLanguage by rememberSaveable { mutableStateOf(false) }
+    // The app's language, offered as the answer language; null for an English app (nothing to ask).
+    val askedLanguageName = scanViewModel?.takeIf { it.answerLanguageChoice }?.appLanguageNativeName
+    // First tap by someone who hasn't set up AI (no model yet): the intro instead of the menu,
+    // until they answer it. The flag is read at tap time, not from a collected State, so a tap
+    // right after launch can't see a stale "not seen" before DataStore's first read.
+    val onAiButtonTap: () -> Unit = {
+        scope.launch {
+            val seen = try {
+                context.dataStore.data.first()[AI_INTRO_SEEN] ?: false
+            } catch (e: java.io.IOException) {
+                true // can't tell: don't nag
+            }
+            when {
+                !seen && scanViewModel?.hasDownloadedModel == false -> showAiIntro = true
+                // Set up before the language was offered: ask it once, before assuming English.
+                scanViewModel?.shouldAskAnswerLanguage == true -> showAnswerLanguage = true
+                else -> aiMenuOpen = true
+            }
+        }
+    }
+    if (showAiIntro) {
+        AiIntroDialog(
+            onContinue = { inAppLanguage ->
+                showAiIntro = false
+                aiMenuOpen = true
+                if (askedLanguageName != null) scanViewModel?.updateAnswerInAppLanguage(inAppLanguage)
+                scope.launch { context.setAiIntroSeen(true) }
+            },
+            onHide = { inAppLanguage ->
+                showAiIntro = false
+                if (askedLanguageName != null) scanViewModel?.updateAnswerInAppLanguage(inAppLanguage, prepare = false)
+                scope.launch {
+                    context.setAiIntroSeen(true)
+                    context.setAiButtonHidden(true)
+                }
+            },
+            onDismiss = { showAiIntro = false },
+            appLanguageName = askedLanguageName,
+            translationSize = scanViewModel?.translationDownloadSize
+        )
+    }
+    if (showAnswerLanguage && askedLanguageName != null) {
+        com.vagujhelyigergely.calculatorm3.camera.AnswerLanguageDialog(
+            appLanguageName = askedLanguageName,
+            translationSize = scanViewModel?.translationDownloadSize,
+            onChoose = { inAppLanguage ->
+                showAnswerLanguage = false
+                scanViewModel?.updateAnswerInAppLanguage(inAppLanguage)
+                aiMenuOpen = true
+            },
+            onDismiss = { showAnswerLanguage = false }
+        )
+    }
 
     // Hidden AI button: hammering "AC" brings it back, like Android's "tap Build number
     // 7 times" — countdown toasts and all. The streak only survives genuinely rapid taps: pause
@@ -297,6 +367,9 @@ fun CalculatorScreen(
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
                 onAiSelect = if (aiVisible) handleShowAi else null,
+                aiMenuOpen = aiMenuOpen,
+                onAiMenuOpenChange = { aiMenuOpen = it },
+                onAiButtonTap = onAiButtonTap,
                 onAllClearPressed = onAllClearPressed
             )
         } else {
@@ -305,6 +378,9 @@ fun CalculatorScreen(
                 buttons = buttons,
                 onShowHistory = { showHistory = true },
                 onAiSelect = if (aiVisible) handleShowAi else null,
+                aiMenuOpen = aiMenuOpen,
+                onAiMenuOpenChange = { aiMenuOpen = it },
+                onAiButtonTap = onAiButtonTap,
                 onAllClearPressed = onAllClearPressed
             )
         }
@@ -317,6 +393,9 @@ private fun PortraitLayout(
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
     onAiSelect: ((AiEntry) -> Unit)? = null,
+    aiMenuOpen: Boolean = false,
+    onAiMenuOpenChange: (Boolean) -> Unit = {},
+    onAiButtonTap: () -> Unit = {},
     onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -334,7 +413,12 @@ private fun PortraitLayout(
             horizontalArrangement = if (onAiSelect != null) Arrangement.SpaceBetween else Arrangement.End
         ) {
             if (onAiSelect != null) {
-                AiMenuButton(onSelect = onAiSelect)
+                AiMenuButton(
+                    onSelect = onAiSelect,
+                    expanded = aiMenuOpen,
+                    onExpandedChange = onAiMenuOpenChange,
+                    onClick = onAiButtonTap
+                )
             }
             IconButton(onClick = onShowHistory) {
                 Icon(
@@ -396,6 +480,9 @@ private fun LandscapeLayout(
     buttons: List<List<CalcButton>>,
     onShowHistory: () -> Unit,
     onAiSelect: ((AiEntry) -> Unit)? = null,
+    aiMenuOpen: Boolean = false,
+    onAiMenuOpenChange: (Boolean) -> Unit = {},
+    onAiButtonTap: () -> Unit = {},
     onAllClearPressed: () -> Unit = {}
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -417,7 +504,12 @@ private fun LandscapeLayout(
                 horizontalArrangement = if (onAiSelect != null) Arrangement.SpaceBetween else Arrangement.End
             ) {
                 if (onAiSelect != null) {
-                    AiMenuButton(onSelect = onAiSelect)
+                    AiMenuButton(
+                        onSelect = onAiSelect,
+                        expanded = aiMenuOpen,
+                        onExpandedChange = onAiMenuOpenChange,
+                        onClick = onAiButtonTap
+                    )
                 }
                 IconButton(onClick = onShowHistory) {
                     Icon(

@@ -1,0 +1,3 @@
+[submodule "app/src/main/cpp/slimt"]
+	path = app/src/main/cpp/slimt
+	url = https://github.com/DavidVentura/slimt.git

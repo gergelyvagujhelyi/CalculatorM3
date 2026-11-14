@@ -115,4 +115,14 @@ class ParseStepsTest {
         assertEquals("", parse("Problem: 5/4 as a mixed number\nAnswer: 1 1/4")!!.usableAnswer)
         assertEquals("12", parse("Problem: 7 + 5\nAnswer: 12.")!!.usableAnswer)
     }
+
+    @Test
+    fun `a typed problem is sent with the request to answer in English, which isn't echoed back`() {
+        val message = SolverPrompts.stepsMessage("  Egy ing 40 euró. Mennyit fizetek?  ")
+        assertEquals("Egy ing 40 euró. Mennyit fizetek?\n\n${SolverPrompts.IN_ENGLISH}", message)
+        val solved = parse(
+            "Problem: A shirt costs 40 euros. How much do I pay? ${SolverPrompts.IN_ENGLISH}\n1. 40\nAnswer: 40"
+        )!!
+        assertEquals("A shirt costs 40 euros. How much do I pay?", solved.problem)
+    }
 }

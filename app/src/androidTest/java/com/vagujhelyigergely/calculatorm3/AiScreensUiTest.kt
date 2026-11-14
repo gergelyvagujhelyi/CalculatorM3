@@ -2,6 +2,7 @@ package com.vagujhelyigergely.calculatorm3
 
 import androidx.annotation.StringRes
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -701,5 +702,163 @@ class AiScreensUiTest {
         composeTestRule.onNodeWithText(str(R.string.follow_up_left, 1)).assertExists()
         button(str(R.string.ai_history_ask)).performScrollTo().performClick()
         assertEquals(1, asks)
+    }
+
+    // ── First-tap AI intro ──────────────────────────────────────────────────
+
+    @Test
+    fun theAiIntroSaysItIsPrivateAndLocalAndOffersToHideTheButton() {
+        var continued = 0
+        var hidden = 0
+        show {
+            com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog(
+                onContinue = { continued++ }, onHide = { hidden++ }, onDismiss = {}
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_intro_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_intro_local)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_intro_download)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_intro_hide_hint)).assertIsDisplayed()
+        button(str(R.string.ai_intro_continue)).performClick()
+        button(str(R.string.ai_intro_hide)).performClick()
+        assertEquals(1, continued)
+        assertEquals(1, hidden)
+    }
+
+    /** The calculator, for someone who hasn't set up AI: intro not yet answered, button shown. */
+    private fun calculatorBeforeAiSetUp(): ModelManager {
+        val manager = ModelManager(context)
+        assumeTrue("This device can't run any model, so the AI button never shows", manager.canRunAnyModel)
+        assumeTrue("A model is downloaded here, so the intro wouldn't show", manager.downloadedModels().isEmpty())
+        kotlinx.coroutines.runBlocking {
+            context.setAiIntroSeen(false)
+            context.setAiButtonHidden(false)
+        }
+        val scanViewModel = ScanViewModel(FakeSolver(), manager, HuggingFaceAuthManager(context), context)
+        show { CalculatorScreen(viewModel = CalculatorViewModel(), scanViewModel = scanViewModel) }
+        return manager
+    }
+
+    private val aiButton get() = hasContentDescription(str(R.string.ai_menu_title)) and hasClickAction()
+
+    @Test
+    fun theFirstTapShowsTheIntroOnceThenTheMenu() {
+        assumeTrue("Writes the app's real AI settings; runs only with allowDataWrites=true", allowDataWrites())
+        try {
+            calculatorBeforeAiSetUp()
+            composeTestRule.onNode(aiButton).performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(str(R.string.ai_intro_title)).fetchSemanticsNodes().isNotEmpty()
+            }
+            button(str(R.string.ai_intro_continue)).performClick()
+            // Continue opens the menu.
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(str(R.string.ai_menu_camera)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(str(R.string.ai_intro_title)).assertDoesNotExist()
+            // Close the menu; the next tap goes straight to it, without the intro.
+            InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_BACK)
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(str(R.string.ai_menu_camera)).fetchSemanticsNodes().isEmpty()
+            }
+            composeTestRule.onNode(aiButton).performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(str(R.string.ai_menu_camera)).fetchSemanticsNodes().isNotEmpty()
+            }
+            composeTestRule.onNodeWithText(str(R.string.ai_intro_title)).assertDoesNotExist()
+        } finally {
+            kotlinx.coroutines.runBlocking { context.setAiIntroSeen(false) }
+        }
+    }
+
+    @Test
+    fun hideInTheIntroRemovesTheAiButton() {
+        assumeTrue("Writes the app's real AI settings; runs only with allowDataWrites=true", allowDataWrites())
+        try {
+            calculatorBeforeAiSetUp()
+            composeTestRule.onNode(aiButton).performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodesWithText(str(R.string.ai_intro_hide)).fetchSemanticsNodes().isNotEmpty()
+            }
+            button(str(R.string.ai_intro_hide)).performClick()
+            composeTestRule.waitUntil(5_000) {
+                composeTestRule.onAllNodes(aiButton).fetchSemanticsNodes().isEmpty()
+            }
+        } finally {
+            kotlinx.coroutines.runBlocking {
+                context.setAiIntroSeen(false)
+                context.setAiButtonHidden(false)
+            }
+        }
+    }
+    // ── Answer language ─────────────────────────────────────────────────────
+
+    @Test
+    fun answerLanguageOffersEnglishAsBestAndTheAppsLanguage() {
+        val choices = mutableListOf<Boolean>()
+        show {
+            var inAppLanguage by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            com.vagujhelyigergely.calculatorm3.camera.AnswerLanguageSetting(
+                inAppLanguage, "Magyar", onChange = { inAppLanguage = it; choices += it }
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_answer_english_hint)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_answer_app_hint)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_answer_english)).assertIsSelectedOrHasSelectedAncestor()
+        composeTestRule.onNodeWithText("Magyar").performClick()
+        composeTestRule.onNodeWithText(str(R.string.ai_answer_english)).performClick()
+        assertEquals(listOf(true, false), choices)
+    }
+
+    @Test
+    fun answerLanguageShowsTheTranslationsSizeProgressAndAFailedDownload() {
+        var status by mutableStateOf<ScanViewModel.TranslationStatus?>(null)
+        show {
+            com.vagujhelyigergely.calculatorm3.camera.AnswerLanguageSetting(
+                true, "Magyar", onChange = {}, downloadSize = 25_106_135L, status = status
+            )
+        }
+        val size = android.text.format.Formatter.formatShortFileSize(context, 25_106_135L)
+        composeTestRule.onNodeWithText(context.getString(R.string.ai_translation_size, size)).assertIsDisplayed()
+        status = ScanViewModel.TranslationStatus.Downloading(downloaded = 50, total = 100)
+        composeTestRule.onNodeWithText(context.getString(R.string.ai_translation_downloading, 50)).assertIsDisplayed()
+        status = ScanViewModel.TranslationStatus.Failed
+        composeTestRule.onNodeWithText(str(R.string.ai_translation_failed)).assertIsDisplayed()
+    }
+
+    private fun SemanticsNodeInteraction.assertIsSelectedOrHasSelectedAncestor() =
+        assert(isSelected() or hasAnyAncestor(isSelected()))
+
+    // ── Asking the answer language once ─────────────────────────────────────
+
+    @Test
+    fun theIntroAsksTheAnswerLanguageWhenTheAppIsntInEnglish() {
+        val continued = mutableListOf<Boolean>()
+        show {
+            com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog(
+                onContinue = { continued += it }, onHide = {}, onDismiss = {}, appLanguageName = "Magyar"
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_settings_answer_language)).assertExists()
+        composeTestRule.onNodeWithText("Magyar").performScrollTo().performClick()
+        button(str(R.string.ai_intro_continue)).performClick()
+        assertEquals(listOf(true), continued)
+    }
+
+    @Test
+    fun anEnglishAppsIntroDoesntAskTheLanguage() {
+        show { com.vagujhelyigergely.calculatorm3.camera.AiIntroDialog(onContinue = {}, onHide = {}, onDismiss = {}) }
+        composeTestRule.onNodeWithText(str(R.string.ai_settings_answer_language)).assertDoesNotExist()
+    }
+
+    @Test
+    fun theOneTimeLanguageQuestionPreselectsEnglish() {
+        val chosen = mutableListOf<Boolean>()
+        show {
+            com.vagujhelyigergely.calculatorm3.camera.AnswerLanguageDialog("Magyar", onChoose = { chosen += it }, onDismiss = {})
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_answer_language_later)).assertExists()
+        button(str(R.string.ai_intro_continue)).performClick()
+        assertEquals(listOf(false), chosen)
     }
 }

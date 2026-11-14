@@ -13,6 +13,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
+import com.vagujhelyigergely.calculatorm3.ai.AnswerTranslator
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelDownloadWorker
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
@@ -21,6 +22,9 @@ import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.ai.SolvedSteps
 import com.vagujhelyigergely.calculatorm3.ai.SolverPrompts
+import com.vagujhelyigergely.calculatorm3.ai.TextTranslator
+import com.vagujhelyigergely.calculatorm3.ai.TranslationPack
+import com.vagujhelyigergely.calculatorm3.ai.TranslationPacks
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -59,7 +63,9 @@ sealed interface ScanUiState {
         val tokenCount: Int = 0,
         val backend: String = "",
         /** Wall-clock of the first generated token; null while still prefilling the image. */
-        val firstTokenMs: Long? = null
+        val firstTokenMs: Long? = null,
+        /** Solved; now translating the steps into the app's language ([partialRaw] is the translation). */
+        val translating: Boolean = false
     ) : ScanUiState
     data class Success(
         val answer: String,
@@ -119,11 +125,15 @@ class ScanViewModel(
     context: Context,
     /** Where AI history is kept; tests pass their own folder. */
     historyDir: java.io.File? = null,
+    /** Translates answers into the app's language; tests pass a fake. */
+    translator: TextTranslator? = null,
 ) : ViewModel() {
 
     // Store the *application* context so the ViewModel can outlive an Activity without leaking it.
     // The factory already passes applicationContext; this makes it safe regardless of caller.
     private val appContext = context.applicationContext
+
+    private val translator: TextTranslator = translator ?: AnswerTranslator(appContext)
 
     // ── AI history ──────────────────────────────────────────────────────────
 
@@ -222,7 +232,8 @@ class ScanViewModel(
         data object Idle : FollowUpUi
         /** The engine was released (window closed, app in the background) and is reloading. */
         data object LoadingModel : FollowUpUi
-        data class Answering(val question: String, val partial: String) : FollowUpUi
+        /** [translating]: answered in English, now translating the reply ([partial] is the translation). */
+        data class Answering(val question: String, val partial: String, val translating: Boolean = false) : FollowUpUi
         data class Failed(val message: String) : FollowUpUi
     }
 
@@ -275,11 +286,14 @@ class ScanViewModel(
                     }
                 }
                 followUp = FollowUpUi.Answering(q, "")
+                // The model reads its own English: the steps shown may be a translation, but its
+                // complete English output is saved with the answer, and so is each English reply.
+                val steps = answer.steps?.let { SolverPrompts.parseSteps(answer.output, answer.typedText.orEmpty()) ?: it }
                 val message = SolverPrompts.followUpMessage(
-                    problem = answer.steps?.problem ?: answer.typedText.orEmpty(),
-                    answer = answer.steps?.answer ?: answer.answer,
-                    working = answer.steps?.steps?.takeIf { it.isNotBlank() } ?: answer.output,
-                    earlier = answer.followUps.map { it.question to it.reply },
+                    problem = steps?.problem ?: answer.typedText.orEmpty(),
+                    answer = steps?.answer ?: answer.answer,
+                    working = steps?.steps?.takeIf { it.isNotBlank() } ?: answer.output,
+                    earlier = answer.followUps.map { it.question to (it.englishReply ?: it.reply) },
                     question = q
                 )
                 var lastUiMs = 0L
@@ -288,11 +302,19 @@ class ScanViewModel(
                     if (partial.isNotEmpty() && now - lastUiMs >= UI_UPDATE_THROTTLE_MS) {
                         lastUiMs = now
                         scope.launch {
-                            if (followUp is FollowUpUi.Answering) followUp = FollowUpUi.Answering(q, partial)
+                            val current = followUp
+                            if (current is FollowUpUi.Answering && !current.translating)
+                                followUp = FollowUpUi.Answering(q, partial)
                         }
                     }
                 }
-                val reply = result.getOrNull()?.raw?.trim().orEmpty()
+                val englishReply = result.getOrNull()?.raw?.trim().orEmpty()
+                val pack = translateTo
+                val reply = if (englishReply.isNotEmpty() && pack != null) {
+                    followUp = FollowUpUi.Answering(q, "", translating = true)
+                    // A failed translation keeps the English reply rather than losing it.
+                    translate(listOf(englishReply), pack)?.single()?.trim()?.takeIf { it.isNotEmpty() } ?: englishReply
+                } else englishReply
                 if (reply.isEmpty()) {
                     val res = (result.exceptionOrNull() as? RecognitionException)?.messageRes ?: 0
                     followUp = FollowUpUi.Failed(
@@ -300,7 +322,9 @@ class ScanViewModel(
                     )
                     return@launch
                 }
-                val updated = answer.copy(followUps = answer.followUps + FollowUp(q, reply))
+                val updated = answer.copy(
+                    followUps = answer.followUps + FollowUp(q, reply, englishReply.takeIf { it != reply })
+                )
                 currentAnswer = updated
                 followUp = FollowUpUi.Idle
                 if (updated.id.isNotEmpty()) {
@@ -506,6 +530,97 @@ class ScanViewModel(
     fun updateScanQuality(quality: ScanQuality) {
         modelManager.scanQuality = quality
         scanQuality = quality
+    }
+
+    /** AI settings' "Answer language": the app's language (true) or English (false, default). */
+    var answerInAppLanguage by mutableStateOf(modelManager.answerInAppLanguage)
+        private set
+
+    /**
+     * [prepare]: start downloading the translation now (not when the AI button is being hidden:
+     * then it waits until an answer needs it).
+     */
+    fun updateAnswerInAppLanguage(inAppLanguage: Boolean, prepare: Boolean = true) {
+        modelManager.answerInAppLanguage = inAppLanguage
+        modelManager.answerLanguageChosen = true
+        answerInAppLanguage = inAppLanguage
+        if (inAppLanguage) {
+            if (prepare) prepareTranslation()
+        } else {
+            // Back to English: the translation isn't needed, so it doesn't keep taking space.
+            translationJob?.cancel()
+            translationJob = null
+            translationStatus = null
+            viewModelScope.launch { runCatching { translator.deleteAll() } }
+        }
+    }
+
+    /** The translation's download, while it runs or after it failed; null otherwise. */
+    sealed interface TranslationStatus {
+        data class Downloading(val downloaded: Long, val total: Long) : TranslationStatus
+        data object Failed : TranslationStatus
+    }
+
+    var translationStatus by mutableStateOf<TranslationStatus?>(null)
+        private set
+
+    private var translationJob: Job? = null
+
+    /** The app language's translation pack, if answers can be translated into it. */
+    private val translationPack: TranslationPack? get() = TranslationPacks.forLanguageName(appLanguageName)
+
+    /** The one-time download for answers in the app's language, or null once it's on the phone. */
+    val translationDownloadSize: Long? get() = translationPack?.takeUnless { translator.isInstalled(it) }?.downloadSize
+
+    /**
+     * Starts downloading the app language's translation, if it isn't on the phone yet: when the
+     * user picks answers in their language, so it's normally ready by the first answer.
+     */
+    fun prepareTranslation() {
+        val pack = translationPack ?: return
+        if (translator.isInstalled(pack) || translationJob?.isActive == true) return
+        translationJob = viewModelScope.launch { downloadTranslation(pack) }
+    }
+
+    private suspend fun downloadTranslation(pack: TranslationPack) {
+        translationStatus = TranslationStatus.Downloading(0L, pack.downloadSize)
+        var lastUiMs = 0L
+        try {
+            translator.download(pack) { downloaded, total ->
+                val now = System.currentTimeMillis()
+                if (now - lastUiMs >= UI_UPDATE_THROTTLE_MS) {
+                    lastUiMs = now
+                    viewModelScope.launch {
+                        if (translationStatus is TranslationStatus.Downloading)
+                            translationStatus = TranslationStatus.Downloading(downloaded, total)
+                    }
+                }
+            }
+            translationStatus = null
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            android.util.Log.w("ScanViewModel", "Translation download failed", e)
+            translationStatus = TranslationStatus.Failed
+        }
+    }
+
+    /**
+     * Whether to ask for the answer language before the AI is used: the app isn't in English and
+     * the user hasn't chosen yet (once, in the first-tap intro or a small dialog; English until then).
+     */
+    val shouldAskAnswerLanguage: Boolean get() = answerLanguageChoice && !modelManager.answerLanguageChosen
+
+    /** The app's language in English, for the model ("Hungarian"); "English" for an English app. */
+    private val appLanguageName: String get() =
+        appLanguageNameForTests ?: appContext.getString(R.string.ai_answer_language)
+
+    /** Whether to offer the choice at all: only when the app isn't in English (and can be translated into). */
+    val answerLanguageChoice: Boolean get() = appLanguageName != "English" && translationPack != null
+
+    /** The app's language as its speakers write it ("magyar" → "Magyar"), for the choice's label. */
+    val appLanguageNativeName: String get() {
+        val locale = appContext.resources.configuration.locales[0]
+        return locale.getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
     }
 
     private fun budgetFor(model: AiModel): Int? =
@@ -1013,15 +1128,23 @@ class ScanViewModel(
                         }
                     }
                 }
-                val elapsed = System.currentTimeMillis() - startTime
-                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - attemptStartMs else elapsed
+                val solvedAt = System.currentTimeMillis()
+                val ttftMs = if (firstTokenMs > 0L) firstTokenMs - attemptStartMs else solvedAt - startTime
                 val decodeMs = (lastTokenMs - firstTokenMs).coerceAtLeast(0L)
                 val decodeTps = if (tokenCount > 1 && decodeMs > 0L)
                     (tokenCount - 1) / (decodeMs / 1000.0) else 0.0
                 finished = true
+                // Answers in the app's language: the steps were written in English; translate
+                // their wording now (the answer and Use stay the English solve's).
+                val englishSteps = result.getOrNull()?.let { parseSteps?.invoke(it.raw) }
+                val pack = translateTo
+                val translatedSteps = if (englishSteps != null && pack != null)
+                    translateSteps(englishSteps, pack) else null
+                // "Solved in" counts the whole wait, translation included.
+                val elapsed = System.currentTimeMillis() - startTime
                 uiState = result.fold(
                     onSuccess = {
-                        val steps = parseSteps?.invoke(it.raw)
+                        val steps = translatedSteps ?: englishSteps
                         when {
                             // A typed problem's reply without an Answer line: show it to check.
                             parseSteps != null && steps == null -> ScanUiState.Error(
@@ -1189,6 +1312,47 @@ class ScanViewModel(
         uiState = settingsState()
     }
 
+    /** True once any model has been downloaded: the AI has been set up (no first-tap intro). */
+    val hasDownloadedModel: Boolean get() = modelManager.downloadedModels().isNotEmpty()
+    /**
+     * The translation to put answers through, or null for English. The model always solves in
+     * English, where it reasons best; with "Answer language" set to the app's language, the
+     * wording (problem, steps, follow-up replies) is translated afterwards, on the phone, by
+     * Mozilla's translation model. The answer and the number for Use always come from the
+     * English solve.
+     */
+    private val translateTo: TranslationPack? get() =
+        if (answerInAppLanguage && answerLanguageChoice) translationPack else null
+
+    /** Tests only: pretend the app is in this language (its English name), e.g. "Hungarian". */
+    internal var appLanguageNameForTests: String? = null
+
+    /** [steps] with its wording translated, or null (keep the English) if that isn't possible. */
+    private suspend fun translateSteps(steps: SolvedSteps, pack: TranslationPack): SolvedSteps? {
+        uiState = ScanUiState.Processing(startTimeMs = System.currentTimeMillis(), backend = solver.activeBackend, translating = true)
+        val texts = translate(listOf(steps.problem, steps.steps), pack) ?: return null
+        return steps.copy(problem = texts[0], steps = texts[1])
+    }
+
+    /**
+     * [texts] translated, downloading the translation first if it isn't on the phone yet (it
+     * normally is: it starts when the language is chosen); null if that fails.
+     */
+    private suspend fun translate(texts: List<String>, pack: TranslationPack): List<String>? {
+        if (!translator.isInstalled(pack)) {
+            val running = translationJob?.takeIf { it.isActive }
+            if (running != null) running.join() else downloadTranslation(pack)
+            if (!translator.isInstalled(pack)) return null
+        }
+        return try {
+            translator.translate(texts, pack)
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            android.util.Log.w("ScanViewModel", "Translation failed", e)
+            null
+        }
+    }
+
     /** True if the device has enough RAM to run at least one AI model. */
     val canRunAnyModel: Boolean get() = modelManager.canRunAnyModel
 
@@ -1211,6 +1375,7 @@ class ScanViewModel(
         releaseJob = CoroutineScope(Dispatchers.IO).launch {
             previous?.join()
             solver.release()
+            translator.release()
         }
     }
 

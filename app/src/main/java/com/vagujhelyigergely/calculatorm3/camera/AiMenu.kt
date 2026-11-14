@@ -19,6 +19,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assistant
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.TextButton
 import androidx.compose.material.icons.filled.Draw
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -61,11 +69,17 @@ enum class AiEntry { CAMERA, GALLERY, WRITE, TYPE, SETTINGS }
  * every choice is always one tap away. [onSelect] gets the chosen [AiEntry].
  */
 @Composable
-fun AiMenuButton(onSelect: (AiEntry) -> Unit, modifier: Modifier = Modifier) {
-    // Saveable so the open menu survives rotation.
-    var expanded by rememberSaveable { mutableStateOf(false) }
+fun AiMenuButton(
+    onSelect: (AiEntry) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Whether the menu is open, owned by the caller (so it can open it after the intro). */
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    /** Tapping the button: the caller decides (the first-tap intro, or just open the menu). */
+    onClick: () -> Unit = { onExpandedChange(true) },
+) {
     Box(modifier) {
-        IconButton(onClick = { expanded = true }) {
+        IconButton(onClick = onClick) {
             Icon(
                 imageVector = Icons.Filled.Assistant,
                 contentDescription = stringResource(R.string.ai_menu_title),
@@ -74,15 +88,103 @@ fun AiMenuButton(onSelect: (AiEntry) -> Unit, modifier: Modifier = Modifier) {
         }
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false },
+            onDismissRequest = { onExpandedChange(false) },
             shape = RoundedCornerShape(28.dp),
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ) {
             AiMenuContent(onSelect = { entry ->
-                expanded = false
+                onExpandedChange(false)
                 onSelect(entry)
             })
         }
+    }
+}
+
+/**
+ * Shown on the first tap of the AI button by someone who hasn't used AI yet (no model): it's
+ * private and runs on the phone, needs a one-time download, and the button can be hidden.
+ * [onContinue] opens the menu; [onHide] hides the button; [onDismiss] (outside, back) just closes,
+ * so it shows again next time.
+ */
+@Composable
+internal fun AiIntroDialog(
+    onContinue: (answerInAppLanguage: Boolean) -> Unit,
+    onHide: (answerInAppLanguage: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    /** The app's language as its speakers write it, to offer as the answer language; null for English. */
+    appLanguageName: String? = null,
+    /** The translation's one-time download, for the language option; null if it's on the phone. */
+    translationSize: Long? = null,
+) {
+    // English until the user picks their language here (English gives the best results).
+    var inAppLanguage by rememberSaveable { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+        title = { Text(stringResource(R.string.ai_intro_title), textAlign = TextAlign.Center) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                IntroPoint(Icons.Filled.PhoneAndroid, stringResource(R.string.ai_intro_local))
+                IntroPoint(Icons.Filled.CloudDownload, stringResource(R.string.ai_intro_download))
+                if (appLanguageName != null) {
+                    Text(stringResource(R.string.ai_settings_answer_language), style = MaterialTheme.typography.titleSmall)
+                    AnswerLanguageSetting(inAppLanguage, appLanguageName, { inAppLanguage = it }, downloadSize = translationSize)
+                }
+                IntroPoint(Icons.Filled.VisibilityOff, stringResource(R.string.ai_intro_hide_hint))
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onContinue(inAppLanguage) }) { Text(stringResource(R.string.ai_intro_continue)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onHide(inAppLanguage) }) { Text(stringResource(R.string.ai_intro_hide)) }
+        }
+    )
+}
+
+/**
+ * Asks once for the answer language, for someone who already set up the AI before it was
+ * offered (so never saw the intro). English is preselected; [onChoose] gets the choice.
+ */
+@Composable
+internal fun AnswerLanguageDialog(
+    appLanguageName: String,
+    onChoose: (answerInAppLanguage: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    translationSize: Long? = null,
+) {
+    var inAppLanguage by rememberSaveable { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.ai_settings_answer_language)) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AnswerLanguageSetting(inAppLanguage, appLanguageName, { inAppLanguage = it }, downloadSize = translationSize)
+                Text(
+                    stringResource(R.string.ai_answer_language_later),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onChoose(inAppLanguage) }) { Text(stringResource(R.string.ai_intro_continue)) }
+        }
+    )
+}
+
+@Composable
+private fun IntroPoint(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

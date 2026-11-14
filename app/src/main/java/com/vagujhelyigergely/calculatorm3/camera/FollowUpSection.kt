@@ -99,8 +99,11 @@ internal fun FollowUpSection(
             is FollowUpUi.Answering -> {
                 QuestionBubble(state.question)
                 if (state.partial.isBlank()) {
-                    Text(stringResource(R.string.follow_up_thinking), style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(if (state.translating) R.string.ai_translating else R.string.follow_up_thinking),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 } else {
                     MarkdownLatexText(state.partial, color = onSurface, modifier = Modifier.fillMaxWidth())
                 }

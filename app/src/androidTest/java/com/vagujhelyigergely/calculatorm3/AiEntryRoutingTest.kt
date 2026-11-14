@@ -6,6 +6,9 @@ import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.MathSolver
 import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
+import com.vagujhelyigergely.calculatorm3.ai.TextTranslator
+import com.vagujhelyigergely.calculatorm3.ai.TranslationPack
+import com.vagujhelyigergely.calculatorm3.ai.TranslationPacks
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiHistoryOutcome
@@ -89,6 +92,32 @@ class AiEntryRoutingTest {
         override suspend fun release() { loaded = false }
     }
 
+    /**
+     * Stands in for Mozilla's translator: "translates" by tagging each line with the pack's code.
+     * [installed]: the pack is on the phone; [downloadFails] / [translateFails] make those fail.
+     */
+    private class FakeTranslator(@Volatile var installed: Boolean = true) : TextTranslator {
+        val translated = java.util.Collections.synchronizedList(mutableListOf<List<String>>())
+        @Volatile var downloads = 0
+        @Volatile var deletes = 0
+        @Volatile var downloadFails = false
+        @Volatile var translateFails = false
+        override fun isInstalled(pack: TranslationPack) = installed
+        override suspend fun download(pack: TranslationPack, onProgress: (Long, Long) -> Unit) {
+            downloads++
+            if (downloadFails) throw java.io.IOException("offline")
+            onProgress(pack.downloadSize, pack.downloadSize)
+            installed = true
+        }
+        override suspend fun deleteAll() { deletes++; installed = false }
+        override suspend fun translate(texts: List<String>, pack: TranslationPack): List<String> {
+            translated += texts
+            if (translateFails) throw java.io.IOException("broken")
+            return texts.map { text -> text.lines().joinToString("\n") { "[${pack.code}] $it" } }
+        }
+        override suspend fun release() {}
+    }
+
     @Before
     fun setUp() {
         assumeTrue("Writes app data; run with allowDataWrites=true",
@@ -124,8 +153,9 @@ class AiEntryRoutingTest {
     private val historyDir: File by lazy { File(context.cacheDir, "test_ai_history_${System.nanoTime()}") }
 
     private fun open(
-        entry: AiEntry, solver: FakeSolver = FakeSolver(), resumed: Boolean = false, rerunId: String? = null
-    ) = ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context, historyDir).also { vm ->
+        entry: AiEntry, solver: FakeSolver = FakeSolver(), resumed: Boolean = false, rerunId: String? = null,
+        translator: FakeTranslator = FakeTranslator(),
+    ) = ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context, historyDir, translator).also { vm ->
             lastVm = vm
             instrumentation.runOnMainSync { vm.initialize(entry, resumed, rerunId) }
         }
@@ -599,5 +629,155 @@ class AiEntryRoutingTest {
         vm.ask("Another way?")
         waitFor("second reply") { vm.currentAnswer?.followUps?.size == 2 }
         waitFor("saved") { vm.aiHistory.first().followUps.size == 2 }
+    }
+
+    // ── Answer language ─────────────────────────────────────────────────────
+
+    /** Runs [block], then puts the answer-language settings back as they were. */
+    private fun keepingAnswerLanguage(block: () -> Unit) {
+        val saved = manager.answerInAppLanguage to manager.answerLanguageChosen
+        try {
+            block()
+        } finally {
+            manager.answerInAppLanguage = saved.first
+            manager.answerLanguageChosen = saved.second
+        }
+    }
+
+    @Test
+    fun answersAreInEnglishByDefaultAndTheChoiceIsRemembered() = keepingAnswerLanguage {
+        manager.answerInAppLanguage = false
+        val translator = FakeTranslator()
+        val solver = FakeSolver()
+        solver.loadGate.complete(Unit)
+        val vm = open(AiEntry.TYPE, solver, translator = translator)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        assertTrue("English answers aren't translated", translator.translated.isEmpty())
+        instrumentation.runOnMainSync { vm.updateAnswerInAppLanguage(true) }
+        assertEquals(true, ModelManager(context).answerInAppLanguage)
+    }
+
+    /** A typed problem answered with "Answer language" set to the app's (pretend Hungarian) language. */
+    private fun answeredInHungarian(solver: FakeSolver, translator: FakeTranslator = FakeTranslator()): ScanViewModel {
+        solver.loadGate.complete(Unit)
+        val vm = open(AiEntry.TYPE, solver, translator = translator)
+        instrumentation.runOnMainSync {
+            vm.appLanguageNameForTests = "Hungarian"
+            vm.updateAnswerInAppLanguage(true)
+        }
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the answer saved") { vm.uiState is ScanUiState.Success && vm.currentAnswer?.id?.isNotEmpty() == true }
+        return vm
+    }
+
+    @Test
+    fun inTheAppsLanguageItSolvesInEnglishAndTranslatesOnlyTheWording() = keepingAnswerLanguage {
+        val translator = FakeTranslator()
+        val vm = answeredInHungarian(FakeSolver(), translator)
+        assertEquals(listOf("6 × 7", "1. 6 × 7 = 42"), translator.translated.single())
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals("[hu] 6 × 7", state.steps?.problem)
+        assertEquals("[hu] 1. 6 × 7 = 42", state.steps?.steps)
+        // The answer and Use come from the English solve, untouched by the translation.
+        assertEquals("42", state.answer)
+        assertEquals("42", state.steps?.usableAnswer)
+        // History keeps the model's own (English) output and the translated steps.
+        waitFor("saved") { vm.aiHistory.firstOrNull()?.steps?.problem == "[hu] 6 × 7" }
+        assertEquals("Problem: 6 × 7\n1. 6 × 7 = 42\nAnswer: 42", vm.aiHistory.first().output)
+    }
+
+    @Test
+    fun aFollowUpReplyIsTranslatedToo() = keepingAnswerLanguage {
+        val solver = FakeSolver()
+        val vm = answeredInHungarian(solver)
+        vm.ask("Miért?")
+        waitFor("the reply") { vm.currentAnswer?.followUps?.size == 1 }
+        val first = vm.currentAnswer!!.followUps.single()
+        assertEquals("[hu] Because 6 × 7 = 42. (reply 1)", first.reply)
+        assertEquals("Because 6 × 7 = 42. (reply 1)", first.englishReply)
+        // The model gets its own English, not the translation shown: the problem, the working and
+        // the earlier reply. The new question goes as typed.
+        vm.ask("És másképp?")
+        waitFor("the second reply") { vm.currentAnswer?.followUps?.size == 2 }
+        for (message in solver.followUpMessages) {
+            assertTrue(message, "[hu]" !in message)
+            assertTrue(message, "Problem: 6 × 7\nAnswer: 42\nWorking:\n1. 6 × 7 = 42" in message)
+        }
+        assertTrue(solver.followUpMessages[1].contains("Your reply: Because 6 × 7 = 42. (reply 1)"))
+        assertTrue(solver.followUpMessages[1].endsWith("Question: És másképp?"))
+        waitFor("saved") { vm.aiHistory.first().followUps.size == 2 }
+        assertEquals("Because 6 × 7 = 42. (reply 1)", vm.aiHistory.first().followUps.first().englishReply)
+    }
+
+    @Test
+    fun aFailedTranslationKeepsTheEnglishAnswer() = keepingAnswerLanguage {
+        val vm = answeredInHungarian(FakeSolver(), FakeTranslator().apply { translateFails = true })
+        val state = vm.uiState as ScanUiState.Success
+        assertEquals("6 × 7", state.steps?.problem)
+        assertEquals("42", state.answer)
+    }
+
+    @Test
+    fun choosingTheAppsLanguageDownloadsTheTranslationAndEnglishRemovesIt() = keepingAnswerLanguage {
+        val translator = FakeTranslator(installed = false)
+        val vm = open(AiEntry.SETTINGS, translator = translator)
+        instrumentation.runOnMainSync { vm.appLanguageNameForTests = "Hungarian" }
+        assertEquals("the size is shown before choosing",
+            TranslationPacks.forLanguageName("Hungarian")!!.downloadSize, vm.translationDownloadSize)
+        instrumentation.runOnMainSync { vm.updateAnswerInAppLanguage(true) }
+        waitFor("downloaded") { translator.installed && vm.translationStatus == null }
+        assertEquals(1, translator.downloads)
+        assertEquals("nothing left to download", null, vm.translationDownloadSize)
+        instrumentation.runOnMainSync { vm.updateAnswerInAppLanguage(false) }
+        waitFor("removed") { translator.deletes == 1 }
+    }
+
+    @Test
+    fun aMissingTranslationIsDownloadedForTheAnswerAndAFailedDownloadKeepsEnglish() = keepingAnswerLanguage {
+        // Chosen while hiding the AI button: no download until an answer needs it.
+        val ok = FakeTranslator(installed = false)
+        val solver = FakeSolver()
+        solver.loadGate.complete(Unit)
+        val vm = open(AiEntry.TYPE, solver, translator = ok)
+        instrumentation.runOnMainSync {
+            vm.appLanguageNameForTests = "Hungarian"
+            vm.updateAnswerInAppLanguage(true, prepare = false)
+        }
+        assertEquals(0, ok.downloads)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the answer") { vm.uiState is ScanUiState.Success }
+        assertEquals(1, ok.downloads)
+        assertEquals("[hu] 6 × 7", (vm.uiState as ScanUiState.Success).steps?.problem)
+
+        val offline = FakeTranslator(installed = false).apply { downloadFails = true }
+        val vm2 = answeredInHungarian(FakeSolver(), offline)
+        val state = vm2.uiState as ScanUiState.Success
+        assertEquals("6 × 7", state.steps?.problem)
+        assertEquals("42", state.answer)
+        assertEquals(ScanViewModel.TranslationStatus.Failed, vm2.translationStatus)
+    }
+
+    @Test
+    fun theAnswerLanguageIsAskedOnceAndOnlyWhenTheAppIsntInEnglish() {
+        val prefs = context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE)
+        val saved = manager.answerInAppLanguage to manager.answerLanguageChosen
+        try {
+            prefs.edit().remove("answer_language_chosen").commit()
+            val vm = open(AiEntry.SETTINGS)
+            // This test device runs in English: nothing to ask.
+            assertEquals(context.getString(R.string.ai_answer_language) != "English", vm.shouldAskAnswerLanguage)
+            instrumentation.runOnMainSync { vm.appLanguageNameForTests = "Hungarian" }
+            assertTrue("asked while not yet chosen", vm.shouldAskAnswerLanguage)
+            instrumentation.runOnMainSync { vm.updateAnswerInAppLanguage(false) }
+            assertEquals("chosen (English), so not asked again", false, vm.shouldAskAnswerLanguage)
+            assertTrue(ModelManager(context).answerLanguageChosen)
+        } finally {
+            manager.answerInAppLanguage = saved.first
+            manager.answerLanguageChosen = saved.second
+        }
     }
 }

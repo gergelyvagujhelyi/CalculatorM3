@@ -110,6 +110,17 @@ class AiHistoryStoreTest {
     }
 
     @Test
+    fun `a translated follow-up keeps the model's English reply`() {
+        val saved = store.add(typed(11))
+        val asked = saved.copy(followUps = listOf(
+            FollowUp("Miért?", "Mert 6 × 7 = 42.", englishReply = "Because 6 × 7 = 42."),
+            FollowUp("Why?", "Because."),
+        ))
+        store.update(asked)
+        assertEquals(asked.followUps, store.find(saved.id)!!.followUps)
+    }
+
+    @Test
     fun `updating an entry that was deleted doesn't bring it back`() {
         val saved = store.add(typed(10))
         store.delete(saved.id)

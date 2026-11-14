@@ -28,6 +28,9 @@ val litertLmVersion = "0.19.1"
 android {
     namespace = "com.vagujhelyigergely.calculatorm3"
     compileSdk = 36
+    // The answer translator (slimt, in src/main/cpp) is native code. Pinned so builds are
+    // reproducible; Gradle downloads this NDK and the CMake below on the first build if missing.
+    ndkVersion = "28.0.13004108"
 
     signingConfigs {
         create("release") {
@@ -62,6 +65,13 @@ android {
         ndk {
             // LiteRT-LM ships 64-bit ARM native libraries; this is the only ABI we support.
             abiFilters += listOf("arm64-v8a")
+        }
+        externalNativeBuild {
+            cmake {
+                arguments += listOf("-DANDROID_STL=c++_static", "-DCMAKE_BUILD_TYPE=Release")
+                // Only the JNI library; slimt, SentencePiece and ruy also define command-line tools.
+                targets += "answertranslator"
+            }
         }
     }
 
@@ -100,6 +110,12 @@ android {
         // ChromeOsAbiSupport asks for an x86_64 build. LiteRT-LM (the on-device AI engine) ships
         // only arm64-v8a native libraries, so x86_64 isn't possible (see abiFilters above).
         disable += "ChromeOsAbiSupport"
+    }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
     dependenciesInfo {
         includeInApk = false
