@@ -9,6 +9,19 @@
     <!-- 履歴 -->
     <string name="history">履歴</string>
     <string name="clear_history">履歴を消去</string>
+    <string name="history_tab_calculations">計算</string>
+    <string name="history_tab_ai">AI履歴</string>
+    <string name="ai_history_empty">AIの回答はここに表示されます。</string>
+    <string name="ai_history_clear">AI履歴を消去</string>
+    <string name="ai_history_clear_confirm">保存されたAIの回答を画像も含めてすべて削除しますか？元に戻せません。</string>
+    <string name="ai_history_delete">削除</string>
+    <string name="ai_history_solve_again">もう一度解く</string>
+    <string name="ai_history_full_output">全出力</string>
+    <string name="ai_history_outcome_check">答えを確認</string>
+    <string name="ai_history_outcome_failed">失敗</string>
+    <string name="ai_history_photo">写真</string>
+    <string name="ai_history_drawing">手書き</string>
+    <string name="ai_history_back">戻る</string>
     <string name="no_history_yet">履歴はまだありません</string>
 
     <!-- ボタンのアクセシビリティ -->

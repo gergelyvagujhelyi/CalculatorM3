@@ -9,6 +9,19 @@
     <!-- Історія -->
     <string name="history">Історія</string>
     <string name="clear_history">Очистити історію</string>
+    <string name="history_tab_calculations">Обчислення</string>
+    <string name="history_tab_ai">Історія ШІ</string>
+    <string name="ai_history_empty">Тут з’являться відповіді ШІ.</string>
+    <string name="ai_history_clear">Очистити історію ШІ</string>
+    <string name="ai_history_clear_confirm">Видалити всі збережені відповіді ШІ разом із зображеннями? Цю дію не можна скасувати.</string>
+    <string name="ai_history_delete">Видалити</string>
+    <string name="ai_history_solve_again">Розв’язати знову</string>
+    <string name="ai_history_full_output">Повна відповідь</string>
+    <string name="ai_history_outcome_check">Перевірте відповідь</string>
+    <string name="ai_history_outcome_failed">Помилка</string>
+    <string name="ai_history_photo">Фото</string>
+    <string name="ai_history_drawing">Малюнок</string>
+    <string name="ai_history_back">Назад</string>
     <string name="no_history_yet">Історії ще немає</string>
 
     <!-- Доступність кнопок -->

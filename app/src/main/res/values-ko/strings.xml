@@ -9,6 +9,19 @@
     <!-- 기록 -->
     <string name="history">기록</string>
     <string name="clear_history">기록 지우기</string>
+    <string name="history_tab_calculations">계산</string>
+    <string name="history_tab_ai">AI 기록</string>
+    <string name="ai_history_empty">AI 답변이 여기에 표시됩니다.</string>
+    <string name="ai_history_clear">AI 기록 지우기</string>
+    <string name="ai_history_clear_confirm">저장된 모든 AI 답변을 사진과 함께 삭제할까요? 되돌릴 수 없습니다.</string>
+    <string name="ai_history_delete">삭제</string>
+    <string name="ai_history_solve_again">다시 풀기</string>
+    <string name="ai_history_full_output">전체 출력</string>
+    <string name="ai_history_outcome_check">답 확인 필요</string>
+    <string name="ai_history_outcome_failed">실패</string>
+    <string name="ai_history_photo">사진</string>
+    <string name="ai_history_drawing">그림</string>
+    <string name="ai_history_back">뒤로</string>
     <string name="no_history_yet">아직 기록이 없습니다</string>
 
     <!-- 버튼 접근성 -->

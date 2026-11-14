@@ -13,6 +13,10 @@ import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuContent
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryDetail
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryList
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryOutcome
 import com.vagujhelyigergely.calculatorm3.camera.InkPoint
 import com.vagujhelyigergely.calculatorm3.camera.InkStroke
 import com.vagujhelyigergely.calculatorm3.camera.WRITE_PAD_TAG
@@ -525,5 +529,92 @@ class AiScreensUiTest {
         button(str(R.string.write_again)).performClick()
         assertEquals(1, fixes)
         assertEquals(1, redraws)
+    }
+
+    // ── AI history ──────────────────────────────────────────────────────────
+
+    private val typedEntry = AiHistoryEntry(
+        id = "a", timestamp = 1_794_000_000_000, mode = AiEntry.TYPE, typedText = "What is 15% of 80?",
+        output = "Problem: What is 15% of 80?\n1. 0.15 × 80 = 12\nAnswer: 12", outcome = AiHistoryOutcome.SOLVED,
+        answer = "12", steps = SolvedSteps("What is 15% of 80?", "1. 0.15 × 80 = 12", "12", "12"),
+        model = "Gemma 4 E2B", elapsedMs = 19_000
+    )
+    private val checkEntry = typedEntry.copy(
+        id = "b", typedText = "1/2 + 3/4", output = "It is 5/4.", outcome = AiHistoryOutcome.CHECK,
+        answer = "", steps = null, message = "Could not extract a numerical answer"
+    )
+
+    @Test
+    fun anEmptyAiHistorySaysWhereAnswersWillAppear() {
+        show { AiHistoryList(emptyList(), imageOf = { null }, onOpen = {}, onDelete = {}) }
+        composeTestRule.onNodeWithText(str(R.string.ai_history_empty)).assertIsDisplayed()
+    }
+
+    @Test
+    fun aiHistoryRowsShowTheProblemAndAnswerAndOpenOnTap() {
+        val opened = mutableListOf<String>()
+        show { AiHistoryList(listOf(typedEntry, checkEntry), imageOf = { null }, onOpen = { opened += it.id }, onDelete = {}) }
+        composeTestRule.onNodeWithText("What is 15% of 80?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("12").assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.ai_history_outcome_check)).assertIsDisplayed()
+        composeTestRule.onNodeWithText("1/2 + 3/4").performClick()
+        assertEquals(listOf("b"), opened)
+    }
+
+    @Test
+    fun anAiHistoryEntryShowsItsFullOutputWithUseSolveAgainAndDelete() {
+        val used = mutableListOf<String>()
+        var again = 0
+        var deleted = 0
+        show {
+            AiHistoryDetail(typedEntry, image = null, onBack = {}, onUse = { used += it },
+                onSolveAgain = { again++ }, onDelete = { deleted++ })
+        }
+        composeTestRule.onNodeWithText(str(R.string.ai_history_full_output)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(typedEntry.output).assertExists()
+        button(str(R.string.use_answer, "12")).performScrollTo().performClick()
+        button(str(R.string.ai_history_solve_again)).performScrollTo().performClick()
+        button(str(R.string.ai_history_delete)).performScrollTo().performClick()
+        assertEquals(listOf("12"), used)
+        assertEquals(1, again)
+        assertEquals(1, deleted)
+    }
+
+    @Test
+    fun anEntryToCheckHasNoUseButKeepsItsOutput() {
+        show { AiHistoryDetail(checkEntry, image = null, onBack = {}, onUse = {}, onSolveAgain = {}, onDelete = {}) }
+        composeTestRule.onNodeWithText(str(R.string.ai_history_outcome_check)).assertExists()
+        composeTestRule.onNodeWithText("It is 5/4.").assertExists()
+        composeTestRule.onAllNodes(hasText(str(R.string.use_answer, ""), substring = true) and hasClickAction())
+            .assertCountEquals(0)
+    }
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    @Test
+    fun theHistorySheetHasNoAiTabWhileAiIsLocked() {
+        show {
+            HistorySheet(
+                sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                historyList = emptyList(), onDismiss = {}, onEntryClick = {}, onClearHistory = {}, aiHistory = null
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.history)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(str(R.string.history_tab_ai)).assertDoesNotExist()
+    }
+
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+    @Test
+    fun theHistorySheetShowsTheAiTabOnceUnlocked() {
+        show {
+            HistorySheet(
+                sheetState = androidx.compose.material3.rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                historyList = emptyList(), onDismiss = {}, onEntryClick = {}, onClearHistory = {},
+                aiHistory = listOf(typedEntry)
+            )
+        }
+        composeTestRule.onNodeWithText(str(R.string.history_tab_ai)).performClick()
+        composeTestRule.onNodeWithText("What is 15% of 80?").assertIsDisplayed()
+        composeTestRule.onNodeWithText("What is 15% of 80?").performClick()
+        composeTestRule.onNodeWithText(str(R.string.ai_history_full_output)).assertIsDisplayed()
     }
 }

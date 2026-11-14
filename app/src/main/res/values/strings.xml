@@ -9,6 +9,19 @@
     <!-- History -->
     <string name="history">History</string>
     <string name="clear_history">Clear history</string>
+    <string name="history_tab_calculations">Calculations</string>
+    <string name="history_tab_ai">AI history</string>
+    <string name="ai_history_empty">Your AI answers will appear here.</string>
+    <string name="ai_history_clear">Clear AI history</string>
+    <string name="ai_history_clear_confirm">Delete all saved AI answers, including their pictures? This can\'t be undone.</string>
+    <string name="ai_history_delete">Delete</string>
+    <string name="ai_history_solve_again">Solve again</string>
+    <string name="ai_history_full_output">Full output</string>
+    <string name="ai_history_outcome_check">Check the answer</string>
+    <string name="ai_history_outcome_failed">Failed</string>
+    <string name="ai_history_photo">Photo</string>
+    <string name="ai_history_drawing">Drawing</string>
+    <string name="ai_history_back">Back</string>
     <string name="no_history_yet">No history yet</string>
 
     <!-- Button accessibility -->

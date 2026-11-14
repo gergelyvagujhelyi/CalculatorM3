@@ -116,12 +116,130 @@ class ScanViewModel(
     private val solver: MathSolver,
     private val modelManager: ModelManager,
     private val authManager: HuggingFaceAuthManager,
-    context: Context
+    context: Context,
+    /** Where AI history is kept; tests pass their own folder. */
+    historyDir: java.io.File? = null,
 ) : ViewModel() {
 
     // Store the *application* context so the ViewModel can outlive an Activity without leaking it.
     // The factory already passes applicationContext; this makes it safe regardless of caller.
     private val appContext = context.applicationContext
+
+    // ── AI history ──────────────────────────────────────────────────────────
+
+    private val historyStore = AiHistoryStore(historyDir ?: java.io.File(appContext.filesDir, "ai_history"))
+    /** All store access runs here, one operation at a time. */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val historyIo = Dispatchers.IO.limitedParallelism(1)
+
+    /** Saved AI solves, newest first ([AiHistoryStore]). */
+    var aiHistory by mutableStateOf<List<AiHistoryEntry>>(emptyList())
+        private set
+
+    init {
+        viewModelScope.launch { refreshHistory() }
+    }
+
+    private suspend fun refreshHistory() {
+        aiHistory = withContext(historyIo) { historyStore.load() }
+    }
+
+    /** The picture saved with [entry] (Camera/Gallery), if it's still there. */
+    fun historyImage(entry: AiHistoryEntry): java.io.File? = historyStore.imageOf(entry)
+
+    fun deleteHistoryEntry(id: String) {
+        viewModelScope.launch {
+            withContext(historyIo) { historyStore.delete(id) }
+            refreshHistory()
+        }
+    }
+
+    fun clearAiHistory() {
+        viewModelScope.launch {
+            withContext(historyIo) { historyStore.clear() }
+            refreshHistory()
+        }
+    }
+
+    /** What a solve was given, for its AI history entry. */
+    private sealed interface HistoryInput {
+        data class Typed(val text: String) : HistoryInput
+        data class Drawn(val strokes: List<InkStroke>) : HistoryInput
+        /** A photo: the prepared picture (the solve's input path) is saved with it. */
+        data object Photo : HistoryInput
+    }
+
+    /**
+     * Save the solve that just ended in [state] to AI history: every answer, and every failure
+     * that still produced output. A run that produced nothing (stopped early, a crash before the
+     * first word) isn't saved. Never fails the solve: a storage error only skips the entry.
+     */
+    private suspend fun saveToHistory(
+        state: ScanUiState, input: HistoryInput, preparedInput: String?, model: AiModel, elapsedMs: Long
+    ) {
+        val base = AiHistoryEntry(
+            id = "", timestamp = System.currentTimeMillis(), mode = entry,
+            typedText = (input as? HistoryInput.Typed)?.text,
+            strokes = (input as? HistoryInput.Drawn)?.strokes,
+            output = "", outcome = AiHistoryOutcome.SOLVED, model = model.displayName,
+            // Speed applies to pictures (photos, drawings) on models that support it.
+            speed = modelManager.scanQuality.takeIf { model.supportsScanQuality && input !is HistoryInput.Typed },
+            elapsedMs = elapsedMs,
+        )
+        val entryToSave = when (state) {
+            is ScanUiState.Success -> base.copy(output = state.rawResponse, answer = state.answer, steps = state.steps)
+            is ScanUiState.Error -> {
+                val raw = state.rawResponse
+                if (raw.isNullOrBlank()) return
+                base.copy(
+                    output = raw, message = state.message,
+                    outcome = if (state.checkOutput) AiHistoryOutcome.CHECK else AiHistoryOutcome.FAILED
+                )
+            }
+            else -> return
+        }
+        val image = if (input is HistoryInput.Photo) preparedInput?.let { java.io.File(it) } else null
+        try {
+            withContext(historyIo) { historyStore.add(entryToSave, image) }
+            refreshHistory()
+        } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            android.util.Log.w("ScanViewModel", "Couldn't save to AI history", e)
+        }
+    }
+
+    /**
+     * A history entry to solve again once the window is ready ([initialize]'s rerunId): the same
+     * input, with the model and speed set now.
+     */
+    private var pendingRerun: AiHistoryEntry? = null
+
+    /** Start [entry]'s solve again from its saved input. False if its input is gone. */
+    private fun rerun(entry: AiHistoryEntry): Boolean {
+        when (entry.mode) {
+            AiEntry.TYPE -> {
+                val text = entry.typedText ?: return false
+                typedProblem = text
+                onTextSubmitted(text)
+            }
+            AiEntry.WRITE -> {
+                val saved = entry.strokes ?: return false
+                strokes.clear()
+                strokes.addAll(saved)
+                clearRedo()
+                onDrawingSubmitted()
+            }
+            AiEntry.CAMERA, AiEntry.GALLERY -> {
+                // The scan deletes its input afterwards, so give it a copy of the saved picture.
+                val picture = historyStore.imageOf(entry) ?: return false
+                val copy = java.io.File(appContext.cacheDir, "rerun_${System.nanoTime()}.jpg")
+                picture.copyTo(copy, overwrite = true)
+                onPhotoCaptured(copy.path)
+            }
+            AiEntry.SETTINGS -> return false
+        }
+        return true
+    }
 
     var uiState by mutableStateOf<ScanUiState>(ScanUiState.Idle)
         private set
@@ -234,6 +352,7 @@ class ScanViewModel(
             },
             solve = { path, onToken -> solver.solveFromImageStepsStreaming(path, onToken) },
             parseSteps = { raw -> SolverPrompts.parseSteps(raw, "") },
+            history = HistoryInput.Drawn(ink),
             cleanup = { path -> path?.let { try { java.io.File(it).delete() } catch (_: Exception) {} } }
         )
     }
@@ -264,6 +383,10 @@ class ScanViewModel(
      * [AiEntry.GALLERY] (opened right away if [autoLaunch]), or the settings page.
      */
     private fun showReady(autoLaunch: Boolean) {
+        pendingRerun?.let { rerunEntry ->
+            pendingRerun = null
+            if (rerun(rerunEntry)) return
+        }
         uiState = when (entry) {
             AiEntry.SETTINGS -> settingsState()
             AiEntry.TYPE -> ScanUiState.Typing
@@ -294,9 +417,11 @@ class ScanViewModel(
      * recreated the app (e.g. while the system camera was in front); the camera's pending result
      * may still arrive, so don't open the camera again on top of it.
      */
-    fun initialize(entry: AiEntry = AiEntry.CAMERA, resumed: Boolean = false) {
+    fun initialize(entry: AiEntry = AiEntry.CAMERA, resumed: Boolean = false, rerunId: String? = null) {
         this.entry = entry
         autoLaunchAllowed = !resumed
+        // Solve again (from AI history): found by id, and not repeated for a recreated window.
+        pendingRerun = if (resumed || rerunId == null) null else aiHistory.find { it.id == rerunId }
         // A preparation started earlier is still running (the window was closed and reopened):
         // keep showing it rather than starting a second one. It ends at the new entry's screen.
         if (preparationJob?.isActive == true) return
@@ -604,6 +729,7 @@ class ScanViewModel(
             },
             solve = { path, onToken -> solver.solveFromImageStreaming(path, onToken) },
             parseSteps = null,
+            history = HistoryInput.Photo,
             cleanup = { processPath ->
                 // Clean up captured photos
                 try { java.io.File(imagePath).delete() } catch (_: Exception) {}
@@ -626,6 +752,7 @@ class ScanViewModel(
             prepareInput = { text },
             solve = { input, onToken -> solver.solveFromTextStreaming(input, onToken) },
             parseSteps = { raw -> SolverPrompts.parseSteps(raw, text) },
+            history = HistoryInput.Typed(text),
             cleanup = {}
         )
     }
@@ -641,6 +768,7 @@ class ScanViewModel(
         prepareInput: suspend () -> String?,
         solve: suspend (input: String, onToken: suspend (String) -> Unit) -> Result<RecognitionResult>,
         parseSteps: ((raw: String) -> SolvedSteps?)?,
+        history: HistoryInput,
         cleanup: (preparedInput: String?) -> Unit,
     ) {
         val model = modelManager.selectedModel
@@ -755,6 +883,8 @@ class ScanViewModel(
                         ScanUiState.Error(msg, raw, checkOutput = res == R.string.error_no_numerical_answer)
                     }
                 )
+                // Into AI history, before the finally below cleans up the input (a photo's picture).
+                saveToHistory(uiState, history, input, model, elapsed)
             } catch (e: Throwable) {
                 // Let cancellation (e.g. user closed the screen) propagate instead
                 // of showing it as an inference error.
