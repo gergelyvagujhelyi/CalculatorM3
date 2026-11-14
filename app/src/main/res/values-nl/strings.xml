@@ -24,8 +24,8 @@
     <string name="ai_history_back">Terug</string>
     <string name="follow_up_title">Vraag iets over dit antwoord</string>
     <string name="follow_up_hint">Stel een vraag…</string>
-    <string name="follow_up_left">Resterende vragen: %1$d</string>
-    <string name="follow_up_none">Geen vragen meer over dit antwoord.</string>
+    <string name="follow_up_left">Nog mogelijke vervolgvragen: %1$d</string>
+    <string name="follow_up_none">Geen vervolgvragen meer over dit antwoord.</string>
     <string name="follow_up_send">Versturen</string>
     <string name="follow_up_chip_simpler">Leg het eenvoudiger uit</string>
     <string name="follow_up_chip_another">Kan het ook anders?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">Denkt na…</string>
     <string name="follow_up_failed">Het model kon dat niet beantwoorden. Probeer het opnieuw.</string>
     <string name="ai_history_ask">Vraag hierover</string>
-    <string name="ai_history_questions">Vragen</string>
+    <string name="ai_history_questions">Vervolgvragen</string>
     <string name="no_history_yet">Nog geen geschiedenis</string>
 
     <!-- Toegankelijkheid van knoppen -->

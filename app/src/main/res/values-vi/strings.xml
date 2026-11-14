@@ -24,8 +24,8 @@
     <string name="ai_history_back">Quay lại</string>
     <string name="follow_up_title">Hỏi về câu trả lời này</string>
     <string name="follow_up_hint">Đặt câu hỏi…</string>
-    <string name="follow_up_left">Số câu hỏi còn lại: %1$d</string>
-    <string name="follow_up_none">Không còn câu hỏi nào cho câu trả lời này.</string>
+    <string name="follow_up_left">Số câu hỏi tiếp theo còn có thể hỏi: %1$d</string>
+    <string name="follow_up_none">Không còn câu hỏi tiếp theo nào cho câu trả lời này.</string>
     <string name="follow_up_send">Gửi</string>
     <string name="follow_up_chip_simpler">Giải thích đơn giản hơn</string>
     <string name="follow_up_chip_another">Có cách khác không?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">Đang suy nghĩ…</string>
     <string name="follow_up_failed">Mô hình không trả lời được. Vui lòng thử lại.</string>
     <string name="ai_history_ask">Hỏi về điều này</string>
-    <string name="ai_history_questions">Câu hỏi</string>
+    <string name="ai_history_questions">Câu hỏi tiếp theo</string>
     <string name="no_history_yet">Chưa có lịch sử</string>
 
     <!-- Trợ năng nút -->

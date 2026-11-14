@@ -24,8 +24,8 @@
     <string name="ai_history_back">Retour</string>
     <string name="follow_up_title">Poser une question sur cette réponse</string>
     <string name="follow_up_hint">Posez une question…</string>
-    <string name="follow_up_left">Questions restantes : %1$d</string>
-    <string name="follow_up_none">Plus de questions possibles pour cette réponse.</string>
+    <string name="follow_up_left">Questions complémentaires encore possibles : %1$d</string>
+    <string name="follow_up_none">Plus de questions complémentaires possibles pour cette réponse.</string>
     <string name="follow_up_send">Envoyer</string>
     <string name="follow_up_chip_simpler">Expliquer plus simplement</string>
     <string name="follow_up_chip_another">Y a-t-il une autre méthode ?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">Réflexion…</string>
     <string name="follow_up_failed">Le modèle n\'a pas pu répondre. Veuillez réessayer.</string>
     <string name="ai_history_ask">Poser une question</string>
-    <string name="ai_history_questions">Questions</string>
+    <string name="ai_history_questions">Questions complémentaires</string>
     <string name="no_history_yet">Aucun historique</string>
 
     <!-- Accessibilité des boutons -->

@@ -24,8 +24,8 @@
     <string name="ai_history_back">戻る</string>
     <string name="follow_up_title">この答えについて質問</string>
     <string name="follow_up_hint">質問を入力…</string>
-    <string name="follow_up_left">残りの質問: %1$d</string>
-    <string name="follow_up_none">この答えについての質問は残っていません。</string>
+    <string name="follow_up_left">残りの追加質問: %1$d</string>
+    <string name="follow_up_none">この答えについての追加質問は残っていません。</string>
     <string name="follow_up_send">送信</string>
     <string name="follow_up_chip_simpler">もっと簡単に説明して</string>
     <string name="follow_up_chip_another">別の解き方はある？</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">考え中…</string>
     <string name="follow_up_failed">モデルが回答できませんでした。もう一度お試しください。</string>
     <string name="ai_history_ask">これについて質問</string>
-    <string name="ai_history_questions">質問</string>
+    <string name="ai_history_questions">追加質問</string>
     <string name="no_history_yet">履歴はまだありません</string>
 
     <!-- ボタンのアクセシビリティ -->

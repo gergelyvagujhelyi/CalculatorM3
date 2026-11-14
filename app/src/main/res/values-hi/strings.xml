@@ -24,8 +24,8 @@
     <string name="ai_history_back">वापस</string>
     <string name="follow_up_title">इस उत्तर के बारे में पूछें</string>
     <string name="follow_up_hint">एक सवाल पूछें…</string>
-    <string name="follow_up_left">बाकी सवाल: %1$d</string>
-    <string name="follow_up_none">इस उत्तर के लिए कोई सवाल बाकी नहीं।</string>
+    <string name="follow_up_left">बाकी संभावित अनुवर्ती सवाल: %1$d</string>
+    <string name="follow_up_none">इस उत्तर के लिए कोई अनुवर्ती सवाल बाकी नहीं।</string>
     <string name="follow_up_send">भेजें</string>
     <string name="follow_up_chip_simpler">और आसान तरीके से समझाएँ</string>
     <string name="follow_up_chip_another">क्या कोई और तरीका है?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">सोच रहा है…</string>
     <string name="follow_up_failed">मॉडल इसका जवाब नहीं दे सका। कृपया फिर से कोशिश करें।</string>
     <string name="ai_history_ask">इसके बारे में पूछें</string>
-    <string name="ai_history_questions">सवाल</string>
+    <string name="ai_history_questions">अनुवर्ती सवाल</string>
     <string name="no_history_yet">अभी तक कोई इतिहास नहीं</string>
 
     <!-- बटन सुगम्यता -->

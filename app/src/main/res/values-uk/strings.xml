@@ -24,8 +24,8 @@
     <string name="ai_history_back">Назад</string>
     <string name="follow_up_title">Запитати про цю відповідь</string>
     <string name="follow_up_hint">Поставте запитання…</string>
-    <string name="follow_up_left">Залишилось запитань: %1$d</string>
-    <string name="follow_up_none">До цієї відповіді запитань більше не залишилось.</string>
+    <string name="follow_up_left">Залишилось можливих уточнювальних запитань: %1$d</string>
+    <string name="follow_up_none">Уточнювальних запитань до цієї відповіді більше не залишилось.</string>
     <string name="follow_up_send">Надіслати</string>
     <string name="follow_up_chip_simpler">Поясни простіше</string>
     <string name="follow_up_chip_another">Чи є інший спосіб?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">Думає…</string>
     <string name="follow_up_failed">Модель не змогла відповісти. Спробуйте ще раз.</string>
     <string name="ai_history_ask">Запитати про це</string>
-    <string name="ai_history_questions">Запитання</string>
+    <string name="ai_history_questions">Уточнювальні запитання</string>
     <string name="no_history_yet">Історії ще немає</string>
 
     <!-- Доступність кнопок -->

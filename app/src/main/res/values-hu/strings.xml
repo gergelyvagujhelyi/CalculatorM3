@@ -24,8 +24,8 @@
     <string name="ai_history_back">Vissza</string>
     <string name="follow_up_title">Kérdezz erről a válaszról</string>
     <string name="follow_up_hint">Tegyél fel egy kérdést…</string>
-    <string name="follow_up_left">Hátralévő kérdések: %1$d</string>
-    <string name="follow_up_none">Erről a válaszról már nem kérdezhetsz többet.</string>
+    <string name="follow_up_left">Még feltehető kérdések: %1$d</string>
+    <string name="follow_up_none">Erről a válaszról már nem tehetsz fel több kérdést.</string>
     <string name="follow_up_send">Küldés</string>
     <string name="follow_up_chip_simpler">Magyarázd egyszerűbben</string>
     <string name="follow_up_chip_another">Van más megoldás?</string>
@@ -33,7 +33,7 @@
     <string name="follow_up_thinking">Gondolkodik…</string>
     <string name="follow_up_failed">A modell nem tudott válaszolni. Próbáld újra.</string>
     <string name="ai_history_ask">Kérdezz róla</string>
-    <string name="ai_history_questions">Kérdések</string>
+    <string name="ai_history_questions">További kérdések</string>
     <string name="no_history_yet">Még nincsenek előzmények</string>
 
     <!-- Gombok akadálymentesítése -->
