@@ -51,6 +51,14 @@ class ParseStepsTest {
         assertEquals("7 × 6", solved.problem)
         assertEquals("42", solved.usableAnswer)
         assertEquals("42", parse("Problem: 6 × 7\nFinal answer: 42")!!.usableAnswer)
+        assertEquals("42", parse("## Problem: 6 × 7\n**Answer: 42**")!!.answer)
+    }
+
+    @Test
+    fun `a times star in the maths is kept`() {
+        val solved = parse("**Problem:** 5*4+3\n1. 5*4 = 20\n2. 20 + 3 = 23\n**Answer:** 23")!!
+        assertEquals("5*4+3", solved.problem)
+        assertEquals("23", solved.usableAnswer)
     }
 
     @Test

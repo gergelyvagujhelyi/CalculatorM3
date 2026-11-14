@@ -96,9 +96,11 @@ object SolverPrompts {
         "(at most 4 steps, one short line each)\n" +
         "Answer: <only the final answer, e.g. 42 or x = 5; a number without units where possible>"
 
-    private val labelDecoration = Regex("[*_#]+")
-    private val problemLabel = Regex("^problem\\s*:\\s*", RegexOption.IGNORE_CASE)
-    private val answerLabel = Regex("^(final\\s+)?answer\\s*:\\s*", RegexOption.IGNORE_CASE)
+    // A label with optional Markdown emphasis or heading marks around it ("**Answer:**",
+    // "## Problem:"). Only the label's own decoration is removed: a '*' in the maths after it
+    // ("5*4+3") must stay.
+    private val problemLabel = Regex("^[#*_\\s]*problem[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
+    private val answerLabel = Regex("^[#*_\\s]*(final\\s+)?answer[*_]*\\s*:[*_]*\\s*", RegexOption.IGNORE_CASE)
 
     /**
      * Read a [STEPS_SYSTEM_PROMPT] response, or null if it has no `Answer:` line (the caller then
@@ -108,14 +110,14 @@ object SolverPrompts {
      */
     fun parseSteps(raw: String, typed: String): SolvedSteps? {
         val lines = raw.trim().lines()
-        fun label(line: String) = line.replace(labelDecoration, "").trim()
-        val answerIndex = lines.indexOfLast { answerLabel.containsMatchIn(label(it)) }
+        val answerIndex = lines.indexOfLast { answerLabel.containsMatchIn(it) }
         if (answerIndex < 0) return null
-        val answer = label(lines[answerIndex]).replace(answerLabel, "").trim()
+        // A bold answer line ("**Answer: 42**") keeps no dangling closing marks.
+        val answer = lines[answerIndex].replace(answerLabel, "").trim().removeSuffix("**").trim()
         if (answer.isEmpty()) return null
-        val problemIndex = lines.indexOfFirst { problemLabel.containsMatchIn(label(it)) }
+        val problemIndex = lines.indexOfFirst { problemLabel.containsMatchIn(it) }
             .takeIf { it in 0 until answerIndex }
-        val problem = problemIndex?.let { label(lines[it]).replace(problemLabel, "").trim() }
+        val problem = problemIndex?.let { lines[it].replace(problemLabel, "").trim() }
             ?.takeIf { it.isNotEmpty() } ?: typed.trim()
         val stepLines = lines.subList((problemIndex ?: -1) + 1, answerIndex)
         val steps = stepLines.joinToString("\n").trim()
