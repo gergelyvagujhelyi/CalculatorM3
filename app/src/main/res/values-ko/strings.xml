@@ -51,6 +51,7 @@
     <string name="btn_pi">원주율</string>
     <string name="btn_power">거듭제곱</string>
     <string name="btn_factorial">계승</string>
+    <string name="btn_parentheses">괄호</string>
 
     <!-- 카메라 / AI 스캔 -->
     <string name="scan_hint">손으로 쓴 수식의 사진을 찍거나 선택하세요</string>

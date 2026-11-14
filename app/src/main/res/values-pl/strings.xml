@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Potęga</string>
     <string name="btn_factorial">Silnia</string>
+    <string name="btn_parentheses">Nawiasy</string>
 
     <!-- Aparat / Skanowanie AI -->
     <string name="scan_hint">Zrób lub wybierz zdjęcie odręcznego wyrażenia matematycznego</string>

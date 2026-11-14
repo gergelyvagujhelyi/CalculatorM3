@@ -579,6 +579,7 @@ private fun ScientificRow(
             "π" to stringResource(R.string.btn_pi),
             "^" to stringResource(R.string.btn_power),
             "!" to stringResource(R.string.btn_factorial),
+            "( )" to stringResource(R.string.btn_parentheses),
         )
         sciButtons.forEach { (label, desc) ->
             TextButton(

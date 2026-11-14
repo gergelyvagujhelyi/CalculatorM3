@@ -51,6 +51,7 @@
     <string name="btn_pi">圆周率</string>
     <string name="btn_power">幂</string>
     <string name="btn_factorial">阶乘</string>
+    <string name="btn_parentheses">括号</string>
 
     <!-- 相机 / AI 扫描 -->
     <string name="scan_hint">拍摄或选择一张手写数学算式的照片</string>

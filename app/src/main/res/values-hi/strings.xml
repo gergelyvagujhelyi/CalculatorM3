@@ -51,6 +51,7 @@
     <string name="btn_pi">पाई</string>
     <string name="btn_power">घात</string>
     <string name="btn_factorial">क्रमगुणन</string>
+    <string name="btn_parentheses">कोष्ठक</string>
 
     <!-- कैमरा / AI स्कैन -->
     <string name="scan_hint">हाथ से लिखे गणितीय व्यंजक की फ़ोटो लें या चुनें</string>

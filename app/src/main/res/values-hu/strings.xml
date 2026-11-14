@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Hatvány</string>
     <string name="btn_factorial">Faktoriális</string>
+    <string name="btn_parentheses">Zárójelek</string>
 
     <!-- Kamera / MI-beolvasás -->
     <string name="scan_hint">Készíts vagy válassz fényképet egy kézzel írt matematikai kifejezésről</string>

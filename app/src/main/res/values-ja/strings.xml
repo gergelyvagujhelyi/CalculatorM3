@@ -51,6 +51,7 @@
     <string name="btn_pi">円周率</string>
     <string name="btn_power">べき乗</string>
     <string name="btn_factorial">階乗</string>
+    <string name="btn_parentheses">括弧</string>
 
     <!-- カメラ / AIスキャン -->
     <string name="scan_hint">手書きの数式の写真を撮影または選択してください</string>

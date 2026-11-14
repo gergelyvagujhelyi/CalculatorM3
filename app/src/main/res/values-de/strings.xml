@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Potenz</string>
     <string name="btn_factorial">Fakultät</string>
+    <string name="btn_parentheses">Klammern</string>
 
     <!-- Kamera / KI-Scan -->
     <string name="scan_hint">Mache oder wähle ein Foto eines handgeschriebenen mathematischen Ausdrucks</string>

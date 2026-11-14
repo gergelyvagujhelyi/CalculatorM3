@@ -220,7 +220,7 @@ class CalculatorViewModel(
         private const val MAX_EXACT_POW_EXPONENT = 999_999_999
 
         /** Keys that begin a new entry when pressed right after "=" (see [justEvaluated]). */
-        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "(")
+        private val NEW_ENTRY_LABELS = setOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "π", "( )")
 
         /**
          * Upper bound on the coefficient digits an exact addition/subtraction may need after
@@ -365,8 +365,9 @@ class CalculatorViewModel(
             }
             "=" -> {
                 if (expression.isNotEmpty()) {
-                    // Strip leading/trailing operators that lack an operand (as the preview does)
-                    expression = stripDanglingOperators(expression)
+                    // Strip leading/trailing operators that lack an operand and close any open
+                    // brackets (as the preview does)
+                    expression = closeBrackets(stripDanglingOperators(expression))
                     if (expression.isEmpty()) {
                         cursorPosition = 0
                         return
@@ -444,6 +445,26 @@ class CalculatorViewModel(
                         cursorPosition = expression.length
                         typingInRoot = false
                     }
+                }
+            }
+            "( )" -> {
+                // One key for both brackets: ")" when there's an open bracket before the cursor
+                // and a number just typed to close it with, "(" otherwise.
+                val before = expression.substring(0, cursorPosition)
+                val unclosed = before.count { it == '(' } - before.count { it == ')' }
+                val charBefore = before.lastOrNull()
+                val afterOperand = charBefore != null && (charBefore.isDigit() || charBefore in NUMBER_ENDING_CHARS)
+                if (unclosed > 0 && afterOperand) {
+                    if (expression.getOrNull(cursorPosition) == ')') {
+                        // A ")" is already here (a root's): step over it rather than add another.
+                        cursorPosition++
+                        typingInRoot = false
+                    } else {
+                        insertAtCursor(")")
+                    }
+                } else if (charBefore != '.') {
+                    val opened = expression.substring(0, cursorPosition) + "(" + expression.substring(cursorPosition)
+                    if (maxParenDepth(opened) <= MAX_PAREN_DEPTH) insertAtCursor("(")
                 }
             }
             "π" -> {
@@ -543,7 +564,7 @@ class CalculatorViewModel(
      * every expression change, so it can never describe a previous expression.
      */
     private fun updatePreview() {
-        val evaluable = stripDanglingOperators(expression)
+        val evaluable = closeBrackets(stripDanglingOperators(expression))
         if (evaluable.none { it.isDigit() || it == 'π' }) {
             result = ""
             return
@@ -580,12 +601,20 @@ class CalculatorViewModel(
     /** Drop operators that lack an operand at either end, exactly as "=" does before evaluating. */
     private fun stripDanglingOperators(expr: String): String {
         var stripped = expr.trimStart('+', '×', '÷', '^')
-        // A root started but not typed into yet ("9 + √()") goes too, with its operator.
+        // So do brackets and roots opened but not typed into yet ("9 + (", "9 + √()"), with
+        // the operator before them.
         while (true) {
-            val shorter = stripped.trimEnd('+', '−', '×', '÷', '^').removeSuffix("√()")
+            val shorter = stripped.trimEnd('+', '−', '×', '÷', '^', '(')
+                .removeSuffix("√()").removeSuffix("()").removeSuffix("√")
             if (shorter == stripped) return stripped
             stripped = shorter
         }
+    }
+
+    /** [expr] with its open brackets closed at the end: "(2+3" is evaluated as "(2+3)". */
+    private fun closeBrackets(expr: String): String {
+        val open = expr.count { it == '(' } - expr.count { it == ')' }
+        return if (open > 0) expr + ")".repeat(open) else expr
     }
 
     private val MC = MathContext.DECIMAL128
@@ -657,6 +686,7 @@ class CalculatorViewModel(
     private val reRParenSqrt = Regex("\\)√")
     private val reFactSqrt = Regex("!√")
     private val rePctSqrt = Regex("%√")
+    private val reBeforeLParen = Regex("([)!%])\\(")
 
     private fun evaluate(expr: String): String {
         return try {
@@ -683,6 +713,8 @@ class CalculatorViewModel(
                 .replace(reRParenSqrt, ")*√")
                 .replace(reFactSqrt, "!*√")
                 .replace(rePctSqrt, "%*√")
+                // Implicit multiplication before ( from ), !, %: (1+2)(3+4), 3!(2), 50%(4)
+                .replace(reBeforeLParen, "$1*(")
 
             val result = evaluateExpression(sanitized)
 

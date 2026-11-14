@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Potência</string>
     <string name="btn_factorial">Fatorial</string>
+    <string name="btn_parentheses">Parênteses</string>
 
     <!-- Câmera / Digitalização com IA -->
     <string name="scan_hint">Tire ou escolha uma foto de uma expressão matemática manuscrita</string>

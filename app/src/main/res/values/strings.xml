@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Power</string>
     <string name="btn_factorial">Factorial</string>
+    <string name="btn_parentheses">Parentheses</string>
 
     <!-- Camera / AI scan -->
     <string name="scan_hint">Take or choose a photo of a handwritten math expression</string>

@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi greco</string>
     <string name="btn_power">Potenza</string>
     <string name="btn_factorial">Fattoriale</string>
+    <string name="btn_parentheses">Parentesi</string>
 
     <!-- Fotocamera / Scansione IA -->
     <string name="scan_hint">Scatta o scegli una foto di un\'espressione matematica scritta a mano</string>

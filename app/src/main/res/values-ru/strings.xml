@@ -51,6 +51,7 @@
     <string name="btn_pi">Пи</string>
     <string name="btn_power">Степень</string>
     <string name="btn_factorial">Факториал</string>
+    <string name="btn_parentheses">Скобки</string>
 
     <!-- Камера / ИИ-сканирование -->
     <string name="scan_hint">Сделайте или выберите фото рукописного математического выражения</string>

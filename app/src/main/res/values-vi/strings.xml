@@ -51,6 +51,7 @@
     <string name="btn_pi">Số pi</string>
     <string name="btn_power">Lũy thừa</string>
     <string name="btn_factorial">Giai thừa</string>
+    <string name="btn_parentheses">Dấu ngoặc</string>
 
     <!-- Máy ảnh / Quét AI -->
     <string name="scan_hint">Chụp hoặc chọn ảnh một biểu thức toán học viết tay</string>

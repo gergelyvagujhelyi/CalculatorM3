@@ -51,6 +51,7 @@
     <string name="btn_pi">Pi</string>
     <string name="btn_power">Üs</string>
     <string name="btn_factorial">Faktöriyel</string>
+    <string name="btn_parentheses">Parantezler</string>
 
     <!-- Kamera / Yapay zeka taraması -->
     <string name="scan_hint">Elle yazılmış bir matematik ifadesinin fotoğrafını çekin veya seçin</string>
