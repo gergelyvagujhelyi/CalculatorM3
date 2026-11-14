@@ -12,13 +12,12 @@
 
   <br>
 
-  <!-- Screenshots -->
+  <!-- Screenshots: made by tools/store-screenshots/render.py -->
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/1.png" width="180" alt="Portrait Light Theme"><br><sub>Light Theme</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/2.png" width="180" alt="Portrait Dark Theme"><br><sub>Dark Theme</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/3.png" width="180" alt="Scientific Functions"><br><sub>Scientific Functions</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/4.png" width="180" alt="History Sheet"><br><sub>Calculation History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/1.jpg" width="180" alt="Calculator with a live result"><br><sub>Calculator</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/2.jpg" width="180" alt="Scientific functions with a live result"><br><sub>Scientific Functions</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/3.jpg" width="180" alt="Calculation history"><br><sub>Calculation History</sub></td>
     </tr>
   </table>
 
@@ -26,8 +25,7 @@
 
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/5.png" width="400" alt="Landscape Mode"><br><sub>Landscape Mode</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/6.png" width="280" alt="Foldable Device"><br><sub>Foldable Support</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/4.jpg" width="560" alt="Landscape mode with the history beside the keys"><br><sub>Landscape Mode</sub></td>
     </tr>
   </table>
 
@@ -35,14 +33,15 @@
 
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.png" width="180" alt="Solve with AI menu: Camera, Gallery, Write, Type"><br><sub>Solve with AI</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.png" width="180" alt="Handwriting pad with 8×6−9 written on it"><br><sub>Write It by Hand</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.png" width="180" alt="Step-by-step answer 39 to the handwritten problem"><br><sub>Step-by-Step Answers</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/5.jpg" width="180" alt="Solve with AI menu: Camera, Gallery, Write, Type"><br><sub>Solve with AI</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/6.jpg" width="180" alt="Handwriting pad with 8×6−9 written on it"><br><sub>Write It by Hand</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.jpg" width="180" alt="Step-by-step answer 39 to the handwritten problem"><br><sub>Step-by-Step Answers</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.jpg" width="180" alt="Typed word problem answered, with a follow-up question"><br><sub>Ask Follow-up Questions</sub></td>
     </tr>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/10.png" width="180" alt="Typed word problem answered, with a follow-up question"><br><sub>Ask Follow-up Questions</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/11.png" width="180" alt="AI history with saved answers"><br><sub>AI History</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/12.png" width="180" alt="AI settings with the recommended on-device model"><br><sub>On-Device Models</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.jpg" width="180" alt="AI history with saved answers"><br><sub>AI History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/10.jpg" width="180" alt="An answer translated into Spanish; 18 languages"><br><sub>Answers in Your Language</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/11.jpg" width="180" alt="AI settings with the recommended on-device model"><br><sub>Private by Design</sub></td>
     </tr>
   </table>
 
