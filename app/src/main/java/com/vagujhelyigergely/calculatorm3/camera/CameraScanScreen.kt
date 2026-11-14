@@ -91,6 +91,8 @@ import io.noties.markwon.ext.latex.JLatexMathPlugin
 import io.noties.markwon.inlineparser.MarkwonInlineParserPlugin
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import androidx.compose.ui.platform.LocalView
 import com.vagujhelyigergely.calculatorm3.R
 import com.vagujhelyigergely.calculatorm3.ai.AiModel
 import com.vagujhelyigergely.calculatorm3.ai.ScanQuality
@@ -265,6 +267,15 @@ fun CameraScanScreen(
             dismissOnClickOutside = false
         )
     ) {
+        // The dialog fills the screen between the system bars, so dimming what's behind it only
+        // shows in the bars: grey in light mode, with white icons, since a dimming window takes
+        // over the bars' appearance. Without the dim, the app's own window keeps the bars, which
+        // already match the theme.
+        val dialogView = LocalView.current
+        SideEffect {
+            (dialogView.parent as? DialogWindowProvider)?.window
+                ?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.surface
