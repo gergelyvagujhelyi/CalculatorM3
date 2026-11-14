@@ -9,6 +9,19 @@
     <!-- Riwayat -->
     <string name="history">Riwayat</string>
     <string name="clear_history">Hapus riwayat</string>
+    <string name="history_tab_calculations">Perhitungan</string>
+    <string name="history_tab_ai">Riwayat AI</string>
+    <string name="ai_history_empty">Jawaban AI Anda akan muncul di sini.</string>
+    <string name="ai_history_clear">Hapus riwayat AI</string>
+    <string name="ai_history_clear_confirm">Hapus semua jawaban AI yang tersimpan, termasuk gambarnya? Tindakan ini tidak dapat dibatalkan.</string>
+    <string name="ai_history_delete">Hapus</string>
+    <string name="ai_history_solve_again">Selesaikan lagi</string>
+    <string name="ai_history_full_output">Output lengkap</string>
+    <string name="ai_history_outcome_check">Periksa jawabannya</string>
+    <string name="ai_history_outcome_failed">Gagal</string>
+    <string name="ai_history_photo">Foto</string>
+    <string name="ai_history_drawing">Gambar</string>
+    <string name="ai_history_back">Kembali</string>
     <string name="no_history_yet">Belum ada riwayat</string>
 
     <!-- Aksesibilitas tombol -->

@@ -84,6 +84,8 @@ Point your camera at a handwritten math expression, write it on screen with your
 - After an app update with a new AI engine, the first scan screen shows **"Updating to the new model format"** while the downloaded model is prepared once (about a minute)
 - If the model is deleted outside the app or can't be loaded, the app says so and offers **Download again**
 
+**AI history:** every solve is saved on your device in the **AI history** tab of the History sheet (it appears once AI is unlocked). The saved entry includes what you typed or drew, or a reduced copy of the photo, plus the model's complete output, the answer and steps, the model, the speed and how long it took. Open an entry to see it all, **Use** its number, **Solve again** with the same input (for example after switching model or speed), or **Delete** it. Swipe a row to delete it, or clear the whole AI history. The newest 200 entries are kept, only in the app's private storage.
+
 **Available models:**
 
 All models are vision-capable and run on Google's [LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM) on-device engine.
@@ -117,6 +119,7 @@ Unlike Google Calculator, this app doesn't phone home. No usage tracking, no tel
 - No ads
 - No data harvesting
 - AI models run entirely on-device — no cloud processing
+- AI history stays on your device, in the app's private storage, and you can delete it any time
 - Internet is only used to download AI models (optional, one-time)
 
 ---

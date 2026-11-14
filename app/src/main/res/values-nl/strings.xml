@@ -9,6 +9,19 @@
     <!-- Geschiedenis -->
     <string name="history">Geschiedenis</string>
     <string name="clear_history">Geschiedenis wissen</string>
+    <string name="history_tab_calculations">Berekeningen</string>
+    <string name="history_tab_ai">AI-geschiedenis</string>
+    <string name="ai_history_empty">Je AI-antwoorden verschijnen hier.</string>
+    <string name="ai_history_clear">AI-geschiedenis wissen</string>
+    <string name="ai_history_clear_confirm">Alle opgeslagen AI-antwoorden en hun afbeeldingen verwijderen? Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="ai_history_delete">Verwijderen</string>
+    <string name="ai_history_solve_again">Opnieuw oplossen</string>
+    <string name="ai_history_full_output">Volledige uitvoer</string>
+    <string name="ai_history_outcome_check">Controleer het antwoord</string>
+    <string name="ai_history_outcome_failed">Mislukt</string>
+    <string name="ai_history_photo">Foto</string>
+    <string name="ai_history_drawing">Tekening</string>
+    <string name="ai_history_back">Terug</string>
     <string name="no_history_yet">Nog geen geschiedenis</string>
 
     <!-- Toegankelijkheid van knoppen -->

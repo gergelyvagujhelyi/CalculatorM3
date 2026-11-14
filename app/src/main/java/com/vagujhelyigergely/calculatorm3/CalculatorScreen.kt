@@ -19,6 +19,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryDetail
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryList
 import com.vagujhelyigergely.calculatorm3.camera.AiMenuButton
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Psychology
@@ -132,6 +135,8 @@ fun CalculatorScreen(
     // system camera is foreground (memory pressure) — otherwise it would close and
     // drop the user back on the calculator mid-scan.
     var aiEntry by rememberSaveable { mutableStateOf<AiEntry?>(null) }
+    // An AI history entry to solve again when the AI window opens (Solve again), by id.
+    var aiRerunId by rememberSaveable { mutableStateOf<String?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val context = LocalContext.current
@@ -238,7 +243,7 @@ fun CalculatorScreen(
 
     pendingAiEntry?.let { pending ->
         AlertDialog(
-            onDismissRequest = { pendingAiEntry = null },
+            onDismissRequest = { pendingAiEntry = null; aiRerunId = null },
             icon = { Icon(imageVector = Icons.Default.Psychology, contentDescription = null) },
             title = { Text(text = stringResource(R.string.experimental_feature_title)) },
             text = { Text(text = stringResource(R.string.experimental_feature_warning)) },
@@ -263,7 +268,7 @@ fun CalculatorScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { pendingAiEntry = null }) {
+                TextButton(onClick = { pendingAiEntry = null; aiRerunId = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -280,7 +285,20 @@ fun CalculatorScreen(
                 viewModel.loadHistoryEntry(entry)
                 showHistory = false
             },
-            onClearHistory = { viewModel.clearHistory() }
+            onClearHistory = { viewModel.clearHistory() },
+            aiHistory = if (scanViewModel != null && aiUnlocked) scanViewModel.aiHistory else null,
+            aiImageOf = { scanViewModel?.historyImage(it) },
+            onUseAiAnswer = { answer ->
+                viewModel.setExpressionFromScan(answer)
+                showHistory = false
+            },
+            onSolveAgain = { entry ->
+                showHistory = false
+                aiRerunId = entry.id
+                handleShowAi(entry.mode)
+            },
+            onDeleteAiEntry = { scanViewModel?.deleteHistoryEntry(it.id) },
+            onClearAiHistory = { scanViewModel?.clearAiHistory() }
         )
     }
 
@@ -289,6 +307,7 @@ fun CalculatorScreen(
         com.vagujhelyigergely.calculatorm3.camera.CameraScanScreen(
             viewModel = scanViewModel,
             entry = openAiEntry,
+            rerunId = aiRerunId,
             onExpressionRecognized = { expr ->
                 viewModel.setExpressionFromScan(expr)
             },
@@ -302,6 +321,7 @@ fun CalculatorScreen(
             onDismiss = {
                 scanViewModel.stopInference()
                 aiEntry = null
+                aiRerunId = null
             }
         )
     }
@@ -1009,9 +1029,40 @@ fun HistorySheet(
     formatHistoryResult: (String) -> String = { it },
     onDismiss: () -> Unit,
     onEntryClick: (HistoryEntry) -> Unit,
-    onClearHistory: () -> Unit
+    onClearHistory: () -> Unit,
+    /** Saved AI solves; null while AI is locked, which hides the AI history tab. */
+    aiHistory: List<AiHistoryEntry>? = null,
+    aiImageOf: (AiHistoryEntry) -> java.io.File? = { null },
+    onUseAiAnswer: (String) -> Unit = {},
+    onSolveAgain: (AiHistoryEntry) -> Unit = {},
+    onDeleteAiEntry: (AiHistoryEntry) -> Unit = {},
+    onClearAiHistory: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    // 0 = calculations, 1 = AI history. Saveable, like the open entry, so rotation keeps both.
+    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var openAiId by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmClearAi by remember { mutableStateOf(false) }
+    val showingAi = aiHistory != null && tab == 1
+    val openAi = if (showingAi) aiHistory?.find { it.id == openAiId } else null
+
+    if (confirmClearAi) {
+        AlertDialog(
+            onDismissRequest = { confirmClearAi = false },
+            title = { Text(stringResource(R.string.ai_history_clear)) },
+            text = { Text(stringResource(R.string.ai_history_clear_confirm)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmClearAi = false
+                    openAiId = null
+                    onClearAiHistory()
+                }) { Text(stringResource(R.string.ai_history_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmClearAi = false }) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -1037,7 +1088,16 @@ fun HistorySheet(
                     fontWeight = FontWeight.Medium,
                     color = colorScheme.onSurface
                 )
-                if (historyList.isNotEmpty()) {
+                if (showingAi && openAi == null && !aiHistory.isNullOrEmpty()) {
+                    // Pictures go too, so this one asks first.
+                    IconButton(onClick = { confirmClearAi = true }) {
+                        Icon(
+                            imageVector = Icons.Default.DeleteOutline,
+                            contentDescription = stringResource(R.string.ai_history_clear),
+                            tint = colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else if (!showingAi && historyList.isNotEmpty()) {
                     IconButton(onClick = onClearHistory) {
                         Icon(
                             imageVector = Icons.Default.DeleteOutline,
@@ -1048,9 +1108,39 @@ fun HistorySheet(
                 }
             }
 
+            if (aiHistory != null) {
+                SecondaryTabRow(selectedTabIndex = tab, containerColor = colorScheme.surface) {
+                    Tab(selected = tab == 0, onClick = { tab = 0 },
+                        text = { Text(stringResource(R.string.history_tab_calculations)) })
+                    Tab(selected = tab == 1, onClick = { tab = 1 },
+                        text = { Text(stringResource(R.string.history_tab_ai)) })
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (historyList.isEmpty()) {
+            if (showingAi) {
+                if (openAi != null) {
+                    AiHistoryDetail(
+                        entry = openAi,
+                        image = aiImageOf(openAi),
+                        onBack = { openAiId = null },
+                        onUse = onUseAiAnswer,
+                        onSolveAgain = { onSolveAgain(openAi) },
+                        onDelete = {
+                            openAiId = null
+                            onDeleteAiEntry(openAi)
+                        }
+                    )
+                } else {
+                    AiHistoryList(
+                        entries = aiHistory.orEmpty(),
+                        imageOf = aiImageOf,
+                        onOpen = { openAiId = it.id },
+                        onDelete = onDeleteAiEntry
+                    )
+                }
+            } else if (historyList.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()

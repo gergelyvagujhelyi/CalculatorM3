@@ -9,6 +9,19 @@
     <!-- Historia -->
     <string name="history">Historia</string>
     <string name="clear_history">Wyczyść historię</string>
+    <string name="history_tab_calculations">Obliczenia</string>
+    <string name="history_tab_ai">Historia AI</string>
+    <string name="ai_history_empty">Tu pojawią się odpowiedzi AI.</string>
+    <string name="ai_history_clear">Wyczyść historię AI</string>
+    <string name="ai_history_clear_confirm">Usunąć wszystkie zapisane odpowiedzi AI razem z obrazami? Tej operacji nie można cofnąć.</string>
+    <string name="ai_history_delete">Usuń</string>
+    <string name="ai_history_solve_again">Rozwiąż ponownie</string>
+    <string name="ai_history_full_output">Pełna odpowiedź</string>
+    <string name="ai_history_outcome_check">Sprawdź odpowiedź</string>
+    <string name="ai_history_outcome_failed">Niepowodzenie</string>
+    <string name="ai_history_photo">Zdjęcie</string>
+    <string name="ai_history_drawing">Rysunek</string>
+    <string name="ai_history_back">Wstecz</string>
     <string name="no_history_yet">Brak historii</string>
 
     <!-- Dostępność przycisków -->

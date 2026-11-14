@@ -9,6 +9,19 @@
     <!-- 历史记录 -->
     <string name="history">历史记录</string>
     <string name="clear_history">清除历史记录</string>
+    <string name="history_tab_calculations">计算</string>
+    <string name="history_tab_ai">AI 历史</string>
+    <string name="ai_history_empty">AI 的回答会显示在这里。</string>
+    <string name="ai_history_clear">清除 AI 历史</string>
+    <string name="ai_history_clear_confirm">删除所有已保存的 AI 回答及其图片？此操作无法撤消。</string>
+    <string name="ai_history_delete">删除</string>
+    <string name="ai_history_solve_again">再次求解</string>
+    <string name="ai_history_full_output">完整输出</string>
+    <string name="ai_history_outcome_check">请检查答案</string>
+    <string name="ai_history_outcome_failed">失败</string>
+    <string name="ai_history_photo">照片</string>
+    <string name="ai_history_drawing">手写</string>
+    <string name="ai_history_back">返回</string>
     <string name="no_history_yet">暂无历史记录</string>
 
     <!-- 按钮无障碍 -->

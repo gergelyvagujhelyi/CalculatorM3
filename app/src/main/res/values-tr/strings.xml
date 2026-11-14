@@ -9,6 +9,19 @@
     <!-- Geçmiş -->
     <string name="history">Geçmiş</string>
     <string name="clear_history">Geçmişi temizle</string>
+    <string name="history_tab_calculations">Hesaplamalar</string>
+    <string name="history_tab_ai">Yapay zeka geçmişi</string>
+    <string name="ai_history_empty">Yapay zeka cevaplarınız burada görünecek.</string>
+    <string name="ai_history_clear">Yapay zeka geçmişini temizle</string>
+    <string name="ai_history_clear_confirm">Kayıtlı tüm yapay zeka cevapları görselleriyle birlikte silinsin mi? Bu işlem geri alınamaz.</string>
+    <string name="ai_history_delete">Sil</string>
+    <string name="ai_history_solve_again">Yeniden çöz</string>
+    <string name="ai_history_full_output">Tam çıktı</string>
+    <string name="ai_history_outcome_check">Cevabı kontrol edin</string>
+    <string name="ai_history_outcome_failed">Başarısız</string>
+    <string name="ai_history_photo">Fotoğraf</string>
+    <string name="ai_history_drawing">Çizim</string>
+    <string name="ai_history_back">Geri</string>
     <string name="no_history_yet">Henüz geçmiş yok</string>
 
     <!-- Düğme erişilebilirliği -->

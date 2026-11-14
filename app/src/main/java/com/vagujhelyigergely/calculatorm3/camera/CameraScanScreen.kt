@@ -101,6 +101,8 @@ fun CameraScanScreen(
     viewModel: ScanViewModel,
     /** What the AI menu opened this window for: a picture source, or the settings page. */
     entry: AiEntry,
+    /** An AI history entry to solve again once the window is ready (Solve again), by id. */
+    rerunId: String? = null,
     onExpressionRecognized: (String) -> Unit,
     /** The calculator's own answer to typed text, if it's plain arithmetic (the Type screen). */
     instantAnswer: (String) -> InstantAnswer? = { null },
@@ -151,7 +153,7 @@ fun CameraScanScreen(
         if (!didInitialize) {
             didInitialize = true
             viewModel.updateTypedProblem("") // a fresh open starts with an empty Type screen
-            viewModel.initialize(entry)
+            viewModel.initialize(entry, rerunId = rerunId)
         } else if (viewModel.uiState is ScanUiState.Idle) {
             viewModel.initialize(entry, resumed = true)
         }
@@ -1555,7 +1557,7 @@ private fun formatBytes(bytes: Long): String {
     }
 }
 
-private fun formatElapsed(ms: Long): String {
+internal fun formatElapsed(ms: Long): String {
     val seconds = ms / 1000
     return when {
         seconds < 60 -> "${seconds}s"

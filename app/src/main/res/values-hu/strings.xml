@@ -9,6 +9,19 @@
     <!-- Előzmények -->
     <string name="history">Előzmények</string>
     <string name="clear_history">Előzmények törlése</string>
+    <string name="history_tab_calculations">Számítások</string>
+    <string name="history_tab_ai">MI-előzmények</string>
+    <string name="ai_history_empty">Az MI válaszai itt jelennek meg.</string>
+    <string name="ai_history_clear">MI-előzmények törlése</string>
+    <string name="ai_history_clear_confirm">Törlöd az összes mentett MI-választ a képekkel együtt? Ez nem vonható vissza.</string>
+    <string name="ai_history_delete">Törlés</string>
+    <string name="ai_history_solve_again">Megoldás újra</string>
+    <string name="ai_history_full_output">Teljes kimenet</string>
+    <string name="ai_history_outcome_check">Ellenőrizd a választ</string>
+    <string name="ai_history_outcome_failed">Sikertelen</string>
+    <string name="ai_history_photo">Fénykép</string>
+    <string name="ai_history_drawing">Rajz</string>
+    <string name="ai_history_back">Vissza</string>
     <string name="no_history_yet">Még nincsenek előzmények</string>
 
     <!-- Gombok akadálymentesítése -->

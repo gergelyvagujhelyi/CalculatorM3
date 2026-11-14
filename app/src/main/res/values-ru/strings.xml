@@ -9,6 +9,19 @@
     <!-- История -->
     <string name="history">История</string>
     <string name="clear_history">Очистить историю</string>
+    <string name="history_tab_calculations">Вычисления</string>
+    <string name="history_tab_ai">История ИИ</string>
+    <string name="ai_history_empty">Здесь появятся ответы ИИ.</string>
+    <string name="ai_history_clear">Очистить историю ИИ</string>
+    <string name="ai_history_clear_confirm">Удалить все сохранённые ответы ИИ вместе с изображениями? Это действие нельзя отменить.</string>
+    <string name="ai_history_delete">Удалить</string>
+    <string name="ai_history_solve_again">Решить снова</string>
+    <string name="ai_history_full_output">Полный ответ</string>
+    <string name="ai_history_outcome_check">Проверьте ответ</string>
+    <string name="ai_history_outcome_failed">Ошибка</string>
+    <string name="ai_history_photo">Фото</string>
+    <string name="ai_history_drawing">Рисунок</string>
+    <string name="ai_history_back">Назад</string>
     <string name="no_history_yet">Истории пока нет</string>
 
     <!-- Специальные возможности кнопок -->

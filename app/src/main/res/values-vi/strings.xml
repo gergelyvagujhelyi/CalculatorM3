@@ -9,6 +9,19 @@
     <!-- Lịch sử -->
     <string name="history">Lịch sử</string>
     <string name="clear_history">Xóa lịch sử</string>
+    <string name="history_tab_calculations">Phép tính</string>
+    <string name="history_tab_ai">Lịch sử AI</string>
+    <string name="ai_history_empty">Các câu trả lời AI sẽ hiển thị ở đây.</string>
+    <string name="ai_history_clear">Xóa lịch sử AI</string>
+    <string name="ai_history_clear_confirm">Xóa tất cả câu trả lời AI đã lưu, kể cả hình ảnh? Không thể hoàn tác.</string>
+    <string name="ai_history_delete">Xóa</string>
+    <string name="ai_history_solve_again">Giải lại</string>
+    <string name="ai_history_full_output">Toàn bộ đầu ra</string>
+    <string name="ai_history_outcome_check">Kiểm tra câu trả lời</string>
+    <string name="ai_history_outcome_failed">Thất bại</string>
+    <string name="ai_history_photo">Ảnh</string>
+    <string name="ai_history_drawing">Hình vẽ</string>
+    <string name="ai_history_back">Quay lại</string>
     <string name="no_history_yet">Chưa có lịch sử</string>
 
     <!-- Trợ năng nút -->

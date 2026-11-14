@@ -9,6 +9,19 @@
     <!-- Cronologia -->
     <string name="history">Cronologia</string>
     <string name="clear_history">Cancella cronologia</string>
+    <string name="history_tab_calculations">Calcoli</string>
+    <string name="history_tab_ai">Cronologia IA</string>
+    <string name="ai_history_empty">Le risposte dell\'IA appariranno qui.</string>
+    <string name="ai_history_clear">Cancella cronologia IA</string>
+    <string name="ai_history_clear_confirm">Eliminare tutte le risposte dell\'IA salvate, con le immagini? L\'azione è irreversibile.</string>
+    <string name="ai_history_delete">Elimina</string>
+    <string name="ai_history_solve_again">Risolvi di nuovo</string>
+    <string name="ai_history_full_output">Output completo</string>
+    <string name="ai_history_outcome_check">Controlla la risposta</string>
+    <string name="ai_history_outcome_failed">Non riuscito</string>
+    <string name="ai_history_photo">Foto</string>
+    <string name="ai_history_drawing">Disegno</string>
+    <string name="ai_history_back">Indietro</string>
     <string name="no_history_yet">Nessuna cronologia</string>
 
     <!-- Accessibilità dei pulsanti -->

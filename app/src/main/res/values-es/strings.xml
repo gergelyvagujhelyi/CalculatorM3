@@ -9,6 +9,19 @@
     <!-- Historial -->
     <string name="history">Historial</string>
     <string name="clear_history">Borrar historial</string>
+    <string name="history_tab_calculations">Cálculos</string>
+    <string name="history_tab_ai">Historial de IA</string>
+    <string name="ai_history_empty">Tus respuestas de IA aparecerán aquí.</string>
+    <string name="ai_history_clear">Borrar historial de IA</string>
+    <string name="ai_history_clear_confirm">¿Borrar todas las respuestas de IA guardadas, con sus imágenes? No se puede deshacer.</string>
+    <string name="ai_history_delete">Borrar</string>
+    <string name="ai_history_solve_again">Resolver de nuevo</string>
+    <string name="ai_history_full_output">Salida completa</string>
+    <string name="ai_history_outcome_check">Revisa la respuesta</string>
+    <string name="ai_history_outcome_failed">Falló</string>
+    <string name="ai_history_photo">Foto</string>
+    <string name="ai_history_drawing">Dibujo</string>
+    <string name="ai_history_back">Atrás</string>
     <string name="no_history_yet">Aún no hay historial</string>
 
     <!-- Accesibilidad de botones -->

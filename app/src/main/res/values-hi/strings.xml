@@ -9,6 +9,19 @@
     <!-- इतिहास -->
     <string name="history">इतिहास</string>
     <string name="clear_history">इतिहास साफ़ करें</string>
+    <string name="history_tab_calculations">गणनाएँ</string>
+    <string name="history_tab_ai">AI इतिहास</string>
+    <string name="ai_history_empty">आपके AI उत्तर यहाँ दिखेंगे।</string>
+    <string name="ai_history_clear">AI इतिहास मिटाएँ</string>
+    <string name="ai_history_clear_confirm">सहेजे गए सभी AI उत्तर, उनकी तस्वीरों सहित, मिटाएँ? इसे वापस नहीं किया जा सकता।</string>
+    <string name="ai_history_delete">मिटाएँ</string>
+    <string name="ai_history_solve_again">फिर से हल करें</string>
+    <string name="ai_history_full_output">पूरा आउटपुट</string>
+    <string name="ai_history_outcome_check">उत्तर जाँचें</string>
+    <string name="ai_history_outcome_failed">विफल</string>
+    <string name="ai_history_photo">फ़ोटो</string>
+    <string name="ai_history_drawing">चित्र</string>
+    <string name="ai_history_back">वापस</string>
     <string name="no_history_yet">अभी तक कोई इतिहास नहीं</string>
 
     <!-- बटन सुगम्यता -->

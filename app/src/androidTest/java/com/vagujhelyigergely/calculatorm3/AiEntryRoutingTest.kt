@@ -8,6 +8,7 @@ import com.vagujhelyigergely.calculatorm3.ai.ModelManager
 import com.vagujhelyigergely.calculatorm3.ai.RecognitionResult
 import com.vagujhelyigergely.calculatorm3.auth.HuggingFaceAuthManager
 import com.vagujhelyigergely.calculatorm3.camera.AiEntry
+import com.vagujhelyigergely.calculatorm3.camera.AiHistoryOutcome
 import com.vagujhelyigergely.calculatorm3.camera.InkPoint
 import com.vagujhelyigergely.calculatorm3.camera.InkStroke
 import com.vagujhelyigergely.calculatorm3.camera.ScanUiState
@@ -52,7 +53,10 @@ class AiEntryRoutingTest {
         override suspend fun loadModel(modelPath: String) { loadGate.await(); loaded = true }
         override suspend fun solveFromImageStreaming(
             imagePath: String, onToken: suspend (partialRaw: String) -> Unit
-        ): Result<RecognitionResult> = Result.failure(UnsupportedOperationException())
+        ): Result<RecognitionResult> {
+            onToken("7 × 6")
+            return Result.success(RecognitionResult("7 × 6 = 42\n42", "42"))
+        }
         override suspend fun solveFromTextStreaming(
             problem: String, onToken: suspend (partialRaw: String) -> Unit
         ): Result<RecognitionResult> {
@@ -88,6 +92,7 @@ class AiEntryRoutingTest {
     @After
     fun tearDown() {
         created.forEach { it.delete() }
+        historyDir.deleteRecursively()
         if (::manager.isInitialized) {
             context.getSharedPreferences("ai_settings", Context.MODE_PRIVATE).edit()
                 .remove("prepared_engine_version_${model.id}").commit()
@@ -102,10 +107,14 @@ class AiEntryRoutingTest {
         throw AssertionError("timed out waiting for: $what (state: ${lastVm?.uiState})")
     }
 
-    private fun open(entry: AiEntry, solver: FakeSolver = FakeSolver(), resumed: Boolean = false) =
-        ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context).also { vm ->
+    /** AI history for these tests only, so they never touch the app's own. */
+    private val historyDir: File by lazy { File(context.cacheDir, "test_ai_history_${System.nanoTime()}") }
+
+    private fun open(
+        entry: AiEntry, solver: FakeSolver = FakeSolver(), resumed: Boolean = false, rerunId: String? = null
+    ) = ScanViewModel(solver, manager, HuggingFaceAuthManager(context), context, historyDir).also { vm ->
             lastVm = vm
-            instrumentation.runOnMainSync { vm.initialize(entry, resumed) }
+            instrumentation.runOnMainSync { vm.initialize(entry, resumed, rerunId) }
         }
 
     @Test
@@ -366,5 +375,109 @@ class AiEntryRoutingTest {
         assertEquals(false, vm.stylusOnly)
         instrumentation.runOnMainSync { vm.onStylusSeen() }
         assertTrue(vm.stylusOnly)
+    }
+
+    // ── AI history ──────────────────────────────────────────────────────────
+
+    /** A real (tiny) JPEG, since a scan decodes and downscales its photo first. */
+    private fun photo(): File = File(context.cacheDir, "hist_${System.nanoTime()}.jpg").apply {
+        val bmp = android.graphics.Bitmap.createBitmap(64, 32, android.graphics.Bitmap.Config.ARGB_8888)
+        outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }
+        bmp.recycle()
+    }
+
+    @Test
+    fun aTypedSolveIsSavedWithItsOutputAndSteps() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the history entry") { vm.aiHistory.isNotEmpty() }
+        val saved = vm.aiHistory.single()
+        assertEquals(AiEntry.TYPE, saved.mode)
+        assertEquals("6 × 7", saved.typedText)
+        assertEquals("Problem: 6 × 7\n1. 6 × 7 = 42\nAnswer: 42", saved.output)
+        assertEquals(AiHistoryOutcome.SOLVED, saved.outcome)
+        assertEquals("42", saved.answer)
+        assertEquals("1. 6 × 7 = 42", saved.steps?.steps)
+        assertEquals("no speed for typed text", null, saved.speed)
+        assertEquals(model.displayName, saved.model)
+    }
+
+    @Test
+    fun aDrawingIsSavedAsItsStrokesAndAPhotoWithItsPicture() {
+        val solver = FakeSolver(textReply = "Problem: 7 + 5\n1. 7 + 5 = 12\nAnswer: 12").apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.WRITE, solver)
+        waitFor("the pad") { vm.uiState is ScanUiState.Drawing }
+        vm.draw(line(0.1f, 0.3f, 0.2f, 0.3f))
+        instrumentation.runOnMainSync { vm.onDrawingSubmitted() }
+        waitFor("the drawing saved") { vm.aiHistory.size == 1 }
+        assertEquals(1, vm.aiHistory.single().strokes?.size)
+        assertEquals(null, vm.historyImage(vm.aiHistory.single()))
+
+        val photoVm = open(AiEntry.GALLERY, solver)
+        waitFor("the picker state") { photoVm.uiState is ScanUiState.Capturing }
+        val picked = photo()
+        instrumentation.runOnMainSync { photoVm.onPhotoCaptured(picked.path) }
+        waitFor("the photo saved") { photoVm.aiHistory.size == 2 }
+        val saved = photoVm.aiHistory.first()
+        assertEquals(AiEntry.GALLERY, saved.mode)
+        assertEquals("42", saved.answer)
+        val picture = photoVm.historyImage(saved)
+        assertTrue("the picture is kept in history", picture != null && picture.length() > 0)
+        waitFor("the scan's own photo deleted") { !picked.exists() }
+    }
+
+    @Test
+    fun aReplyToCheckIsSavedButAStoppedSolveIsNot() {
+        val solver = FakeSolver(textReply = "I think it is about forty.").apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("the entry") { vm.aiHistory.isNotEmpty() }
+        assertEquals(AiHistoryOutcome.CHECK, vm.aiHistory.single().outcome)
+
+        val gate = CompletableDeferred<Unit>()
+        val stopping = FakeSolver(textGate = gate).apply { loadGate.complete(Unit) }
+        val vm2 = open(AiEntry.TYPE, stopping)
+        waitFor("the Type screen") { vm2.uiState is ScanUiState.Typing }
+        solveTyped(vm2, "1 + 1")
+        waitFor("the solve") { vm2.uiState is ScanUiState.Processing }
+        instrumentation.runOnMainSync { vm2.stopInference() }
+        gate.complete(Unit)
+        Thread.sleep(300)
+        assertEquals("only the first solve is saved", 1, vm2.aiHistory.size)
+    }
+
+    @Test
+    fun entriesCanBeDeletedOneByOneOrAllAtOnce() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("one entry") { vm.aiHistory.size == 1 }
+        instrumentation.runOnMainSync { vm.editTypedProblem() }
+        solveTyped(vm, "7 × 6")
+        waitFor("two entries") { vm.aiHistory.size == 2 }
+        instrumentation.runOnMainSync { vm.deleteHistoryEntry(vm.aiHistory.first().id) }
+        waitFor("one left") { vm.aiHistory.size == 1 }
+        assertEquals("6 × 7", vm.aiHistory.single().typedText)
+        instrumentation.runOnMainSync { vm.clearAiHistory() }
+        waitFor("none left") { vm.aiHistory.isEmpty() }
+    }
+
+    @Test
+    fun solveAgainRunsTheSavedInputAgain() {
+        val solver = FakeSolver().apply { loadGate.complete(Unit) }
+        val vm = open(AiEntry.TYPE, solver)
+        waitFor("the Type screen") { vm.uiState is ScanUiState.Typing }
+        solveTyped(vm, "6 × 7")
+        waitFor("one entry") { vm.aiHistory.size == 1 }
+        val id = vm.aiHistory.single().id
+        // The window opened again from Solve again in the history sheet.
+        instrumentation.runOnMainSync { vm.initialize(AiEntry.TYPE, rerunId = id) }
+        waitFor("the second solve saved") { vm.aiHistory.size == 2 }
+        assertEquals(listOf("6 × 7", "6 × 7"), solver.solvedTexts)
+        assertTrue(vm.uiState is ScanUiState.Success)
     }
 }

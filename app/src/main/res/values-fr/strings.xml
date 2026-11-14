@@ -9,6 +9,19 @@
     <!-- Historique -->
     <string name="history">Historique</string>
     <string name="clear_history">Effacer l\'historique</string>
+    <string name="history_tab_calculations">Calculs</string>
+    <string name="history_tab_ai">Historique IA</string>
+    <string name="ai_history_empty">Vos réponses de l\'IA apparaîtront ici.</string>
+    <string name="ai_history_clear">Effacer l\'historique IA</string>
+    <string name="ai_history_clear_confirm">Supprimer toutes les réponses de l\'IA enregistrées, avec leurs images ? Action irréversible.</string>
+    <string name="ai_history_delete">Supprimer</string>
+    <string name="ai_history_solve_again">Résoudre à nouveau</string>
+    <string name="ai_history_full_output">Sortie complète</string>
+    <string name="ai_history_outcome_check">Vérifiez la réponse</string>
+    <string name="ai_history_outcome_failed">Échec</string>
+    <string name="ai_history_photo">Photo</string>
+    <string name="ai_history_drawing">Dessin</string>
+    <string name="ai_history_back">Retour</string>
     <string name="no_history_yet">Aucun historique</string>
 
     <!-- Accessibilité des boutons -->
