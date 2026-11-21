@@ -15,9 +15,9 @@
   <!-- Screenshots: made by tools/store-screenshots/render.py -->
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/1.jpg" width="180" alt="Calculator with a live result"><br><sub>Calculator</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/2.jpg" width="180" alt="Scientific functions with a live result"><br><sub>Scientific Functions</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/3.jpg" width="180" alt="Calculation history"><br><sub>Calculation History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/01.jpg" width="180" alt="Calculator with a live result"><br><sub>Calculator</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/02.jpg" width="180" alt="Scientific functions with a live result"><br><sub>Scientific Functions</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/03.jpg" width="180" alt="Calculation history"><br><sub>Calculation History</sub></td>
     </tr>
   </table>
 
@@ -25,7 +25,7 @@
 
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/4.jpg" width="560" alt="Landscape mode with the history beside the keys"><br><sub>Landscape Mode</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/04.jpg" width="560" alt="Landscape mode with the history beside the keys"><br><sub>Landscape Mode</sub></td>
     </tr>
   </table>
 
@@ -33,13 +33,13 @@
 
   <table>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/5.jpg" width="180" alt="Solve with AI menu: Camera, Gallery, Write, Type"><br><sub>Solve with AI</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/6.jpg" width="180" alt="Handwriting pad with 8×6−9 written on it"><br><sub>Write It by Hand</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/7.jpg" width="180" alt="Step-by-step answer 39 to the handwritten problem"><br><sub>Step-by-Step Answers</sub></td>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/8.jpg" width="180" alt="Typed word problem answered, with a follow-up question"><br><sub>Ask Follow-up Questions</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/05.jpg" width="180" alt="Solve with AI menu: Camera, Gallery, Write, Type"><br><sub>Solve with AI</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/06.jpg" width="180" alt="Handwriting pad with 8×6−9 written on it"><br><sub>Write It by Hand</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/07.jpg" width="180" alt="Step-by-step answer 39 to the handwritten problem"><br><sub>Step-by-Step Answers</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/08.jpg" width="180" alt="Typed word problem answered, with a follow-up question"><br><sub>Ask Follow-up Questions</sub></td>
     </tr>
     <tr>
-      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/9.jpg" width="180" alt="AI history with saved answers"><br><sub>AI History</sub></td>
+      <td align="center"><img src="metadata/en-US/images/phoneScreenshots/09.jpg" width="180" alt="AI history with saved answers"><br><sub>AI History</sub></td>
       <td align="center"><img src="metadata/en-US/images/phoneScreenshots/10.jpg" width="180" alt="An answer translated into Spanish; 18 languages"><br><sub>Answers in Your Language</sub></td>
       <td align="center"><img src="metadata/en-US/images/phoneScreenshots/11.jpg" width="180" alt="AI settings with the recommended on-device model"><br><sub>Private by Design</sub></td>
     </tr>

@@ -1,6 +1,7 @@
 """Frames the raw screen captures in raw/ for the store and the README: each one goes into a
 phone frame on a dark background, under a headline. The results are written to
-metadata/en-US/images/phoneScreenshots/<n>.jpg, which F-Droid shows and the README links to.
+metadata/en-US/images/phoneScreenshots/<nn>.jpg, which F-Droid shows and the README links to.
+The numbers are zero-padded because F-Droid sorts the names as text: 10.jpg would come before 2.jpg.
 
 The layout is plain HTML/CSS, rendered by headless Chrome, so Google Chrome must be installed.
 
@@ -139,8 +140,8 @@ def render(n, browser):
                        check=True, capture_output=True)
         # JPEG at this quality looks the same as PNG here, at about a quarter of the size.
         Image.open(io.BytesIO(png.read_bytes())).convert("RGB").save(
-            OUT / f"{n}.jpg", quality=90, subsampling=0, optimize=True, progressive=True)
-    print(f"{n}.jpg")
+            OUT / f"{n:02d}.jpg", quality=90, subsampling=0, optimize=True, progressive=True)
+    print(f"{n:02d}.jpg")
 
 
 def main():
